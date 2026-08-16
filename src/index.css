@@ -1,13 +1,1 @@
 @import "tailwindcss";
-
-@keyframes orb-move {
-  0% { left: 5%; top: 20%; }
-  25% { left: 30%; top: 70%; }
-  50% { left: 60%; top: 30%; }
-  75% { left: 85%; top: 80%; }
-  100% { left: 95%; top: 40%; }
-}
-
-.animate-orb {
-  animation: orb-move 15s ease-in-out infinite alternate;
-}

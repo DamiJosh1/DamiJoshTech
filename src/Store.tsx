@@ -4,20 +4,31 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User } from 'lucide-react';
+import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home, Package } from 'lucide-react';
 import { usePaystackPayment } from 'react-paystack';
 import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
-import { db } from './firebase';
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { db, auth } from './firebase';
 import { Product, CartItem } from './types';
 
 export default function Store() {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState('home');
   const [products, setProducts] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'details' | 'payment'>('cart');
   const [customer, setCustomer] = useState({ name: '', email: '', phone: '', address: '' });
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribeAuth();
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
@@ -27,6 +38,19 @@ export default function Store() {
     return () => unsub();
   }, []);
 
+  const handleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      console.error('Login failed', e);
+    }
+  };
+
+  const handleLogout = () => {
+    signOut(auth);
+  };
+
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -35,7 +59,7 @@ export default function Store() {
     reference: (new Date()).getTime().toString(),
     email: customer.email,
     amount: Math.round(cartTotal * 100), // in kobo/cents
-    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_dummy_key',
+    publicKey: (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_dummy_key',
     metadata: {
       custom_fields: [
         {
@@ -110,102 +134,169 @@ export default function Store() {
   };
 
   return (
-    <div className={`min-h-screen font-sans flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-zinc-900 text-zinc-50' : 'bg-zinc-100 text-zinc-900'}`}>
-      {/* Header */}
-      <header className="relative w-full overflow-hidden">
-        {/* Moving Blue Orb */}
-        <div className="absolute w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_12px_4px_rgba(59,130,246,0.6)] animate-orb pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-          
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <button className="lg:hidden p-2 -ml-2 text-zinc-500 hover:text-blue-500 transition-colors" aria-label="Menu">
-              <Menu className="w-5 h-5" />
-            </button>
-            <a href="#" className="text-2xl font-bold tracking-tight">
-              <span className="text-blue-600">DamiJosh</span>Tech
+    <div className={`min-h-screen font-sans flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-zinc-900 text-zinc-50' : 'bg-zinc-100 text-zinc-900'} ${user ? 'pb-16 lg:pb-0' : ''}`}>
+      
+      {/* Desktop Header */}
+      <header className="hidden lg:block relative w-full pt-6 px-4 z-40">
+         <div className={`max-w-7xl mx-auto rounded-full px-6 h-[72px] flex items-center justify-between gap-4 border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-zinc-100 border-blue-500/30'}`}>
+            
+            {/* Logo */}
+            <a href="#" className="text-2xl font-bold tracking-tight z-10">
+              <span className="text-blue-500">DamiJosh</span><span className={isDarkMode ? 'text-white' : 'text-zinc-900'}>Tech</span>
             </a>
-          </div>
 
-          {/* Search Bar */}
-          <div className={`hidden md:flex flex-1 max-w-md mx-4 items-center rounded-full px-4 py-2 transition-colors ${isDarkMode ? 'bg-white/5' : 'bg-black/5'}`}>
-            <Search className={`w-4 h-4 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`} />
-            <input 
-              type="text" 
-              placeholder="Search premium tech..." 
-              className={`bg-transparent border-none outline-none w-full ml-3 text-sm placeholder:text-zinc-500 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}
-            />
-          </div>
+            {/* Search */}
+            <div className={`flex flex-1 max-w-md mx-4 items-center rounded-full px-4 py-2.5 z-10 transition-colors ${isDarkMode ? 'bg-zinc-800/50' : 'bg-white/50'}`}>
+              <Search className={`w-4 h-4 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`} />
+              <input type="text" placeholder="Search products..." className={`bg-transparent border-none outline-none w-full ml-3 text-sm placeholder:text-zinc-500 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`} />
+            </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-8 text-sm font-medium">
-            <a href="#" className="hover:text-blue-500 transition-colors">Home</a>
-            <a href="#" className="hover:text-blue-500 transition-colors">Shop</a>
-            <a href="#" className="hover:text-blue-500 transition-colors">Categories</a>
-            <a href="#" className="hover:text-blue-500 transition-colors">About</a>
-            <a href="#" className="hover:text-blue-500 transition-colors">Contact</a>
-          </nav>
+            {/* Links */}
+            <nav className="flex items-center gap-8 text-sm font-medium z-10">
+              <a href="#" className="text-blue-500">Home</a>
+              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>Shop</a>
+              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>Categories</a>
+              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>About</a>
+              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>Contact</a>
+            </nav>
 
-          {/* Actions (Theme, Cart, Profile/Auth) */}
-          <div className="flex items-center gap-2 sm:gap-4 z-10">
-            {/* Mobile Search Icon */}
-            <button className="md:hidden p-2 text-zinc-500 hover:text-blue-500 transition-colors" aria-label="Search">
+            {/* Right Icons */}
+            <div className="flex items-center gap-2 z-10">
+               {/* Cart */}
+               <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-zinc-200 text-zinc-600'}`}>
+                  <ShoppingBag className="w-5 h-5" />
+                  {cartCount > 0 && <span className="absolute top-1 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-transparent">{cartCount}</span>}
+               </button>
+               {/* Theme Toggle */}
+               <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-zinc-200 text-zinc-600'}`}>
+                  {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+               </button>
+               {/* Auth */}
+               {user ? (
+                 <div className="relative ml-2">
+                   <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                     {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : <User className="w-5 h-5" />}
+                   </button>
+                   {isProfileMenuOpen && (
+                     <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-xl py-2 border overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-zinc-800 shadow-black/50' : 'bg-white border-zinc-200 shadow-zinc-200/50'}`}>
+                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Profile</button>
+                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Orders</button>
+                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Saved/Favorites</button>
+                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Settings</button>
+                        <div className={`h-px my-1 ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                        <button onClick={handleLogout} className="w-full text-left px-5 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors">Logout</button>
+                     </div>
+                   )}
+                 </div>
+               ) : (
+                 <button onClick={handleLogin} className="ml-4 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors shadow-lg shadow-blue-600/20 active:scale-95">
+                   Get Started
+                 </button>
+               )}
+            </div>
+         </div>
+      </header>
+
+      {/* Mobile Top Navbar */}
+      <header className="lg:hidden relative w-full pt-4 px-4 z-40">
+        <div className={`w-full rounded-2xl px-5 h-16 flex items-center justify-between border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-zinc-100 border-blue-500/30'}`}>
+          
+          <a href="#" className="text-xl font-bold tracking-tight z-10">
+            <span className="text-blue-500">DamiJosh</span><span className={isDarkMode ? 'text-white' : 'text-zinc-900'}>Tech</span>
+          </a>
+
+          <div className="flex items-center gap-2 z-10">
+            <button className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
               <Search className="w-5 h-5" />
             </button>
-
-            {/* Dark/Light Toggle */}
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-full transition-colors flex items-center justify-center ${isDarkMode ? 'bg-zinc-800 text-zinc-300 hover:text-white' : 'bg-white shadow-sm text-zinc-600 hover:text-zinc-900'}`}
-              aria-label="Toggle theme"
-            >
-              {isDarkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </button>
-
-            {/* Cart */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="p-2 text-zinc-500 hover:text-blue-500 relative transition-colors"
-              aria-label="Cart"
-            >
+            <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
               <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute top-0 right-0 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-transparent">
-                  {cartCount}
-                </span>
-              )}
+              {cartCount > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{cartCount}</span>}
             </button>
-
-            {/* Auth Button / Profile */}
-            {isLoggedIn ? (
-              <button onClick={() => setIsLoggedIn(false)} className={`ml-2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isDarkMode ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-zinc-200 text-zinc-600 hover:bg-zinc-300'}`}>
-                <User className="w-4 h-4" />
-              </button>
-            ) : (
-              <button onClick={() => setIsLoggedIn(true)} className="ml-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold transition-colors whitespace-nowrap">
-                Get Started
+            {!user && (
+              <button onClick={() => setIsMobileMenuOpen(true)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
+                <Menu className="w-5 h-5" />
               </button>
             )}
           </div>
         </div>
       </header>
 
+      {/* Mobile Drawer (Non-Logged In) */}
+      {isMobileMenuOpen && !user && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className={`relative w-4/5 max-w-sm h-full shadow-2xl flex flex-col transition-colors ${isDarkMode ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'}`}>
+             <div className="p-6 flex items-center justify-between border-b border-zinc-500/20">
+               <span className="text-xl font-bold"><span className="text-blue-500">DamiJosh</span>Tech</span>
+               <button onClick={() => setIsMobileMenuOpen(false)} className={`p-2 -mr-2 rounded-full ${isDarkMode ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`}><X className="w-6 h-6"/></button>
+             </div>
+             <div className="p-6 flex-1 overflow-y-auto flex flex-col gap-6">
+                <nav className="flex flex-col gap-6 text-lg font-medium">
+                  <a href="#" className="text-blue-500">Home</a>
+                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>Shop</a>
+                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>Categories</a>
+                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>About</a>
+                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>Contact</a>
+                </nav>
+                <div className="mt-auto flex flex-col gap-4">
+                  <div className="flex items-center justify-between py-4 border-t border-zinc-500/20">
+                    <span className="font-medium">Theme</span>
+                    <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-100 text-zinc-600'}`}>
+                      {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <button onClick={() => { setIsMobileMenuOpen(false); handleLogin(); }} className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors active:scale-95">Login</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); handleLogin(); }} className={`w-full py-3.5 rounded-xl font-semibold transition-colors active:scale-95 ${isDarkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-white' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'}`}>Sign Up</button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Bottom Navigation (Logged In) */}
+      {user && (
+        <div className={`lg:hidden fixed bottom-0 left-0 w-full pb-2 z-40 border-t transition-colors shadow-[0_-5px_15px_rgba(0,0,0,0.05)] ${isDarkMode ? 'bg-zinc-900/95 border-zinc-800' : 'bg-white/95 border-zinc-200'} backdrop-blur-lg`}>
+          <div className="flex justify-around items-center h-16 px-2">
+            <button onClick={() => setActiveMobileTab('profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'profile' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+              <User className={`w-5 h-5 ${activeMobileTab === 'profile' ? 'fill-blue-500/20' : ''}`} />
+              <span className="text-[10px] font-medium">Profile</span>
+            </button>
+            <button onClick={() => setActiveMobileTab('ai')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'ai' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+              <Bot className={`w-5 h-5 ${activeMobileTab === 'ai' ? 'fill-blue-500/20' : ''}`} />
+              <span className="text-[10px] font-medium">AI</span>
+            </button>
+            <button onClick={() => setActiveMobileTab('home')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'home' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+              <Home className={`w-5 h-5 ${activeMobileTab === 'home' ? 'fill-blue-500/20' : ''}`} />
+              <span className="text-[10px] font-medium">Home</span>
+            </button>
+            <button onClick={() => setActiveMobileTab('shop')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'shop' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+              <ShoppingBag className={`w-5 h-5 ${activeMobileTab === 'shop' ? 'fill-blue-500/20' : ''}`} />
+              <span className="text-[10px] font-medium">Shop</span>
+            </button>
+            <button onClick={() => setActiveMobileTab('orders')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'orders' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+              <Package className={`w-5 h-5 ${activeMobileTab === 'orders' ? 'fill-blue-500/20' : ''}`} />
+              <span className="text-[10px] font-medium">Orders</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
-      <section className="relative bg-zinc-950 text-white overflow-hidden">
+      <section className={`relative overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-900'}`}>
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1550009158-9efff6c97364?auto=format&fit=crop&q=80&w=2000"
             alt="Modern tech setup"
-            className="w-full h-full object-cover opacity-30"
+            className={`w-full h-full object-cover ${isDarkMode ? 'opacity-30' : 'opacity-10'}`}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
+          <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${isDarkMode ? 'from-zinc-950' : 'from-zinc-100'}`} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-48 flex flex-col items-start">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-2xl leading-tight text-white">
+          <h1 className={`text-4xl md:text-6xl font-bold tracking-tight max-w-2xl leading-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
             Next-Generation <span className="text-blue-500">Tech</span> & Gadgets.
           </h1>
-          <p className="mt-6 text-lg md:text-xl text-zinc-400 max-w-xl">
+          <p className={`mt-6 text-lg md:text-xl max-w-xl ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
             Upgrade your digital lifestyle with premium electronics, engineered for the future. From smart home to wearables, experience tomorrow today.
           </p>
           <button className="mt-10 bg-blue-600 text-white px-8 py-4 text-sm font-semibold hover:bg-blue-500 transition-colors flex items-center gap-2 whitespace-nowrap rounded-sm">
@@ -216,7 +307,7 @@ export default function Store() {
       </section>
 
       {/* Features/Trust */}
-      <section className="border-y border-zinc-800 bg-zinc-900">
+      <section className={`border-y transition-colors duration-300 ${isDarkMode ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { icon: Truck, title: 'Express Global Shipping', desc: 'Tracked & Insured' },
@@ -226,8 +317,8 @@ export default function Store() {
           ].map((feature, i) => (
             <div key={i} className="flex flex-col items-center text-center">
               <feature.icon className="w-6 h-6 text-blue-500 mb-4" />
-              <h3 className="text-sm font-semibold text-white">{feature.title}</h3>
-              <p className="text-sm text-zinc-400 mt-1">{feature.desc}</p>
+              <h3 className={`text-sm font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{feature.title}</h3>
+              <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{feature.desc}</p>
             </div>
           ))}
         </div>
@@ -236,7 +327,7 @@ export default function Store() {
       {/* Product Grid */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
         <div className="flex items-center justify-between mb-10">
-          <h2 className="text-2xl font-bold tracking-tight text-white">Trending Gadgets</h2>
+          <h2 className={`text-2xl font-bold tracking-tight transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Trending Gadgets</h2>
           <a href="#" className="text-sm font-medium text-blue-500 hover:text-blue-400 flex items-center gap-1 group whitespace-nowrap">
             View All
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -246,7 +337,7 @@ export default function Store() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
           {products.map(product => (
             <div key={product.id} className="group relative flex flex-col">
-              <div className="aspect-[4/5] w-full overflow-hidden bg-zinc-900 relative mb-4 rounded-sm border border-zinc-800">
+              <div className={`aspect-[4/5] w-full overflow-hidden relative mb-4 rounded-sm border transition-colors ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-200 border-zinc-300'}`}>
                 <img
                   src={product.image}
                   alt={product.name}
@@ -260,7 +351,7 @@ export default function Store() {
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <button
                     onClick={() => addToCart(product)}
-                    className="bg-zinc-950/90 backdrop-blur-sm text-white px-6 py-3 text-sm font-medium hover:bg-zinc-900 border border-zinc-700 transition-colors w-[85%] shadow-lg shadow-black/20 whitespace-nowrap rounded-sm"
+                    className={`px-6 py-3 text-sm font-medium transition-colors w-[85%] shadow-lg shadow-black/20 whitespace-nowrap rounded-sm backdrop-blur-sm border ${isDarkMode ? 'bg-zinc-950/90 text-white hover:bg-zinc-900 border-zinc-700' : 'bg-white/90 text-zinc-900 hover:bg-zinc-100 border-zinc-300'}`}
                   >
                     Add to Cart
                   </button>
@@ -268,15 +359,15 @@ export default function Store() {
               </div>
               <div className="flex flex-col flex-1">
                 <p className="text-xs text-blue-500 mb-1 uppercase tracking-wider font-semibold">{product.category}</p>
-                <h3 className="text-sm font-medium text-white line-clamp-1">
+                <h3 className={`text-sm font-medium line-clamp-1 transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
                   {product.name}
                 </h3>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-sm font-bold text-white">
+                  <span className={`text-sm font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
                     ${product.price.toFixed(2)}
                   </span>
                   {product.originalPrice && (
-                    <span className="text-sm text-zinc-500 line-through">
+                    <span className="text-xs text-zinc-500 line-through">
                       ${product.originalPrice.toFixed(2)}
                     </span>
                   )}
