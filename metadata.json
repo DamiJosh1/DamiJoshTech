@@ -1,0 +1,6 @@
+{
+  "name": "DamiJoshTech Dropshipping",
+  "description": "A modern tech and electronics dropshipping storefront.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

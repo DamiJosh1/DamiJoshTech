@@ -1,0 +1,101 @@
+{
+  "collections": {
+    "orders": {
+      "rules": {
+        "read": "request.auth != null",
+        "create": "true",
+        "update": "request.auth != null",
+        "delete": "false"
+      },
+      "schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string"
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "shippingAddress": {
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array"
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "timestamp"
+          }
+        },
+        "required": [
+          "status",
+          "customerName",
+          "customerEmail",
+          "customerPhone",
+          "shippingAddress",
+          "totalAmount",
+          "items",
+          "createdAt"
+        ]
+      }
+    },
+    "products": {
+      "rules": {
+        "read": "true",
+        "create": "isAdmin()",
+        "update": "false",
+        "delete": "isAdmin()"
+      },
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "originalPrice": {
+            "type": "number"
+          },
+          "image": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "badge": {
+            "type": "string"
+          },
+          "cjSku": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "timestamp"
+          }
+        },
+        "required": [
+          "name",
+          "price",
+          "originalPrice",
+          "image",
+          "category",
+          "badge",
+          "cjSku",
+          "createdAt"
+        ]
+      }
+    }
+  }
+}
