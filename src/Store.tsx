@@ -4,24 +4,66 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home, Package } from 'lucide-react';
+import { useNavigate, Routes, Route } from 'react-router-dom';
+import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye } from 'lucide-react';
 import { usePaystackPayment } from 'react-paystack';
 import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from './firebase';
 import { Product, CartItem } from './types';
+import { StoreContext } from './StoreContext';
+import Home from './pages/Home';
+import Shop from './pages/Shop';
+import Categories from './pages/Categories';
+import ProductDetail from './pages/ProductDetail';
 
 export default function Store() {
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState('home');
+  const [activeFeaturedCategory, setActiveFeaturedCategory] = useState("All");
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [addingToCartId, setAddingToCartId] = useState<string | null>(null);
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'details' | 'payment'>('cart');
   const [customer, setCustomer] = useState({ name: '', email: '', phone: '', address: '' });
+
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [scrollY, setScrollY] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isHeroLoaded, setIsHeroLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsHeroLoaded(true);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    const handleMediaChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    const handleScroll = () => setScrollY(window.scrollY);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (mediaQuery.matches) return;
+      setMousePos({
+        x: (e.clientX / window.innerWidth - 0.5) * 20,
+        y: (e.clientY / window.innerHeight - 0.5) * 20,
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaChange);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -34,17 +76,14 @@ export default function Store() {
     const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
       const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
       setProducts(fetchedProducts);
+    }, (error) => {
+      console.error("Firestore connection error:", error);
     });
     return () => unsub();
   }, []);
 
-  const handleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error('Login failed', e);
-    }
+  const handleLogin = () => {
+    navigate('/login');
   };
 
   const handleLogout = () => {
@@ -123,6 +162,40 @@ export default function Store() {
     setCheckoutStep('cart');
   };
 
+  const handleFeaturedAddToCart = (product: Product, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setAddingToCartId(product.id);
+    
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+    
+    setTimeout(() => {
+      setAddingToCartId(null);
+    }, 1500);
+  };
+
+  const handleWishlistToggle = (product: Product, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setWishlistIds(prev => 
+      prev.includes(product.id) ? prev.filter(id => id !== product.id) : [...prev, product.id]
+    );
+  };
+
   const updateQuantity = (id: string, delta: number) => {
     setCartItems(prev => prev.map(item => {
       if (item.id === id) {
@@ -133,42 +206,53 @@ export default function Store() {
     }).filter(item => item.quantity > 0));
   };
 
+  const storeState = {
+    products,
+    isDarkMode,
+    user,
+    wishlistIds,
+    addingToCartId,
+    prefersReducedMotion,
+    handleFeaturedAddToCart,
+    handleWishlistToggle,
+    setQuickViewProduct
+  };
+
   return (
-    <div className={`min-h-screen font-sans flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-zinc-900 text-zinc-50' : 'bg-zinc-100 text-zinc-900'} ${user ? 'pb-16 lg:pb-0' : ''}`}>
+    <StoreContext.Provider value={storeState}>
+    <div className={`min-h-screen font-sans flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-zinc-900 text-zinc-50' : 'bg-[#f4f6fc] text-slate-800'} ${user ? 'pb-16 lg:pb-0' : ''}`}>
       
       {/* Desktop Header */}
       <header className="hidden lg:block relative w-full pt-6 px-4 z-40">
-         <div className={`max-w-7xl mx-auto rounded-full px-6 h-[72px] flex items-center justify-between gap-4 border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-zinc-100 border-blue-500/30'}`}>
+         <div className={`max-w-7xl mx-auto rounded-full px-6 h-[72px] flex items-center justify-between gap-4 border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-slate-100 border-blue-200 shadow-xl shadow-blue-500/5'}`}>
             
             {/* Logo */}
-            <a href="#" className="text-2xl font-bold tracking-tight z-10">
-              <span className="text-blue-500">DamiJosh</span><span className={isDarkMode ? 'text-white' : 'text-zinc-900'}>Tech</span>
-            </a>
+            <button onClick={() => navigate('/')} className="text-2xl font-bold tracking-tight z-10">
+              <span className="text-blue-500">Vora</span><span className={isDarkMode ? 'text-white' : 'text-slate-800'}>Tech</span>
+            </button>
 
             {/* Search */}
-            <div className={`flex flex-1 max-w-md mx-4 items-center rounded-full px-4 py-2.5 z-10 transition-colors ${isDarkMode ? 'bg-zinc-800/50' : 'bg-white/50'}`}>
-              <Search className={`w-4 h-4 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`} />
-              <input type="text" placeholder="Search products..." className={`bg-transparent border-none outline-none w-full ml-3 text-sm placeholder:text-zinc-500 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`} />
+            <div className={`flex flex-1 max-w-md mx-4 items-center rounded-full px-4 py-2.5 z-10 transition-colors ${isDarkMode ? 'bg-zinc-800/50' : 'bg-blue-50/50'}`}>
+              <Search className={`w-4 h-4 ${isDarkMode ? 'text-zinc-400' : 'text-slate-500'}`} />
+              <input type="text" placeholder="Search products..." className={`bg-transparent border-none outline-none w-full ml-3 text-sm placeholder:text-zinc-500 ${isDarkMode ? 'text-white' : 'text-slate-800'}`} />
             </div>
 
             {/* Links */}
             <nav className="flex items-center gap-8 text-sm font-medium z-10">
-              <a href="#" className="text-blue-500">Home</a>
-              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>Shop</a>
-              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>Categories</a>
-              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>About</a>
-              <a href="#" className={`transition-colors ${isDarkMode ? 'text-zinc-300 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>Contact</a>
+              <button onClick={() => navigate('/')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Home</button>
+              <button onClick={() => navigate('/shop')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/shop' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Shop</button>
+              <button onClick={() => navigate('/categories')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/categories' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Categories</button>
             </nav>
 
             {/* Right Icons */}
             <div className="flex items-center gap-2 z-10">
                {/* Cart */}
-               <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-zinc-200 text-zinc-600'}`}>
+               <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-blue-100 text-slate-600'}`}>
                   <ShoppingBag className="w-5 h-5" />
                   {cartCount > 0 && <span className="absolute top-1 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-transparent">{cartCount}</span>}
                </button>
                {/* Theme Toggle */}
-               <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-zinc-200 text-zinc-600'}`}>
+               <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-blue-100 text-slate-600'}`}>
                   {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                </button>
                {/* Auth */}
@@ -178,12 +262,12 @@ export default function Store() {
                      {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : <User className="w-5 h-5" />}
                    </button>
                    {isProfileMenuOpen && (
-                     <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-xl py-2 border overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-zinc-800 shadow-black/50' : 'bg-white border-zinc-200 shadow-zinc-200/50'}`}>
+                     <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-xl py-2 border overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-zinc-800 shadow-black/50' : 'bg-slate-50 border-blue-100 shadow-blue-100/50'}`}>
                         <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Profile</button>
                         <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Orders</button>
                         <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Saved/Favorites</button>
                         <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Settings</button>
-                        <div className={`h-px my-1 ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                        <div className={`h-px my-1 ${isDarkMode ? 'bg-zinc-800' : 'bg-slate-200'}`} />
                         <button onClick={handleLogout} className="w-full text-left px-5 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors">Logout</button>
                      </div>
                    )}
@@ -199,11 +283,11 @@ export default function Store() {
 
       {/* Mobile Top Navbar */}
       <header className="lg:hidden relative w-full pt-4 px-4 z-40">
-        <div className={`w-full rounded-2xl px-5 h-16 flex items-center justify-between border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-zinc-100 border-blue-500/30'}`}>
+        <div className={`w-full rounded-2xl px-5 h-16 flex items-center justify-between border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-slate-100 border-blue-200 shadow-xl shadow-blue-500/5'}`}>
           
-          <a href="#" className="text-xl font-bold tracking-tight z-10">
-            <span className="text-blue-500">DamiJosh</span><span className={isDarkMode ? 'text-white' : 'text-zinc-900'}>Tech</span>
-          </a>
+          <button onClick={() => navigate('/')} className="text-xl font-bold tracking-tight z-10">
+            <span className="text-blue-500">Vora</span><span className={isDarkMode ? 'text-white' : 'text-slate-800'}>Tech</span>
+          </button>
 
           <div className="flex items-center gap-2 z-10">
             <button className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
@@ -228,16 +312,14 @@ export default function Store() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           <div className={`relative w-4/5 max-w-sm h-full shadow-2xl flex flex-col transition-colors ${isDarkMode ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'}`}>
              <div className="p-6 flex items-center justify-between border-b border-zinc-500/20">
-               <span className="text-xl font-bold"><span className="text-blue-500">DamiJosh</span>Tech</span>
+               <span className="text-xl font-bold"><span className="text-blue-500">Vora</span>Tech</span>
                <button onClick={() => setIsMobileMenuOpen(false)} className={`p-2 -mr-2 rounded-full ${isDarkMode ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`}><X className="w-6 h-6"/></button>
              </div>
              <div className="p-6 flex-1 overflow-y-auto flex flex-col gap-6">
                 <nav className="flex flex-col gap-6 text-lg font-medium">
-                  <a href="#" className="text-blue-500">Home</a>
-                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>Shop</a>
-                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>Categories</a>
-                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>About</a>
-                  <a href="#" className={isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}>Contact</a>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Home</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/shop' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Shop</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/categories'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/categories' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Categories</button>
                 </nav>
                 <div className="mt-auto flex flex-col gap-4">
                   <div className="flex items-center justify-between py-4 border-t border-zinc-500/20">
@@ -246,8 +328,8 @@ export default function Store() {
                       {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                     </button>
                   </div>
-                  <button onClick={() => { setIsMobileMenuOpen(false); handleLogin(); }} className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors active:scale-95">Login</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); handleLogin(); }} className={`w-full py-3.5 rounded-xl font-semibold transition-colors active:scale-95 ${isDarkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-white' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'}`}>Sign Up</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/login'); }} className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors active:scale-95">Login</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/signup'); }} className={`w-full py-3.5 rounded-xl font-semibold transition-colors active:scale-95 ${isDarkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-white' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'}`}>Sign Up</button>
                 </div>
              </div>
           </div>
@@ -267,7 +349,7 @@ export default function Store() {
               <span className="text-[10px] font-medium">AI</span>
             </button>
             <button onClick={() => setActiveMobileTab('home')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'home' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
-              <Home className={`w-5 h-5 ${activeMobileTab === 'home' ? 'fill-blue-500/20' : ''}`} />
+              <HomeIcon className={`w-5 h-5 ${activeMobileTab === 'home' ? 'fill-blue-500/20' : ''}`} />
               <span className="text-[10px] font-medium">Home</span>
             </button>
             <button onClick={() => setActiveMobileTab('shop')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'shop' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
@@ -282,131 +364,100 @@ export default function Store() {
         </div>
       )}
 
-      {/* Hero */}
-      <section className={`relative overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-900'}`}>
-        <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1550009158-9efff6c97364?auto=format&fit=crop&q=80&w=2000"
-            alt="Modern tech setup"
-            className={`w-full h-full object-cover ${isDarkMode ? 'opacity-30' : 'opacity-10'}`}
-          />
-          <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${isDarkMode ? 'from-zinc-950' : 'from-zinc-100'}`} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-48 flex flex-col items-start">
-          <h1 className={`text-4xl md:text-6xl font-bold tracking-tight max-w-2xl leading-tight ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-            Next-Generation <span className="text-blue-500">Tech</span> & Gadgets.
-          </h1>
-          <p className={`mt-6 text-lg md:text-xl max-w-xl ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-            Upgrade your digital lifestyle with premium electronics, engineered for the future. From smart home to wearables, experience tomorrow today.
-          </p>
-          <button className="mt-10 bg-blue-600 text-white px-8 py-4 text-sm font-semibold hover:bg-blue-500 transition-colors flex items-center gap-2 whitespace-nowrap rounded-sm">
-            Shop Collection
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </section>
-
-      {/* Features/Trust */}
-      <section className={`border-y transition-colors duration-300 ${isDarkMode ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { icon: Truck, title: 'Express Global Shipping', desc: 'Tracked & Insured' },
-            { icon: ShieldCheck, title: '1-Year Warranty', desc: 'Guaranteed quality' },
-            { icon: CreditCard, title: 'Secure Checkout', desc: '256-bit encryption' },
-            { icon: HeadphonesIcon, title: '24/7 Tech Support', desc: 'Here to help anytime' },
-          ].map((feature, i) => (
-            <div key={i} className="flex flex-col items-center text-center">
-              <feature.icon className="w-6 h-6 text-blue-500 mb-4" />
-              <h3 className={`text-sm font-semibold transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{feature.title}</h3>
-              <p className={`text-sm mt-1 transition-colors ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>{feature.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Product Grid */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className={`text-2xl font-bold tracking-tight transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Trending Gadgets</h2>
-          <a href="#" className="text-sm font-medium text-blue-500 hover:text-blue-400 flex items-center gap-1 group whitespace-nowrap">
-            View All
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </a>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-          {products.map(product => (
-            <div key={product.id} className="group relative flex flex-col">
-              <div className={`aspect-[4/5] w-full overflow-hidden relative mb-4 rounded-sm border transition-colors ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-200 border-zinc-300'}`}>
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
-                />
-                {product.badge && (
-                  <div className="absolute top-3 left-3 bg-blue-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm whitespace-nowrap rounded-sm">
-                    {product.badge}
-                  </div>
-                )}
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <button
-                    onClick={() => addToCart(product)}
-                    className={`px-6 py-3 text-sm font-medium transition-colors w-[85%] shadow-lg shadow-black/20 whitespace-nowrap rounded-sm backdrop-blur-sm border ${isDarkMode ? 'bg-zinc-950/90 text-white hover:bg-zinc-900 border-zinc-700' : 'bg-white/90 text-zinc-900 hover:bg-zinc-100 border-zinc-300'}`}
-                  >
-                    Add to Cart
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-col flex-1">
-                <p className="text-xs text-blue-500 mb-1 uppercase tracking-wider font-semibold">{product.category}</p>
-                <h3 className={`text-sm font-medium line-clamp-1 transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                  {product.name}
-                </h3>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className={`text-sm font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-                    ${product.price.toFixed(2)}
-                  </span>
-                  {product.originalPrice && (
-                    <span className="text-xs text-zinc-500 line-through">
-                      ${product.originalPrice.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      <main className="flex-1 flex flex-col w-full min-h-screen">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+        </Routes>
       </main>
 
+      {/* Quick View Modal */}
+      {quickViewProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setQuickViewProduct(null)}>
+          <div className={`relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl flex flex-col md:flex-row ${isDarkMode ? 'bg-[#111318]' : 'bg-slate-50'}`} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setQuickViewProduct(null)} className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors">
+              <X className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-[#111827]'}`} />
+            </button>
+            <div className="w-full md:w-1/2 aspect-square md:aspect-auto bg-zinc-100 dark:bg-zinc-900">
+              <img src={quickViewProduct.image} alt={quickViewProduct.name} className="w-full h-full object-cover object-center" />
+            </div>
+            <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
+              <span className={`text-xs font-bold uppercase tracking-widest mb-3 ${isDarkMode ? 'text-[#A78BFA]' : 'text-[#7C3AED]'}`}>
+                {quickViewProduct.category}
+              </span>
+              <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-[#111827]'}`}>
+                {quickViewProduct.name}
+              </h2>
+              <div className="flex items-baseline gap-3 mb-6">
+                <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-[#111827]'}`}>
+                  ₦{(quickViewProduct.price).toLocaleString()}
+                </span>
+                {quickViewProduct.originalPrice && (
+                  <span className="text-lg line-through text-[#64748B]">
+                    ₦{(quickViewProduct.originalPrice).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              <p className={`text-base mb-8 line-clamp-4 ${isDarkMode ? 'text-zinc-400' : 'text-[#64748B]'}`}>
+                Premium technology designed to upgrade your daily routine. Experience unparalleled performance and sleek aesthetics with the {quickViewProduct.name}.
+              </p>
+              <div className="flex flex-col gap-4 mt-auto">
+                <button
+                  onClick={() => { handleFeaturedAddToCart(quickViewProduct); setQuickViewProduct(null); }}
+                  className="w-full py-4 rounded-xl font-semibold bg-[#3B82F6] hover:bg-[#2563EB] text-white transition-colors"
+                >
+                  Add to Cart
+                </button>
+                <button
+                  onClick={() => { setQuickViewProduct(null); navigate(`/product/${quickViewProduct.id}`); }}
+                  className={`w-full py-4 rounded-xl font-semibold transition-colors border ${isDarkMode ? 'border-zinc-800 text-white hover:bg-white/5' : 'border-zinc-200 text-[#111827] hover:bg-black/5'}`}
+                >
+                  View Full Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
-      <footer className="bg-zinc-950 border-t border-zinc-800 text-zinc-400 py-16 text-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
+      <footer className="relative bg-zinc-950 border-t border-zinc-800 text-zinc-300 py-16 text-sm overflow-hidden z-10 p-4">
+        {/* Animated Gadgets Slideshow */}
+        <div className="absolute inset-0 bg-zinc-950 pointer-events-none"></div>
+        <div className="absolute inset-0 slide-1 bg-[url('https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
+        <div className="absolute inset-0 slide-2 bg-[url('https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
+        <div className="absolute inset-0 slide-3 bg-[url('https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
+        <div className="absolute inset-0 slide-4 bg-[url('https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-8 py-12 sm:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 z-10 bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-white text-lg font-bold tracking-tight mb-4"><span className="text-blue-500">DamiJosh</span>Tech</h3>
-            <p className="max-w-xs leading-relaxed">
+            <h3 className="text-white text-lg font-bold tracking-tight mb-4 drop-shadow-md"><span className="text-blue-400">Vora</span>Tech</h3>
+            <p className="max-w-xs leading-relaxed drop-shadow-md font-medium">
               Curating the best modern essentials for a seamless lifestyle. Quality, design, and function in every detail.
             </p>
           </div>
           <div>
             <h4 className="text-white font-medium mb-4">Support</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="hover:text-white transition-colors">Track Order</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Returns & Exchanges</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Shipping Info</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Track Order</button></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Returns & Exchanges</button></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Shipping Info</button></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Contact Us</button></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-medium mb-4">Legal</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Refund Policy</a></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Privacy Policy</button></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Terms of Service</button></li>
+              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Refund Policy</button></li>
             </ul>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p>&copy; 2026 DamiJoshTech. All rights reserved.</p>
+        <div className="relative max-w-7xl mx-auto px-8 py-6 mt-8 sm:px-12 flex flex-col md:flex-row items-center justify-between gap-4 z-10 bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
+          <p className="drop-shadow-md font-medium text-white">&copy; 2026 VoraTech. All rights reserved.</p>
         </div>
       </footer>
 
@@ -612,5 +663,6 @@ export default function Store() {
         </div>
       )}
     </div>
+    </StoreContext.Provider>
   );
 }

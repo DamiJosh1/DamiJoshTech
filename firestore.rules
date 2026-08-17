@@ -64,5 +64,12 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isValidId(productId) && isAdmin();
     }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isValidId(userId) && isSignedIn() && request.auth.uid == userId;
+      allow update: if isValidId(userId) && isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
   }
 }

@@ -34,11 +34,15 @@ export default function Admin() {
     const qOrders = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
     const unsubOrders = onSnapshot(qOrders, (snapshot) => {
       setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      console.error("Orders connection error:", error);
     });
 
     // Fetch products
     const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
       setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      console.error("Products connection error:", error);
     });
 
     return () => {
@@ -140,7 +144,7 @@ export default function Admin() {
       {/* Sidebar */}
       <aside className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col">
         <div className="p-6 border-b border-zinc-800">
-          <h1 className="text-xl font-bold tracking-tight"><span className="text-blue-500">DamiJosh</span>Tech</h1>
+          <h1 className="text-xl font-bold tracking-tight"><span className="text-blue-500">Vora</span>Tech</h1>
           <p className="text-xs text-zinc-400 mt-1">Admin Dashboard</p>
         </div>
         <nav className="flex-1 p-4 space-y-2">

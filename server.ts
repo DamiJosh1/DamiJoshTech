@@ -43,9 +43,9 @@ async function sendReceipt(email: string, name: string, amount: number, items: s
 
   try {
     await resend.emails.send({
-      from: 'DamiJoshTech <orders@resend.dev>', // Update this with your verified domain later
+      from: 'VoraTech <orders@resend.dev>', // Update this with your verified domain later
       to: email,
-      subject: `Order Confirmation - DamiJoshTech (#${reference})`,
+      subject: `Order Confirmation - VoraTech (#${reference})`,
       html: `
         <div style="font-family: sans-serif; max-w-xl mx-auto p-6 bg-zinc-50 text-zinc-900">
           <h1 style="color: #18181b; margin-bottom: 24px;">Thank you for your order, ${name}!</h1>
@@ -57,7 +57,7 @@ async function sendReceipt(email: string, name: string, amount: number, items: s
             <p style="background: #f4f4f5; padding: 12px; border-radius: 4px;">${items}</p>
           </div>
           <p>We are currently processing your order and will send another update when it ships.</p>
-          <p>Best regards,<br>The DamiJoshTech Team</p>
+          <p>Best regards,<br>The VoraTech Team</p>
         </div>
       `,
     });
@@ -229,7 +229,7 @@ app.post('/api/chat', async (req, res) => {
       model: "gemini-3.7-flash",
       contents: message,
       config: {
-        systemInstruction: "You are an AI assistant for DamiJoshTech dropshipping store. Help the admin with product descriptions, SEO, analyzing metrics, setting pricing strategies based on CJ Dropshipping, and overall e-commerce advice. Be concise, professional, and knowledgeable about dropshipping.",
+        systemInstruction: "You are an AI assistant for VoraTech dropshipping store. Help the admin with product descriptions, SEO, analyzing metrics, setting pricing strategies based on CJ Dropshipping, and overall e-commerce advice. Be concise, professional, and knowledgeable about dropshipping.",
       }
     });
 
