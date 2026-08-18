@@ -60,11 +60,12 @@ export default function Home() {
              loop
              muted
              playsInline
-             poster="https://images.unsplash.com/photo-1605464315542-bda3e2f4e605?auto=format&fit=crop&q=80&w=2000"
-             className="w-full h-full object-cover object-center lg:object-right scale-[1.05] will-change-transform"
+             
+             className="w-full h-full object-center object-cover"
            >
              <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-smartwatch-with-a-blue-interface-4082-large.mp4" type="video/mp4" />
            </video>
+           <div className={`absolute inset-0 ${isDarkMode ? 'bg-zinc-950/60' : 'bg-slate-900/40'}`} />
         </div>
 
         {/* Content Layer */}
@@ -78,7 +79,7 @@ export default function Home() {
            <div className="max-w-2xl w-full flex flex-col items-start text-left mt-auto lg:mt-0 mb-auto lg:mb-0">
               {/* 1. Eyebrow */}
               <div 
-                className={`transition-all duration-1000 ease-out transform mb-4 lg:mb-6 text-xs lg:text-sm font-bold tracking-[0.2em] uppercase drop-shadow-md ${isDarkMode ? 'text-zinc-300' : 'text-purple-600'} ${isHeroLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
+                className={`transition-all duration-1000 ease-out transform mb-4 lg:mb-6 text-xs lg:text-sm font-bold tracking-[0.2em] uppercase drop-shadow-md ${isDarkMode ? 'text-zinc-300' : 'text-[#A78BFA]'} ${isHeroLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
                 style={{ transitionDelay: '100ms' }}
               >
                 <span className={isDarkMode ? 'text-[#A78BFA]' : 'text-[#7C3AED]'}>SMART</span> TECH. BETTER LIVING.
@@ -86,7 +87,7 @@ export default function Home() {
               
               {/* 2. Headline */}
               <h1 
-                className={`transition-all duration-1000 ease-out transform text-[2.5rem] leading-[1.1] sm:text-6xl lg:text-7xl font-bold tracking-tight drop-shadow-md ${isDarkMode ? 'text-white' : 'text-slate-800'} ${isHeroLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
+                className={`transition-all duration-1000 ease-out transform text-[2.5rem] leading-[1.1] sm:text-6xl lg:text-7xl font-bold tracking-tight drop-shadow-md ${isDarkMode ? 'text-white' : 'text-white'} ${isHeroLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
                 style={{ transitionDelay: '300ms' }}
               >
                 Technology Made for the Way You Live.
@@ -108,7 +109,7 @@ export default function Home() {
                 <button onClick={() => navigate('/shop')} className="w-full sm:w-auto px-8 lg:px-10 py-4 lg:py-4.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 rounded-full font-medium transition-all duration-300 active:scale-95 flex items-center justify-center">
                   Explore Products
                 </button>
-                <button onClick={() => navigate('/categories')} className={`w-full sm:w-auto px-8 lg:px-10 py-4 lg:py-4.5 rounded-full font-medium transition-all duration-300 active:scale-95 flex items-center justify-center border-2 shadow-xl ${isDarkMode ? 'border-white/20 bg-black/40 hover:bg-black/60 text-white backdrop-blur-md' : 'border-slate-800/10 bg-white/80 hover:bg-white text-slate-800 backdrop-blur-md'}`}>
+                <button onClick={() => navigate('/categories')} className={`w-full sm:w-auto px-8 lg:px-10 py-4 lg:py-4.5 rounded-full font-medium transition-all duration-300 active:scale-95 flex items-center justify-center border-2 shadow-xl ${isDarkMode ? 'border-white/20 bg-black/40 hover:bg-black/60 text-white backdrop-blur-md' : 'border-slate-800/10 bg-white/80 hover:bg-white text-white backdrop-blur-md'}`}>
                   View Categories
                 </button>
               </div>
@@ -194,7 +195,7 @@ export default function Home() {
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                      className="w-full h-full object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                     />
                     
                     {/* Wishlist Button */}
@@ -272,7 +273,7 @@ export default function Home() {
               <X className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-[#111827]'}`} />
             </button>
             <div className="w-full md:w-1/2 aspect-square md:aspect-auto bg-zinc-100 dark:bg-zinc-900">
-              <img src={quickViewProduct.image} alt={quickViewProduct.name} className="w-full h-full object-cover object-center" />
+              <img src={quickViewProduct.image} alt={quickViewProduct.name} className="w-full h-full object-center" />
             </div>
             <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
               <span className={`text-xs font-bold uppercase tracking-widest mb-3 ${isDarkMode ? 'text-[#A78BFA]' : 'text-[#7C3AED]'}`}>

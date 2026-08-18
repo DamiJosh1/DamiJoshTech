@@ -15,10 +15,19 @@ import { StoreContext } from './StoreContext';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import Categories from './pages/Categories';
+import Profile from './pages/Profile';
+import Ai from './pages/Ai';
 import ProductDetail from './pages/ProductDetail';
 
 export default function Store() {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -234,7 +243,7 @@ export default function Store() {
             {/* Search */}
             <div className={`flex flex-1 max-w-md mx-4 items-center rounded-full px-4 py-2.5 z-10 transition-colors ${isDarkMode ? 'bg-zinc-800/50' : 'bg-blue-50/50'}`}>
               <Search className={`w-4 h-4 ${isDarkMode ? 'text-zinc-400' : 'text-slate-500'}`} />
-              <input type="text" placeholder="Search products..." className={`bg-transparent border-none outline-none w-full ml-3 text-sm placeholder:text-zinc-500 ${isDarkMode ? 'text-white' : 'text-slate-800'}`} />
+              <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleSearch} className={`bg-transparent border-none outline-none w-full ml-3 text-sm placeholder:text-zinc-500 ${isDarkMode ? 'text-white' : 'text-slate-800'}`} />
             </div>
 
             {/* Links */}
@@ -246,6 +255,13 @@ export default function Store() {
 
             {/* Right Icons */}
             <div className="flex items-center gap-2 z-10">
+              {user ? (
+                <button onClick={() => navigate('/profile')} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-100'}`}>
+                  <User size={20} />
+                </button>
+              ) : (
+                <button onClick={() => navigate('/login')} className={`text-sm font-medium px-4 py-2 rounded-full ${isDarkMode ? 'text-white hover:bg-zinc-800' : 'text-slate-800 hover:bg-slate-100'}`}>Log In</button>
+              )}
                {/* Cart */}
                <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-blue-100 text-slate-600'}`}>
                   <ShoppingBag className="w-5 h-5" />
@@ -290,6 +306,13 @@ export default function Store() {
           </button>
 
           <div className="flex items-center gap-2 z-10">
+              {user ? (
+                <button onClick={() => navigate('/profile')} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-100'}`}>
+                  <User size={20} />
+                </button>
+              ) : (
+                <button onClick={() => navigate('/login')} className={`text-sm font-medium px-4 py-2 rounded-full ${isDarkMode ? 'text-white hover:bg-zinc-800' : 'text-slate-800 hover:bg-slate-100'}`}>Log In</button>
+              )}
             <button className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
               <Search className="w-5 h-5" />
             </button>
@@ -369,6 +392,8 @@ export default function Store() {
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/ai" element={<Ai />} />
           <Route path="/product/:id" element={<ProductDetail />} />
         </Routes>
       </main>

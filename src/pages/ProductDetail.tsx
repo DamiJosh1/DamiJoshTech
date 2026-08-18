@@ -124,14 +124,21 @@ export default function ProductDetail() {
             </div>
 
             <p className={`text-base sm:text-lg mb-8 leading-relaxed ${isDarkMode ? 'text-zinc-300' : 'text-[#475569]'}`}>
-              Engineered for premium performance and uncompromised quality. The {product.name} seamlessly combines modern design with advanced functionality. Whether you're working, traveling, or relaxing, experience a new standard of excellence tailored to your lifestyle.
+              {product.description || `Engineered for premium performance and uncompromised quality. The ${product.name} seamlessly combines modern design with advanced functionality.`}
             </p>
 
             {/* Trust Bullet Points */}
             <ul className={`space-y-3 mb-10 text-sm font-medium ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+              {product.features ? product.features.map((feature, i) => (
+                <li key={i} className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500" /> {feature}</li>
+              )) : (
+                <>
+
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500" /> 100% Authentic Product Guarantee</li>
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500" /> Secure SSL Encrypted Checkout</li>
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500" /> 24/7 Priority Customer Support</li>
+                </>
+              )}
             </ul>
 
             <button
@@ -164,32 +171,22 @@ export default function ProductDetail() {
           </div>
         </div>
         
-        {/* Extended Trust & Video Demo Section */}
-        <div className="mt-24 pt-16 border-t border-zinc-200 dark:border-zinc-800">
-          <div className="text-center mb-12">
-            <h2 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>See It In Action</h2>
-            <p className={`max-w-2xl mx-auto text-lg ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-              Watch our full product overview to discover all the hidden features and premium quality materials.
-            </p>
-          </div>
-          
-          <div className="max-w-4xl mx-auto relative aspect-video rounded-3xl overflow-hidden bg-zinc-900 group cursor-pointer border border-white/10 shadow-2xl">
-            <img 
-              src={product.image} 
-              alt="Video Thumbnail" 
-              className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity duration-700" 
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                <PlayCircle className="w-10 h-10 text-white fill-white/10" />
-              </div>
+        {product.video && (
+          <div className="mt-24 pt-16 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="text-center mb-12">
+              <h2 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>See It In Action</h2>
+              <p className={`max-w-2xl mx-auto text-lg ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                Watch our full product overview to discover all the hidden features and premium quality materials.
+              </p>
             </div>
-            <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center text-white">
-              <span className="font-medium px-4 py-2 bg-black/50 backdrop-blur-md rounded-lg">Product Showcase</span>
-              <span className="font-medium px-4 py-2 bg-black/50 backdrop-blur-md rounded-lg flex items-center gap-2"><Clock className="w-4 h-4"/> 2:45</span>
+            
+            <div className="max-w-4xl mx-auto relative aspect-video rounded-3xl overflow-hidden bg-zinc-900 group border border-white/10 shadow-2xl">
+              <video autoPlay loop muted playsInline className="w-full h-full object-cover opacity-90 transition-opacity duration-700">
+                <source src={product.video} type="video/mp4" />
+              </video>
             </div>
           </div>
-        </div>
+        )}
         
       </div>
     </div>

@@ -4,6 +4,10 @@ export interface Product {
   price: number;
   originalPrice?: number;
   image: string;
+  images?: string[];
+  video?: string;
+  description?: string;
+  features?: string[];
   category: string;
   badge?: string;
   cjSku?: string;

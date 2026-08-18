@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Heart, Eye, Star, Search, Filter } from 'lucide-react';
 import { useStore } from '../StoreContext';
 
 export default function Shop() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialQuery = searchParams.get('q') || "";
   const { 
     products, 
     isDarkMode, 
@@ -16,7 +19,10 @@ export default function Shop() {
   } = useStore();
 
   const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  React.useEffect(() => {
+    setSearchQuery(new URLSearchParams(location.search).get('q') || "");
+  }, [location.search]);
 
   const categories = ["All", ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
 
