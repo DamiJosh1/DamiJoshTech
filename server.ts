@@ -222,14 +222,19 @@ const ai = new GoogleGenAI({
 // Admin AI Assistant Webhook
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, isAdmin, userName } = req.body;
     if (!message) return res.status(400).json({ error: 'Message is required' });
 
+    const systemInstruction = isAdmin 
+      ? `You are an AI assistant for VoraTech dropshipping store. Help the admin, ${userName || 'Dami'}, with product descriptions, SEO, analyzing metrics, setting pricing strategies based on CJ Dropshipping, and overall e-commerce advice. Be concise, professional, and knowledgeable about dropshipping. You also have access to Google Search for the latest trends.`
+      : `You are a helpful AI shopping assistant for VoraTech. Help the customer, ${userName || 'there'}, find tech products, compare features, and learn about the latest gadgets. Be friendly, concise, and helpful. Do not mention internal store operations. Use Google Search if asked about recent tech news or reviews.`;
+
     const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+      model: "gemini-3.5-flash",
       contents: message,
       config: {
-        systemInstruction: "You are an AI assistant for VoraTech dropshipping store. Help the admin with product descriptions, SEO, analyzing metrics, setting pricing strategies based on CJ Dropshipping, and overall e-commerce advice. Be concise, professional, and knowledgeable about dropshipping.",
+        systemInstruction,
+        tools: [{ googleSearch: {} }],
       }
     });
 
@@ -237,6 +242,27 @@ app.post('/api/chat', async (req, res) => {
   } catch (error: any) {
     console.error('Gemini API Error:', error);
     res.status(500).json({ error: 'Failed to generate AI response' });
+  }
+});
+
+// Product Review Summarization Webhook
+app.post('/api/product-reviews', async (req, res) => {
+  try {
+    const { productName } = req.body;
+    if (!productName) return res.status(400).json({ error: 'Product name is required' });
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: `Search for the latest real-world reviews and news for: "${productName}". Summarize the general consensus, pros, and cons in a short 2-3 paragraph tech review style. Keep it professional and engaging.`,
+      config: {
+        tools: [{ googleSearch: {} }],
+      }
+    });
+
+    res.json({ summary: response.text });
+  } catch (error: any) {
+    console.error('Gemini Review API Error:', error);
+    res.status(500).json({ error: 'Failed to generate review summary due to rate limits or API error.' });
   }
 });
 

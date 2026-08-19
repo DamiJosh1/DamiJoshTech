@@ -1,10 +1,12 @@
+import Preloader from './Preloader';
+import Logo from './Logo';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Routes, Route } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye } from 'lucide-react';
 import { usePaystackPayment } from 'react-paystack';
 import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
@@ -32,7 +34,16 @@ export default function Store() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [activeMobileTab, setActiveMobileTab] = useState('home');
+  const location = useLocation();
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path === '/') return 'home';
+    if (path.startsWith('/shop')) return 'shop';
+    if (path.startsWith('/ai')) return 'ai';
+    if (path.startsWith('/profile') || path.startsWith('/orders')) return 'profile';
+    return '';
+  };
+  const activeMobileTab = getActiveTab();
   const [activeFeaturedCategory, setActiveFeaturedCategory] = useState("All");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [addingToCartId, setAddingToCartId] = useState<string | null>(null);
@@ -229,6 +240,7 @@ export default function Store() {
 
   return (
     <StoreContext.Provider value={storeState}>
+      <Preloader isDarkMode={isDarkMode} />
     <div className={`min-h-screen font-sans flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-zinc-900 text-zinc-50' : 'bg-[#f4f6fc] text-slate-800'} ${user ? 'pb-16 lg:pb-0' : ''}`}>
       
       {/* Desktop Header */}
@@ -236,8 +248,8 @@ export default function Store() {
          <div className={`max-w-7xl mx-auto rounded-full px-6 h-[72px] flex items-center justify-between gap-4 border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-slate-100 border-blue-200 shadow-xl shadow-blue-500/5'}`}>
             
             {/* Logo */}
-            <button onClick={() => navigate('/')} className="text-2xl font-bold tracking-tight z-10">
-              <span className="text-blue-500">Vora</span><span className={isDarkMode ? 'text-white' : 'text-slate-800'}>Tech</span>
+            <button onClick={() => navigate('/')} className="z-10 hover:opacity-80 transition-opacity">
+              <Logo size="default" isDarkMode={isDarkMode} />
             </button>
 
             {/* Search */}
@@ -302,7 +314,7 @@ export default function Store() {
         <div className={`w-full rounded-2xl px-5 h-16 flex items-center justify-between border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-slate-100 border-blue-200 shadow-xl shadow-blue-500/5'}`}>
           
           <button onClick={() => navigate('/')} className="text-xl font-bold tracking-tight z-10">
-            <span className="text-blue-500">Vora</span><span className={isDarkMode ? 'text-white' : 'text-slate-800'}>Tech</span>
+            <Logo size="default" isDarkMode={isDarkMode} />
           </button>
 
           <div className="flex items-center gap-2 z-10">
@@ -335,7 +347,7 @@ export default function Store() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           <div className={`relative w-4/5 max-w-sm h-full shadow-2xl flex flex-col transition-colors ${isDarkMode ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'}`}>
              <div className="p-6 flex items-center justify-between border-b border-zinc-500/20">
-               <span className="text-xl font-bold"><span className="text-blue-500">Vora</span>Tech</span>
+               <Logo size="sm" isDarkMode={isDarkMode} />
                <button onClick={() => setIsMobileMenuOpen(false)} className={`p-2 -mr-2 rounded-full ${isDarkMode ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`}><X className="w-6 h-6"/></button>
              </div>
              <div className="p-6 flex-1 overflow-y-auto flex flex-col gap-6">
@@ -363,23 +375,23 @@ export default function Store() {
       {user && (
         <div className={`lg:hidden fixed bottom-0 left-0 w-full pb-2 z-40 border-t transition-colors shadow-[0_-5px_15px_rgba(0,0,0,0.05)] ${isDarkMode ? 'bg-zinc-900/95 border-zinc-800' : 'bg-white/95 border-zinc-200'} backdrop-blur-lg`}>
           <div className="flex justify-around items-center h-16 px-2">
-            <button onClick={() => setActiveMobileTab('profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'profile' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+            <button onClick={() => navigate('/profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'profile' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
               <User className={`w-5 h-5 ${activeMobileTab === 'profile' ? 'fill-blue-500/20' : ''}`} />
               <span className="text-[10px] font-medium">Profile</span>
             </button>
-            <button onClick={() => setActiveMobileTab('ai')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'ai' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+            <button onClick={() => navigate('/ai')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'ai' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
               <Bot className={`w-5 h-5 ${activeMobileTab === 'ai' ? 'fill-blue-500/20' : ''}`} />
               <span className="text-[10px] font-medium">AI</span>
             </button>
-            <button onClick={() => setActiveMobileTab('home')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'home' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+            <button onClick={() => navigate('/')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'home' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
               <HomeIcon className={`w-5 h-5 ${activeMobileTab === 'home' ? 'fill-blue-500/20' : ''}`} />
               <span className="text-[10px] font-medium">Home</span>
             </button>
-            <button onClick={() => setActiveMobileTab('shop')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'shop' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+            <button onClick={() => navigate('/shop')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'shop' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
               <ShoppingBag className={`w-5 h-5 ${activeMobileTab === 'shop' ? 'fill-blue-500/20' : ''}`} />
               <span className="text-[10px] font-medium">Shop</span>
             </button>
-            <button onClick={() => setActiveMobileTab('orders')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'orders' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+            <button onClick={() => navigate('/profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'orders' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
               <Package className={`w-5 h-5 ${activeMobileTab === 'orders' ? 'fill-blue-500/20' : ''}`} />
               <span className="text-[10px] font-medium">Orders</span>
             </button>
@@ -458,7 +470,7 @@ export default function Store() {
         
         <div className="relative max-w-7xl mx-auto px-8 py-12 sm:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 z-10 bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-white text-lg font-bold tracking-tight mb-4 drop-shadow-md"><span className="text-blue-400">Vora</span>Tech</h3>
+            <Logo size="lg" className="mb-4" isDarkMode={true} />
             <p className="max-w-xs leading-relaxed drop-shadow-md font-medium">
               Curating the best modern essentials for a seamless lifestyle. Quality, design, and function in every detail.
             </p>

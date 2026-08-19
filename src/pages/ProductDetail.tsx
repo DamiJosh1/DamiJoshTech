@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Heart, Star, ArrowLeft, ShieldCheck, Truck, PlayCircle, Clock, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { Heart, Star, ArrowLeft, ShieldCheck, Truck, PlayCircle, Clock, RotateCcw, CheckCircle2, Sparkles, Bot } from 'lucide-react';
 import { useStore } from '../StoreContext';
 
 export default function ProductDetail() {
@@ -16,6 +16,8 @@ export default function ProductDetail() {
   } = useStore();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [reviewSummary, setReviewSummary] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   const product = products.find(p => p.id === id);
 
@@ -140,6 +142,48 @@ export default function ProductDetail() {
                 </>
               )}
             </ul>
+
+            <div className="mb-10">
+              <button 
+                onClick={async () => {
+                  if (summaryLoading) return;
+                  setSummaryLoading(true);
+                  try {
+                    const res = await fetch('/api/product-reviews', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ productName: product.name })
+                    });
+                    const data = await res.json();
+                    if (data.summary) {
+                      setReviewSummary(data.summary);
+                    } else {
+                      setReviewSummary("Failed to load summary.");
+                    }
+                  } catch (e) {
+                    setReviewSummary("Error generating summary.");
+                  }
+                  setSummaryLoading(false);
+                }}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                  isDarkMode ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/20' : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                {summaryLoading ? 'Analyzing Web Reviews...' : 'AI Review Summary'}
+              </button>
+              
+              {reviewSummary && (
+                <div className={`mt-4 p-5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  isDarkMode ? 'bg-zinc-900 border border-zinc-800 text-zinc-300' : 'bg-slate-50 border border-slate-200 text-slate-700'
+                }`}>
+                  <div className="flex items-center gap-2 mb-3 font-semibold text-purple-500">
+                    <Bot className="w-4 h-4" /> Gemini Web Summary
+                  </div>
+                  {reviewSummary}
+                </div>
+              )}
+            </div>
 
             <button
               onClick={(e) => handleFeaturedAddToCart(product, e)}

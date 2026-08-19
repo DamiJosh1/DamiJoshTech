@@ -6,10 +6,14 @@ import { products } from '../data';
 
 const Ai = () => {
   const { isDarkMode, user } = useContext(StoreContext);
+  const isAdmin = user?.email === 'damijosh12@gmail.com';
+  
   const [messages, setMessages] = useState<{ role: 'ai' | 'user', content: string, actionUrl?: string, actionText?: string }[]>([
     { 
       role: 'ai', 
-      content: `Hello ${user?.displayName?.split(' ')[0] || 'there'}! I'm your AI shopping assistant. I can help you find products, compare features, or track your orders. What are you looking for today?` 
+      content: isAdmin 
+        ? `Welcome back, Admin ${user?.displayName?.split(' ')[0] || 'Dami'}! I'm your private Executive AI. I've prepared your business analytics and system tools. How can I assist you with store operations today?`
+        : `Hello ${user?.displayName?.split(' ')[0] || 'there'}! I'm your AI shopping assistant. I can help you find products, compare features, or track your orders. What are you looking for today?` 
     }
   ]);
   const [input, setInput] = useState('');
@@ -20,7 +24,7 @@ const Ai = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -29,33 +33,42 @@ const Ai = () => {
     setInput('');
     setIsTyping(true);
 
-    // Simulated AI response
-    setTimeout(() => {
-      setIsTyping(false);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: userQuery,
+          isAdmin,
+          userName: user?.displayName?.split(' ')[0]
+        }),
+      });
+      const data = await res.json();
       
-      const query = userQuery.toLowerCase();
-      let aiResponse = { role: 'ai' as const, content: '', actionUrl: '', actionText: '' };
+      let aiResponse: { role: 'ai', content: string, actionUrl?: string, actionText?: string } = { role: 'ai' as const, content: data.text || 'I am sorry, I am having trouble connecting to my database right now.' };
 
-      if (query.includes('drone')) {
-        aiResponse.content = "We have an amazing 4K Cinematic Drone in stock right now! It features a 3-axis gimbal and 31 minutes of flight time.";
+      // Optional manual overrides for explicit store directions 
+      const query = userQuery.toLowerCase();
+      if (isAdmin && (query.includes('stats') || query.includes('sales'))) {
+        aiResponse.actionUrl = "/admin";
+        aiResponse.actionText = "View Full Dashboard";
+      } else if (query.includes('drone')) {
         aiResponse.actionUrl = "/product/4";
         aiResponse.actionText = "View Drone";
       } else if (query.includes('headphone') || query.includes('audio') || query.includes('earbud')) {
-        aiResponse.content = "Looking for great audio? Our Premium Wireless Over-Ear Headphones and Active Noise Cancelling Earbuds are top rated.";
         aiResponse.actionUrl = "/shop";
         aiResponse.actionText = "Shop Audio";
       } else if (query.includes('order') || query.includes('track')) {
-        aiResponse.content = "To track your orders or view your purchase history, you can visit your account dashboard.";
         aiResponse.actionUrl = "/profile";
         aiResponse.actionText = "Go to My Account";
-      } else {
-        aiResponse.content = "I'd be happy to help you find that. We have a wide range of gadgets and smart home devices. Would you like to see our trending items?";
-        aiResponse.actionUrl = "/shop";
-        aiResponse.actionText = "Browse Trending";
       }
 
       setMessages(prev => [...prev, aiResponse]);
-    }, 1500);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I encountered an error. Please try again later." }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -67,7 +80,7 @@ const Ai = () => {
           <div className="inline-flex items-center justify-center p-3 bg-purple-500/10 text-purple-500 rounded-full mb-4 ring-1 ring-purple-500/20">
             <Sparkles size={24} />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">AI Shopping Assistant</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{isAdmin ? 'Executive AI System' : 'AI Shopping Assistant'}</h1>
           <p className={`${isDarkMode ? 'text-zinc-400' : 'text-slate-500'}`}>Ask me anything about our products, recommendations, or your orders.</p>
         </div>
 
@@ -139,7 +152,7 @@ const Ai = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about a product, category, or your order..."
+                placeholder={isAdmin ? "Ask for analytics, manage inventory, or view reports..." : "Ask about a product, category, or your order..."}
                 className={`w-full pl-6 pr-14 py-4 rounded-full outline-none transition-shadow ${
                   isDarkMode 
                     ? 'bg-zinc-950 border border-zinc-800 focus:border-purple-500/50 text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-purple-500/20' 
