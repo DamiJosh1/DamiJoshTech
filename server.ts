@@ -246,6 +246,67 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Product Review Summarization Webhook
+
+// CJ Dropshipping API Proxy
+// CJ Dropshipping Categories API Proxy
+app.get('/api/dropshipping/categories', async (req, res) => {
+  try {
+    const cjToken = process.env.CJ_ACCESS_TOKEN;
+    if (!cjToken) {
+      return res.status(500).json({ error: 'CJ Dropshipping access token not configured.' });
+    }
+
+    const response = await fetch(`https://developers.cjdropshipping.com/api2.0/v1/product/getCategory`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'CJ-Access-Token': cjToken
+      }
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('[CJ Dropshipping] Category Fetch Error:', error);
+    res.status(500).json({ error: 'Failed to fetch dropshipping categories' });
+  }
+});
+
+app.get('/api/dropshipping/products', async (req, res) => {
+  try {
+    const cjToken = process.env.CJ_ACCESS_TOKEN;
+    if (!cjToken) {
+      return res.status(500).json({ error: 'CJ Dropshipping access token not configured.' });
+    }
+
+    const { page = 1, size = 20, keyWord = '', categoryId = '' } = req.query;
+    const queryParams = new URLSearchParams({
+      pageNum: String(page),
+      pageSize: String(size),
+    });
+    if (keyWord) {
+      queryParams.append('keyWord', String(keyWord));
+    }
+    if (categoryId) {
+      queryParams.append('categoryId', String(categoryId));
+    }
+
+    const response = await fetch(`https://developers.cjdropshipping.com/api2.0/v1/product/list?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'CJ-Access-Token': cjToken
+      }
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('[CJ Dropshipping] Fetch Error:', error);
+    res.status(500).json({ error: 'Failed to fetch dropshipping products' });
+  }
+});
+
 app.post('/api/product-reviews', async (req, res) => {
   try {
     const { productName } = req.body;

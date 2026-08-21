@@ -20,7 +20,7 @@ export default function Login() {
       setError('');
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate('/');
+      if (auth.currentUser?.email === 'damijosh12@gmail.com') { navigate('/admin'); } else { navigate('/'); }
     } catch (err: any) {
       setError(err.message || 'Failed to authenticate with Google');
       setLoading(false);
@@ -49,7 +49,7 @@ export default function Login() {
       }
 
       await signInWithEmailAndPassword(auth, loginEmail, password);
-      navigate('/');
+      if (auth.currentUser?.email === 'damijosh12@gmail.com') { navigate('/admin'); } else { navigate('/'); }
     } catch (err: any) {
       if (err.code === 'auth/user-not-found' || err.message === 'Account does not exist') {
         setError('Account does not exist. Please check your details.');

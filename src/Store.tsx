@@ -7,7 +7,7 @@ import Logo from './Logo';
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
-import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye } from 'lucide-react';
+import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye, LayoutDashboard } from 'lucide-react';
 import { usePaystackPayment } from 'react-paystack';
 import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -20,6 +20,8 @@ import Categories from './pages/Categories';
 import Profile from './pages/Profile';
 import Ai from './pages/Ai';
 import ProductDetail from './pages/ProductDetail';
+import Dropshipping from './pages/Dropshipping';
+import AdminDashboard from './pages/AdminDashboard';
 
 export default function Store() {
   const navigate = useNavigate();
@@ -40,7 +42,9 @@ export default function Store() {
     if (path === '/') return 'home';
     if (path.startsWith('/shop')) return 'shop';
     if (path.startsWith('/ai')) return 'ai';
-    if (path.startsWith('/profile') || path.startsWith('/orders')) return 'profile';
+    if (path.startsWith('/profile')) return 'profile';
+    if (path.startsWith('/orders')) return 'orders_tab';
+    if (path.startsWith('/admin')) return 'admin';
     return '';
   };
   const activeMobileTab = getActiveTab();
@@ -263,17 +267,11 @@ export default function Store() {
               <button onClick={() => navigate('/')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Home</button>
               <button onClick={() => navigate('/shop')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/shop' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Shop</button>
               <button onClick={() => navigate('/categories')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/categories' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Categories</button>
+              <button onClick={() => navigate('/dropshipping')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/dropshipping' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Dropship</button>
             </nav>
 
             {/* Right Icons */}
             <div className="flex items-center gap-2 z-10">
-              {user ? (
-                <button onClick={() => navigate('/profile')} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-100'}`}>
-                  <User size={20} />
-                </button>
-              ) : (
-                <button onClick={() => navigate('/login')} className={`text-sm font-medium px-4 py-2 rounded-full ${isDarkMode ? 'text-white hover:bg-zinc-800' : 'text-slate-800 hover:bg-slate-100'}`}>Log In</button>
-              )}
                {/* Cart */}
                <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-blue-100 text-slate-600'}`}>
                   <ShoppingBag className="w-5 h-5" />
@@ -291,10 +289,11 @@ export default function Store() {
                    </button>
                    {isProfileMenuOpen && (
                      <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-xl py-2 border overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-zinc-800 shadow-black/50' : 'bg-slate-50 border-blue-100 shadow-blue-100/50'}`}>
-                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Profile</button>
-                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Orders</button>
-                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Saved/Favorites</button>
-                        <button className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Settings</button>
+                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Profile</button>
+                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Orders</button>
+                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Saved/Favorites</button>
+                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Settings</button>
+                        {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-purple-500/10 hover:text-purple-400 text-purple-400' : 'hover:bg-purple-50 hover:text-purple-600 text-purple-600'}`}>Admin Dashboard</button>}
                         <div className={`h-px my-1 ${isDarkMode ? 'bg-zinc-800' : 'bg-slate-200'}`} />
                         <button onClick={handleLogout} className="w-full text-left px-5 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors">Logout</button>
                      </div>
@@ -355,6 +354,7 @@ export default function Store() {
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Home</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/shop' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Shop</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/categories'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/categories' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Categories</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/dropshipping'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/dropshipping' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Dropship</button>
                 </nav>
                 <div className="mt-auto flex flex-col gap-4">
                   <div className="flex items-center justify-between py-4 border-t border-zinc-500/20">
@@ -391,9 +391,9 @@ export default function Store() {
               <ShoppingBag className={`w-5 h-5 ${activeMobileTab === 'shop' ? 'fill-blue-500/20' : ''}`} />
               <span className="text-[10px] font-medium">Shop</span>
             </button>
-            <button onClick={() => navigate('/profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'orders' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
-              <Package className={`w-5 h-5 ${activeMobileTab === 'orders' ? 'fill-blue-500/20' : ''}`} />
-              <span className="text-[10px] font-medium">Orders</span>
+            <button onClick={() => navigate(user.email === 'damijosh12@gmail.com' ? '/admin' : '/profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'orders_tab' || activeMobileTab === 'admin' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
+              {user.email === 'damijosh12@gmail.com' ? <LayoutDashboard className={`w-5 h-5 ${activeMobileTab === 'admin' ? 'fill-blue-500/20' : ''}`} /> : <Package className={`w-5 h-5 ${activeMobileTab === 'orders_tab' ? 'fill-blue-500/20' : ''}`} />}
+              {user.email === 'damijosh12@gmail.com' ? <span className="text-[10px] font-medium">Admin</span> : <span className="text-[10px] font-medium">Orders</span>}
             </button>
           </div>
         </div>
@@ -407,6 +407,8 @@ export default function Store() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/ai" element={<Ai />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/dropshipping" element={<Dropshipping />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </main>
 

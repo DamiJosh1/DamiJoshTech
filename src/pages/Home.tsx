@@ -5,6 +5,12 @@ import { useStore } from '../StoreContext';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user: _storeUser } = useStore();
+  useEffect(() => {
+    if (_storeUser && _storeUser.email === 'damijosh12@gmail.com') {
+      navigate('/admin');
+    }
+  }, [_storeUser, navigate]);
   const { 
     products, 
     isDarkMode, 

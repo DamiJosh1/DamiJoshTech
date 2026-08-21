@@ -1,3 +1,5 @@
+#!/bin/bash
+cat << 'INNER' > src/pages/Profile.tsx
 import React, { useContext } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { LogOut, User as UserIcon, Package, Settings, Heart, CreditCard, ChevronRight } from 'lucide-react';
@@ -104,3 +106,4 @@ const Profile = () => {
 };
 
 export default Profile;
+INNER

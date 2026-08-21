@@ -1,0 +1,2 @@
+#!/bin/bash
+sed -i 's/if (loginEmail === '"'"'damijosh12@gmail.com'"'"' || (currentUser \&\& currentUser.email === '"'"'damijosh12@gmail.com'"'"')) { navigate('"'"'\/admin'"'"'); } else { navigate('"'"'\/'"'"'); }/if (auth.currentUser?.email === '"'"'damijosh12@gmail.com'"'"' || loginEmail === '"'"'damijosh12@gmail.com'"'"') { navigate('"'"'\/admin'"'"'); } else { navigate('"'"'\/'"'"'); }/g' src/Login.tsx
