@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+let code = fs.readFileSync('src/pages/ProductDetail.tsx', 'utf-8');
+
+const newProductDetail = `import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, Star, ArrowLeft, ShieldCheck, Truck, RotateCcw, CheckCircle2, Sparkles, Bot } from 'lucide-react';
 import { useStore } from '../StoreContext';
@@ -59,7 +62,7 @@ export default function ProductDetail() {
                 onClick={(e) => handleWishlistToggle(product, e)}
                 className="absolute top-6 right-6 p-3 rounded-full bg-white/80 backdrop-blur-md text-charcoal hover:text-error transition-colors shadow-sm"
               >
-                <Heart className={`w-5 h-5 ${wishlistIds.includes(product.id) ? 'fill-error text-error' : ''}`} />
+                <Heart className={\`w-5 h-5 \${wishlistIds.includes(product.id) ? 'fill-error text-error' : ''}\`} />
               </button>
             </div>
             
@@ -69,9 +72,9 @@ export default function ProductDetail() {
                 <button 
                   key={idx}
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`relative aspect-square rounded-xl overflow-hidden bg-light-bg border-2 transition-all ${activeImageIndex === idx ? 'border-primary-blue' : 'border-transparent hover:border-border'}`}
+                  className={\`relative aspect-square rounded-xl overflow-hidden bg-light-bg border-2 transition-all \${activeImageIndex === idx ? 'border-primary-blue' : 'border-transparent hover:border-border'}\`}
                 >
-                  <img src={img} alt={`Gallery view ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={img} alt={\`Gallery view \${idx + 1}\`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -98,7 +101,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-1">
                 <div className="flex text-amber-400">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-4 h-4 ${i < Math.floor((product as any).rating || 5) ? 'fill-current' : 'opacity-30'}`} />
+                    <Star key={i} className={\`w-4 h-4 \${i < Math.floor((product as any).rating || 5) ? 'fill-current' : 'opacity-30'}\`} />
                   ))}
                 </div>
                 <span className="text-sm font-medium ml-1 text-charcoal">
@@ -129,11 +132,11 @@ export default function ProductDetail() {
             <button
               onClick={(e) => handleFeaturedAddToCart(product, e)}
               disabled={addingToCartId === product.id}
-              className={`w-full py-4 rounded-lg font-bold text-lg transition-all active:scale-95 flex items-center justify-center gap-2 mb-8 shadow-md ${
+              className={\`w-full py-4 rounded-lg font-bold text-lg transition-all active:scale-95 flex items-center justify-center gap-2 mb-8 shadow-md \${
                 addingToCartId === product.id
                   ? 'bg-emerald-500 text-white shadow-emerald-500/20'
                   : 'bg-primary-blue hover:bg-secondary-blue text-white shadow-primary-blue/20'
-              }`}
+              }\`}
             >
               {addingToCartId === product.id ? 'Added to Cart' : 'Add to Cart'}
             </button>
@@ -168,3 +171,6 @@ export default function ProductDetail() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/pages/ProductDetail.tsx', newProductDetail);

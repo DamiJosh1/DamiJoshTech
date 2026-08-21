@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+let code = fs.readFileSync('src/pages/Categories.tsx', 'utf8');
+
+const replacement = `import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Search, TrendingUp, Clock } from 'lucide-react';
 import { useStore } from '../StoreContext';
@@ -8,18 +11,18 @@ export default function Categories() {
   const { products } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
+  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
   const recentSearches = ['Headphones', 'Smart Watch', 'Speaker'];
   const trendingSearches = ['Sony WH-1000XM5', 'Dyson Airwrap', 'Samsung S24 Ultra'];
 
-  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleSearch = (e) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
-      navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(\`/shop?q=\${encodeURIComponent(searchQuery.trim())}\`);
     }
   };
 
-  const executeSearch = (term: string) => {
-    navigate(`/shop?q=${encodeURIComponent(term)}`);
+  const executeSearch = (term) => {
+    navigate(\`/shop?q=\${encodeURIComponent(term)}\`);
   };
 
   return (
@@ -99,7 +102,7 @@ export default function Categories() {
             return (
               <div 
                 key={cat}
-                onClick={() => navigate(`/shop?category=${encodeURIComponent(cat)}`)} 
+                onClick={() => navigate(\`/shop?category=\${encodeURIComponent(cat)}\`)} 
                 className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer"
               >
                 <img 
@@ -122,4 +125,7 @@ export default function Categories() {
       </div>
     </div>
   );
-}
+}`;
+
+fs.writeFileSync('src/pages/Categories.tsx', replacement);
+console.log('Categories.tsx updated for Search view.');

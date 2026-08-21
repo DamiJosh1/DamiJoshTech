@@ -22,6 +22,7 @@ import Ai from './pages/Ai';
 import ProductDetail from './pages/ProductDetail';
 import Dropshipping from './pages/Dropshipping';
 import AdminDashboard from './pages/AdminDashboard';
+import MobileBottomNav from './components/MobileBottomNav';
 
 export default function Store() {
   const navigate = useNavigate();
@@ -81,11 +82,14 @@ export default function Store() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    const handleOpenCart = () => setIsCartOpen(true);
+    window.addEventListener('open-cart', handleOpenCart);
 
     return () => {
       mediaQuery.removeEventListener('change', handleMediaChange);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('open-cart', handleOpenCart);
     };
   }, []);
 
@@ -245,161 +249,142 @@ export default function Store() {
   return (
     <StoreContext.Provider value={storeState}>
       <Preloader isDarkMode={isDarkMode} />
-    <div className={`min-h-screen font-sans flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-zinc-900 text-zinc-50' : 'bg-[#f4f6fc] text-slate-800'} ${user ? 'pb-16 lg:pb-0' : ''}`}>
+    <div className="min-h-screen font-sans flex flex-col text-dark-text bg-light-bg pb-20 lg:pb-0">
       
-      {/* Desktop Header */}
-      <header className="hidden lg:block relative w-full pt-6 px-4 z-40">
-         <div className={`max-w-7xl mx-auto rounded-full px-6 h-[72px] flex items-center justify-between gap-4 border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-slate-100 border-blue-200 shadow-xl shadow-blue-500/5'}`}>
-            
-            {/* Logo */}
-            <button onClick={() => navigate('/')} className="z-10 hover:opacity-80 transition-opacity">
-              <Logo size="default" isDarkMode={isDarkMode} />
-            </button>
-
-            {/* Search */}
-            <div className={`flex flex-1 max-w-md mx-4 items-center rounded-full px-4 py-2.5 z-10 transition-colors ${isDarkMode ? 'bg-zinc-800/50' : 'bg-blue-50/50'}`}>
-              <Search className={`w-4 h-4 ${isDarkMode ? 'text-zinc-400' : 'text-slate-500'}`} />
-              <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleSearch} className={`bg-transparent border-none outline-none w-full ml-3 text-sm placeholder:text-zinc-500 ${isDarkMode ? 'text-white' : 'text-slate-800'}`} />
-            </div>
-
-            {/* Links */}
-            <nav className="flex items-center gap-8 text-sm font-medium z-10">
-              <button onClick={() => navigate('/')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Home</button>
-              <button onClick={() => navigate('/shop')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/shop' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Shop</button>
-              <button onClick={() => navigate('/categories')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/categories' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Categories</button>
-              <button onClick={() => navigate('/dropshipping')} className={`transition-colors hover:text-blue-500 ${window.location.pathname === '/dropshipping' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Dropship</button>
-            </nav>
-
-            {/* Right Icons */}
-            <div className="flex items-center gap-2 z-10">
-               {/* Cart */}
-               <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-blue-100 text-slate-600'}`}>
-                  <ShoppingBag className="w-5 h-5" />
-                  {cartCount > 0 && <span className="absolute top-1 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-transparent">{cartCount}</span>}
-               </button>
-               {/* Theme Toggle */}
-               <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-blue-100 text-slate-600'}`}>
-                  {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-               </button>
-               {/* Auth */}
-               {user ? (
-                 <div className="relative ml-2">
-                   <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
-                     {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : <User className="w-5 h-5" />}
-                   </button>
-                   {isProfileMenuOpen && (
-                     <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-xl py-2 border overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-zinc-800 shadow-black/50' : 'bg-slate-50 border-blue-100 shadow-blue-100/50'}`}>
-                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Profile</button>
-                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>My Orders</button>
-                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Saved/Favorites</button>
-                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-blue-500/10 hover:text-blue-400' : 'hover:bg-blue-50 hover:text-blue-600'}`}>Settings</button>
-                        {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} className={`w-full text-left px-5 py-2.5 text-sm transition-colors ${isDarkMode ? 'hover:bg-purple-500/10 hover:text-purple-400 text-purple-400' : 'hover:bg-purple-50 hover:text-purple-600 text-purple-600'}`}>Admin Dashboard</button>}
-                        <div className={`h-px my-1 ${isDarkMode ? 'bg-zinc-800' : 'bg-slate-200'}`} />
-                        <button onClick={handleLogout} className="w-full text-left px-5 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors">Logout</button>
-                     </div>
-                   )}
-                 </div>
-               ) : (
-                 <button onClick={handleLogin} className="ml-4 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors shadow-lg shadow-blue-600/20 active:scale-95">
-                   Get Started
-                 </button>
-               )}
-            </div>
-         </div>
-      </header>
-
-      {/* Mobile Top Navbar */}
-      <header className="lg:hidden relative w-full pt-4 px-4 z-40">
-        <div className={`w-full rounded-2xl px-5 h-16 flex items-center justify-between border shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-colors relative overflow-hidden ${isDarkMode ? 'bg-zinc-900 border-blue-500/30' : 'bg-slate-100 border-blue-200 shadow-xl shadow-blue-500/5'}`}>
-          
-          <button onClick={() => navigate('/')} className="text-xl font-bold tracking-tight z-10">
-            <Logo size="default" isDarkMode={isDarkMode} />
+                  {/* Desktop Header */}
+      <header className="hidden lg:block sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 transition-all">
+        <div className="max-w-[1440px] mx-auto px-8 h-[80px] flex items-center justify-between gap-6">
+          <button onClick={() => navigate('/')} className="z-10 hover:opacity-80 transition-opacity">
+            <Logo className="h-8" variant="full" />
           </button>
 
-          <div className="flex items-center gap-2 z-10">
-              {user ? (
-                <button onClick={() => navigate('/profile')} className={`p-2.5 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-100'}`}>
-                  <User size={20} />
-                </button>
-              ) : (
-                <button onClick={() => navigate('/login')} className={`text-sm font-medium px-4 py-2 rounded-full ${isDarkMode ? 'text-white hover:bg-zinc-800' : 'text-slate-800 hover:bg-slate-100'}`}>Log In</button>
-              )}
-            <button className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
-              <Search className="w-5 h-5" />
+          <nav className="flex items-center gap-8 text-[15px] font-medium z-10">
+            <button onClick={() => navigate('/shop')} className="transition-colors text-charcoal hover:text-primary-blue">Shop</button>
+            <button onClick={() => navigate('/categories')} className="transition-colors text-charcoal hover:text-primary-blue">Categories</button>
+            <button onClick={() => navigate('/shop?q=new')} className="transition-colors text-charcoal hover:text-primary-blue">New Arrivals</button>
+            <button onClick={() => navigate('/shop?q=best')} className="transition-colors text-charcoal hover:text-primary-blue">Best Sellers</button>
+            <button onClick={() => navigate('/shop?q=deals')} className="transition-colors text-charcoal hover:text-primary-blue text-error">Deals</button>
+          </nav>
+
+          <div className="flex flex-1 max-w-sm items-center rounded-full px-4 py-2 bg-light-bg border border-zinc-200 transition-colors focus-within:border-primary-blue">
+            <Search className="w-4 h-4 text-zinc-500" />
+            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleSearch} className="bg-transparent border-none outline-none w-full ml-3 text-sm text-dark-text placeholder:text-zinc-400" />
+          </div>
+
+          <div className="flex items-center gap-4 z-10">
+             <button onClick={() => navigate('/profile')} className="p-2 transition-colors hover:text-primary-blue text-charcoal">
+                <Heart className="w-5 h-5" />
+             </button>
+             <button onClick={() => setIsCartOpen(true)} className="p-2 relative transition-colors hover:text-primary-blue text-charcoal">
+                <ShoppingBag className="w-5 h-5" />
+                {cartCount > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-primary-blue text-white text-[10px] font-bold flex items-center justify-center rounded-full">{cartCount}</span>}
+             </button>
+             {user ? (
+               <div className="relative ml-2">
+                 <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="w-9 h-9 rounded-full overflow-hidden border border-zinc-200 hover:border-primary-blue transition-colors bg-light-bg flex items-center justify-center">
+                   {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : <User className="w-4 h-4 text-zinc-500" />}
+                 </button>
+                 {isProfileMenuOpen && (
+                   <div className="absolute right-0 mt-3 w-56 rounded-xl shadow-xl py-2 bg-white border border-zinc-100">
+                      <div className="px-5 py-3 border-b border-zinc-100 mb-2">
+                        <p className="text-sm font-semibold truncate text-dark-text">{user.email}</p>
+                      </div>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-charcoal">My Account</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-charcoal">Orders</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-charcoal">Wishlist</button>
+                      {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-primary-blue font-medium">Admin Dashboard</button>}
+                      <div className="h-px my-1 bg-zinc-100" />
+                      <button onClick={handleLogout} className="w-full text-left px-5 py-2.5 text-sm text-error hover:bg-red-50 transition-colors">Logout</button>
+                   </div>
+                 )}
+               </div>
+             ) : (
+               <button onClick={handleLogin} className="flex items-center gap-2 p-2 hover:text-primary-blue transition-colors text-charcoal">
+                 <User className="w-5 h-5" />
+                 <span className="text-sm font-medium">Account</span>
+               </button>
+             )}
+          </div>
+        </div>
+      </header>
+{/* Mobile Top Navbar */}
+      <header className="lg:hidden sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200">
+        <div className="w-full h-[60px] px-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 z-10">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-1 -ml-1 text-charcoal hover:bg-light-bg rounded-full transition-colors">
+              <Menu className="w-6 h-6" />
             </button>
-            <button onClick={() => setIsCartOpen(true)} className={`p-2 rounded-full relative transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
+            <button onClick={() => navigate('/')}>
+              <Logo className="h-5" variant="full" />
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-1 -mr-2 z-10">
+            <button onClick={() => navigate('/profile')} className="p-2 text-charcoal hover:bg-light-bg rounded-full transition-colors">
+              <Heart className="w-5 h-5" />
+            </button>
+            <button onClick={() => setIsCartOpen(true)} className="p-2 relative text-charcoal hover:bg-light-bg rounded-full transition-colors">
               <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{cartCount}</span>}
+              {cartCount > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary-blue text-white text-[9px] font-bold flex items-center justify-center rounded-full">{cartCount}</span>}
             </button>
-            {!user && (
-              <button onClick={() => setIsMobileMenuOpen(true)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-200'}`}>
-                <Menu className="w-5 h-5" />
-              </button>
-            )}
+          </div>
+        </div>
+        <div className={`px-4 transition-all duration-300 overflow-hidden ${scrollY > 50 ? 'h-0 opacity-0 pb-0' : 'h-[52px] pb-3 opacity-100'}`}>
+          <div className="flex items-center rounded-full px-4 py-2 bg-zinc-100 border border-transparent transition-colors focus-within:bg-white focus-within:border-primary-blue focus-within:shadow-sm">
+            <Search className="w-4 h-4 text-zinc-500" />
+            <input 
+              type="text" 
+              placeholder="Search premium electronics..." 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              onKeyDown={handleSearch} 
+              className="bg-transparent border-none outline-none w-full ml-2 text-sm text-dark-text placeholder:text-zinc-500" 
+            />
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer (Non-Logged In) */}
-      {isMobileMenuOpen && !user && (
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          <div className={`relative w-4/5 max-w-sm h-full shadow-2xl flex flex-col transition-colors ${isDarkMode ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'}`}>
-             <div className="p-6 flex items-center justify-between border-b border-zinc-500/20">
-               <Logo size="sm" isDarkMode={isDarkMode} />
-               <button onClick={() => setIsMobileMenuOpen(false)} className={`p-2 -mr-2 rounded-full ${isDarkMode ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`}><X className="w-6 h-6"/></button>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="relative w-full md:w-4/5 max-w-sm h-[90vh] md:h-full mt-auto md:mt-0 bg-white rounded-t-3xl md:rounded-none shadow-2xl flex flex-col transform transition-transform animate-slide-up md:animate-slide-left">
+             <div className="p-5 flex items-center justify-between border-b border-zinc-100">
+               <Logo className="h-6" variant="full" />
+               <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 -mr-2 text-charcoal hover:bg-light-bg rounded-full"><X className="w-6 h-6"/></button>
              </div>
              <div className="p-6 flex-1 overflow-y-auto flex flex-col gap-6">
-                <nav className="flex flex-col gap-6 text-lg font-medium">
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Home</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/shop' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Shop</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/categories'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/categories' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Categories</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/dropshipping'); }} className={`text-left transition-colors hover:text-blue-500 ${window.location.pathname === '/dropshipping' ? 'text-blue-500' : isDarkMode ? 'text-zinc-300' : 'text-slate-600'}`}>Dropship</button>
+                <nav className="flex flex-col gap-6 text-[15px] font-medium text-dark-text">
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} className="text-left hover:text-primary-blue">Home</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop'); }} className="text-left hover:text-primary-blue">Shop</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/categories'); }} className="text-left hover:text-primary-blue">Categories</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=new'); }} className="text-left hover:text-primary-blue">New Arrivals</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=best'); }} className="text-left hover:text-primary-blue">Best Sellers</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=deals'); }} className="text-left text-error hover:text-primary-blue">Deals</button>
+                  
+                  <div className="h-px bg-zinc-100 my-2" />
+                  
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/orders'); }} className="text-left hover:text-primary-blue">Track Order</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/about'); }} className="text-left hover:text-primary-blue">About</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/contact'); }} className="text-left hover:text-primary-blue">Contact</button>
+                  
+                  <div className="h-px bg-zinc-100 my-2" />
+                  
+                  {user ? (
+                     <button onClick={() => { setIsMobileMenuOpen(false); navigate('/profile'); }} className="text-left flex items-center gap-3">
+                        <User className="w-5 h-5 text-zinc-400" /> My Account
+                     </button>
+                  ) : (
+                     <button onClick={() => { setIsMobileMenuOpen(false); navigate('/login'); }} className="text-left flex items-center gap-3">
+                        <User className="w-5 h-5 text-zinc-400" /> Login / Sign Up
+                     </button>
+                  )}
                 </nav>
-                <div className="mt-auto flex flex-col gap-4">
-                  <div className="flex items-center justify-between py-4 border-t border-zinc-500/20">
-                    <span className="font-medium">Theme</span>
-                    <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-100 text-zinc-600'}`}>
-                      {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/login'); }} className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors active:scale-95">Login</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/signup'); }} className={`w-full py-3.5 rounded-xl font-semibold transition-colors active:scale-95 ${isDarkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-white' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'}`}>Sign Up</button>
-                </div>
              </div>
           </div>
         </div>
       )}
-
-      {/* Mobile Bottom Navigation (Logged In) */}
-      {user && (
-        <div className={`lg:hidden fixed bottom-0 left-0 w-full pb-2 z-40 border-t transition-colors shadow-[0_-5px_15px_rgba(0,0,0,0.05)] ${isDarkMode ? 'bg-zinc-900/95 border-zinc-800' : 'bg-white/95 border-zinc-200'} backdrop-blur-lg`}>
-          <div className="flex justify-around items-center h-16 px-2">
-            <button onClick={() => navigate('/profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'profile' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
-              <User className={`w-5 h-5 ${activeMobileTab === 'profile' ? 'fill-blue-500/20' : ''}`} />
-              <span className="text-[10px] font-medium">Profile</span>
-            </button>
-            <button onClick={() => navigate('/ai')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'ai' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
-              <Bot className={`w-5 h-5 ${activeMobileTab === 'ai' ? 'fill-blue-500/20' : ''}`} />
-              <span className="text-[10px] font-medium">AI</span>
-            </button>
-            <button onClick={() => navigate('/')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'home' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
-              <HomeIcon className={`w-5 h-5 ${activeMobileTab === 'home' ? 'fill-blue-500/20' : ''}`} />
-              <span className="text-[10px] font-medium">Home</span>
-            </button>
-            <button onClick={() => navigate('/shop')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'shop' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
-              <ShoppingBag className={`w-5 h-5 ${activeMobileTab === 'shop' ? 'fill-blue-500/20' : ''}`} />
-              <span className="text-[10px] font-medium">Shop</span>
-            </button>
-            <button onClick={() => navigate(user.email === 'damijosh12@gmail.com' ? '/admin' : '/profile')} className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeMobileTab === 'orders_tab' || activeMobileTab === 'admin' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600')}`}>
-              {user.email === 'damijosh12@gmail.com' ? <LayoutDashboard className={`w-5 h-5 ${activeMobileTab === 'admin' ? 'fill-blue-500/20' : ''}`} /> : <Package className={`w-5 h-5 ${activeMobileTab === 'orders_tab' ? 'fill-blue-500/20' : ''}`} />}
-              {user.email === 'damijosh12@gmail.com' ? <span className="text-[10px] font-medium">Admin</span> : <span className="text-[10px] font-medium">Orders</span>}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <main className="flex-1 flex flex-col w-full min-h-screen">
+<main className="flex-1 flex flex-col w-full min-h-screen">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
@@ -472,7 +457,7 @@ export default function Store() {
         
         <div className="relative max-w-7xl mx-auto px-8 py-12 sm:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 z-10 bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
           <div className="col-span-1 md:col-span-2">
-            <Logo size="lg" className="mb-4" isDarkMode={true} />
+            <Logo variant="full" className="h-6" />
             <p className="max-w-xs leading-relaxed drop-shadow-md font-medium">
               Curating the best modern essentials for a seamless lifestyle. Quality, design, and function in every detail.
             </p>
@@ -702,6 +687,7 @@ export default function Store() {
         </div>
       )}
     </div>
+      <MobileBottomNav cartCount={cartCount} />
     </StoreContext.Provider>
   );
 }

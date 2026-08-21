@@ -24,7 +24,7 @@ export default function Preloader({ isDarkMode }: { isDarkMode: boolean }) {
         
         {/* Tech Icon Core */}
         <div className="relative z-10 w-20 h-20 bg-transparent flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.3)] rounded-full animate-pulse">
-          <Logo size="lg" isDarkMode={isDarkMode} />
+          <Logo variant="icon" className="h-10" />
         </div>
         
         {/* Loading Dots */}

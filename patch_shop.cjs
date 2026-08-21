@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+
+const shopCode = `import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Heart, Search, Filter, SlidersHorizontal, ChevronDown, X, ShoppingBag } from 'lucide-react';
 import { useStore } from '../StoreContext';
@@ -51,7 +53,7 @@ export default function Shop() {
     <div className="group flex flex-col w-full">
       <div 
         className="relative aspect-[4/5] w-full rounded-2xl overflow-hidden mb-3 bg-zinc-100 cursor-pointer"
-        onClick={() => navigate(`/product/${product.id}`)}
+        onClick={() => navigate(\`/product/\${product.id}\`)}
       >
         <img
           src={product.image}
@@ -69,18 +71,18 @@ export default function Shop() {
           onClick={(e) => { e.stopPropagation(); handleWishlistToggle(product, e); }}
           className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full bg-white/90 backdrop-blur-md text-charcoal hover:text-error transition-colors shadow-sm"
         >
-          <Heart className={`w-4 h-4 ${wishlistIds.includes(product.id) ? 'fill-error text-error' : ''}`} />
+          <Heart className={\`w-4 h-4 \${wishlistIds.includes(product.id) ? 'fill-error text-error' : ''}\`} />
         </button>
 
         <div className="hidden lg:flex absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0">
           <button
             onClick={(e) => { e.stopPropagation(); handleFeaturedAddToCart(product, e); }}
             disabled={addingToCartId === product.id}
-            className={`w-full py-3 rounded-xl text-sm font-bold transition-all shadow-lg ${
+            className={\`w-full py-3 rounded-xl text-sm font-bold transition-all shadow-lg \${
               addingToCartId === product.id
                 ? 'bg-success text-white'
                 : 'bg-white hover:bg-zinc-50 text-primary-blue'
-            }`}
+            }\`}
           >
             {addingToCartId === product.id ? 'Added' : 'Add to Cart'}
           </button>
@@ -89,9 +91,9 @@ export default function Shop() {
         <button
           onClick={(e) => { e.stopPropagation(); handleFeaturedAddToCart(product, e); }}
           disabled={addingToCartId === product.id}
-          className={`lg:hidden absolute bottom-2 right-2 sm:bottom-3 sm:right-3 p-2.5 rounded-full shadow-md transition-colors ${
+          className={\`lg:hidden absolute bottom-2 right-2 sm:bottom-3 sm:right-3 p-2.5 rounded-full shadow-md transition-colors \${
             addingToCartId === product.id ? 'bg-success text-white' : 'bg-white text-primary-blue'
-          }`}
+          }\`}
         >
           <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
@@ -99,16 +101,16 @@ export default function Shop() {
 
       <div className="flex flex-col flex-1 px-1">
         <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase mb-1">{product.category || 'Tech'}</span>
-        <h3 className="text-sm font-semibold text-dark-text mb-2 line-clamp-2 leading-snug cursor-pointer hover:text-primary-blue transition-colors" onClick={() => navigate(`/product/${product.id}`)}>
+        <h3 className="text-sm font-semibold text-dark-text mb-2 line-clamp-2 leading-snug cursor-pointer hover:text-primary-blue transition-colors" onClick={() => navigate(\`/product/\${product.id}\`)}>
           {product.name}
         </h3>
         <div className="mt-auto flex items-baseline gap-2">
           <span className="text-sm sm:text-base font-bold text-dark-text">
-            ${(product.price).toFixed(2)}
+            \${(product.price).toFixed(2)}
           </span>
           {product.originalPrice && product.originalPrice > product.price && (
             <span className="text-xs text-zinc-400 line-through">
-              ${(product.originalPrice).toFixed(2)}
+              \${(product.originalPrice).toFixed(2)}
             </span>
           )}
         </div>
@@ -149,11 +151,11 @@ export default function Shop() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 snap-start ${
+              className={\`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 snap-start \${
                 activeCategory === cat
                   ? 'bg-zinc-900 text-white'
                   : 'bg-zinc-100 text-zinc-600'
-              }`}
+              }\`}
             >
               {cat}
             </button>
@@ -206,7 +208,7 @@ export default function Shop() {
                   <li key={cat}>
                     <button
                       onClick={() => setActiveCategory(cat)}
-                      className={`text-sm font-medium transition-colors hover:text-primary-blue flex items-center justify-between w-full ${activeCategory === cat ? 'text-primary-blue' : 'text-zinc-500'}`}
+                      className={\`text-sm font-medium transition-colors hover:text-primary-blue flex items-center justify-between w-full \${activeCategory === cat ? 'text-primary-blue' : 'text-zinc-500'}\`}
                     >
                       {cat}
                       {activeCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-primary-blue" />}
@@ -290,7 +292,7 @@ export default function Shop() {
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${activeCategory === cat ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-200'}`}
+                    className={\`px-4 py-2 rounded-xl text-sm font-medium border transition-colors \${activeCategory === cat ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-200'}\`}
                   >
                     {cat}
                   </button>
@@ -325,3 +327,6 @@ export default function Shop() {
     </div>
   );
 }
+`
+
+fs.writeFileSync('src/pages/Shop.tsx', shopCode);

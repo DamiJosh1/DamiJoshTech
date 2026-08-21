@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary-blue: #0D47A1;
+  --color-secondary-blue: #2563EB;
+  --color-deep-navy: #0B1F38;
+  --color-charcoal: #1F2937;
+  --color-dark-text: #111827;
+  --color-body-text: #4B5563;
+  --color-light-bg: #F8FAFC;
+  --color-border: #E5E7EB;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+}
+
 @layer utilities {
   .animate-gradient-x {
     animation: gradient-x 15s ease infinite;
@@ -38,5 +53,80 @@
   }
   50% {
     background-position: 100% 50%;
+  }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+
+@layer utilities {
+  .animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-slide-left {
+    animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slideLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up, .animate-slide-left, .animate-gradient-x {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+@layer utilities {
+  .animate-hero-image {
+    animation: hero-image-fade 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-hero-text {
+    animation: hero-text-fade 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes hero-image-fade {
+  from { opacity: 0; transform: scale(1.05); }
+  to { opacity: 0.6; transform: scale(1); }
+}
+
+@keyframes hero-text-fade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-image, .animate-hero-text, .animate-fade-in-up {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
   }
 }
