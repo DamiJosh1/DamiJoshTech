@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../StoreContext';
 import ProductCard from '../components/ProductCard';
-import { Search, ChevronDown, Filter, X, Loader2 } from 'lucide-react';
+import { Search, ChevronDown, Filter, X, Loader2, Check } from 'lucide-react';
 import SearchInput from '../components/SearchInput';
 
 export default function SearchPage() {

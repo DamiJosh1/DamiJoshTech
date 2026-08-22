@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, Search, Heart, ShoppingBag, Grid } from 'lucide-react';
+import { Home, Search, User, ShoppingBag, Grid } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
@@ -12,7 +12,7 @@ export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
     if (path === '/') setActiveTab('home');
     else if (path.startsWith('/shop')) setActiveTab('shop');
     else if (path.startsWith('/categories') || path.startsWith('/search')) setActiveTab('search');
-    else if (path.startsWith('/account/wishlist') || path.startsWith('/account')) setActiveTab('wishlist');
+    else if (path.startsWith('/account')) setActiveTab('account');
     // Cart is handled via modal, but we can set it active if we had a dedicated page.
   }, [location.pathname]);
 
@@ -20,7 +20,7 @@ export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'shop', icon: Grid, label: 'Shop', path: '/shop' },
     { id: 'search', icon: Search, label: 'Search', path: '/search' },
-    { id: 'wishlist', icon: Heart, label: 'Wishlist', path: '/account/wishlist' },
+    { id: 'account', icon: User, label: 'Profile', path: '/account' },
     // Cart uses a button not a route directly usually, but let's wire it up
     { id: 'cart', icon: ShoppingBag, label: 'Cart', isCart: true },
   ];
