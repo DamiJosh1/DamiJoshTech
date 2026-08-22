@@ -1,4 +1,8 @@
-import { Product } from './types';
+const fs = require('fs');
+
+const dataPath = '/app/applet/src/data.ts';
+
+const newContent = `import { Product } from './types';
 
 export const products: Product[] = [
   {
@@ -155,3 +159,7 @@ export const products: Product[] = [
     cjSku: 'CJ-COFFEE-1010'
   }
 ];
+`;
+
+fs.writeFileSync(dataPath, newContent);
+console.log("Updated data.ts successfully.");

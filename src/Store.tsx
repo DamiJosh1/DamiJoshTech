@@ -342,9 +342,9 @@ export default function Store() {
                  </button>
                  {isProfileMenuOpen && (
                    <div className="absolute right-0 mt-3 w-56 rounded-xl shadow-xl py-2 bg-white border border-zinc-100 animate-fade-in-up origin-top-right">
-                      <div className="px-5 py-3 border-b border-zinc-100 mb-2">
-                        <p className="text-sm font-semibold truncate text-zinc-900">{user.displayName || 'Customer'}</p>
-                        <p className="text-xs truncate text-zinc-500">{user.email}</p>
+                      <div className="px-5 py-3 border-b border-zinc-100 mb-1">
+                        <p className="text-sm font-bold text-zinc-900 truncate">{user.displayName || 'Customer'}</p>
+                        <p className="text-xs text-zinc-500 truncate">{user.email}</p>
                       </div>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">My Account</button>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/orders'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">My Orders</button>
@@ -364,7 +364,7 @@ export default function Store() {
                    <span className="text-sm font-medium">Account</span>
                  </button>
                  {isProfileMenuOpen && (
-                   <div className="absolute right-0 mt-3 w-64 rounded-xl shadow-xl p-5 bg-white border border-zinc-100 animate-fade-in-up origin-top-right">
+                   <div className="absolute right-0 mt-3 w-64 rounded-xl shadow-xl p-5 bg-white border border-zinc-100 animate-fade-in-up origin-top-right z-50">
                       <h3 className="text-sm font-black text-zinc-900 mb-1 tracking-tight">WELCOME TO SAJODA</h3>
                       <p className="text-xs text-zinc-500 mb-4">Sign in to your account or create a new account.</p>
                       <div className="space-y-2">
@@ -378,7 +378,8 @@ export default function Store() {
           </div>
         </div>
       </header>
-{/* Mobile Top Navbar */}
+
+      {/* Mobile Top Navbar */}
       <header className="lg:hidden sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200">
         <div className="w-full h-[60px] px-4 flex items-center justify-between">
           <div className="flex items-center gap-3 z-10">
@@ -394,7 +395,7 @@ export default function Store() {
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
+        <div className="fixed inset-0 z-[60] flex lg:hidden">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           <div className="relative w-full md:w-4/5 max-w-sm h-[90vh] md:h-full mt-auto md:mt-0 bg-white rounded-t-3xl md:rounded-none shadow-2xl flex flex-col transform transition-transform animate-slide-up md:animate-slide-left">
              <div className="p-5 flex items-center justify-between border-b border-zinc-100">
@@ -419,6 +420,7 @@ export default function Store() {
                   <div className="h-px bg-zinc-100 my-2" />
                   
                   {user ? (
+                     <>
                      <button onClick={() => { setIsMobileMenuOpen(false); navigate('/account'); }} className="text-left flex items-center gap-3 hover:bg-zinc-50 p-2 -ml-2 rounded-xl transition-colors w-full">
                         <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm overflow-hidden shadow-sm shrink-0">
                           {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : (user.displayName ? user.displayName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'U')}
@@ -428,6 +430,8 @@ export default function Store() {
                           <span className="text-xs text-zinc-500 truncate w-full text-left">{user.email}</span>
                         </div>
                      </button>
+                     <button onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} className="text-left text-error hover:text-red-600 font-bold transition-colors mt-2 p-2 -ml-2">Log Out</button>
+                     </>
                   ) : (
                      <button onClick={() => { setIsMobileMenuOpen(false); navigate('/login'); }} className="text-left flex items-center gap-3 hover:bg-zinc-50 p-2 -ml-2 rounded-xl transition-colors">
                         <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-500 flex items-center justify-center shrink-0">
