@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../StoreContext';
+import ProductCard from '../components/ProductCard';
 import { ArrowRight, ChevronRight, ShieldCheck, Truck, CreditCard, HeadphonesIcon, RefreshCw, Mail, Heart, ShoppingBag, Star } from 'lucide-react';
 
 export default function Home() {
@@ -27,79 +28,7 @@ export default function Home() {
     }
   };
 
-  const ProductCard = ({ product }: { product: any }) => (
-    <div className="group flex flex-col min-w-[200px] md:min-w-[240px] max-w-[280px] flex-shrink-0 snap-start">
-      <div 
-        className="relative aspect-[4/5] w-full rounded-2xl overflow-hidden mb-4 bg-zinc-100 cursor-pointer"
-        onClick={() => navigate(`/product/${product.id}`)}
-      >
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-center object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-        />
-        
-        {/* Deal Badge */}
-        {product.originalPrice && product.originalPrice > product.price && (
-          <div className="absolute top-3 left-3 bg-error text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
-            Sale
-          </div>
-        )}
-
-        {/* Wishlist Button */}
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleWishlistToggle(product, e); }}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-md text-charcoal hover:text-error transition-colors shadow-sm"
-        >
-          <Heart className={`w-4 h-4 ${wishlistIds.includes(product.id) ? 'fill-error text-error' : ''}`} />
-        </button>
-
-        {/* Add to Cart - Desktop Hover */}
-        <div className="hidden lg:flex absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0">
-          <button
-            onClick={(e) => { e.stopPropagation(); handleFeaturedAddToCart(product, e); }}
-            disabled={addingToCartId === product.id}
-            className={`w-full py-3 rounded-xl text-sm font-bold transition-all shadow-lg ${
-              addingToCartId === product.id
-                ? 'bg-success text-white'
-                : 'bg-white hover:bg-zinc-50 text-primary-blue'
-            }`}
-          >
-            {addingToCartId === product.id ? 'Added to Cart' : 'Add to Cart'}
-          </button>
-        </div>
-        
-        {/* Add to Cart - Mobile Visible */}
-        <button
-          onClick={(e) => { e.stopPropagation(); handleFeaturedAddToCart(product, e); }}
-          disabled={addingToCartId === product.id}
-          className={`lg:hidden absolute bottom-3 right-3 p-3 rounded-full shadow-md transition-colors ${
-            addingToCartId === product.id ? 'bg-success text-white' : 'bg-white text-primary-blue'
-          }`}
-        >
-          <ShoppingBag className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="flex flex-col flex-1 px-1">
-        <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase mb-1.5">{product.category || 'Tech'}</span>
-        <h3 className="text-sm font-semibold text-dark-text mb-2 line-clamp-2 leading-snug cursor-pointer hover:text-primary-blue transition-colors" onClick={() => navigate(`/product/${product.id}`)}>
-          {product.name}
-        </h3>
-        
-        <div className="mt-auto flex items-baseline gap-2">
-          <span className="text-base font-bold text-dark-text">
-            ${(product.price).toFixed(2)}
-          </span>
-          {product.originalPrice && product.originalPrice > product.price && (
-            <span className="text-xs text-zinc-400 line-through">
-              ${(product.originalPrice).toFixed(2)}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  
 
   return (
     <div className="w-full bg-white pb-20">
@@ -187,7 +116,7 @@ export default function Home() {
           ) : (
             <div className="flex overflow-x-auto gap-6 pb-8 -mx-6 px-6 sm:mx-0 sm:px-0 snap-x snap-mandatory scrollbar-hide">
               {products.slice(0, 6).map(product => (
-                <ProductCard key={product.id} product={product} />
+                <div key={product.id}><ProductCard product={product} /></div>
               ))}
             </div>
           )}
@@ -232,7 +161,7 @@ export default function Home() {
         {products.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {products.filter(p => !p.category || p.category.includes('Gadget') || p.category.includes('Audio')).slice(0, 4).map(product => (
-              <ProductCard key={product.id} product={product} />
+              <div key={product.id}><ProductCard product={product} /></div>
             ))}
           </div>
         )}
@@ -253,7 +182,7 @@ export default function Home() {
           
           <div className="flex overflow-x-auto gap-6 pb-8 -mx-6 px-6 sm:mx-0 sm:px-0 snap-x snap-mandatory scrollbar-hide">
              {products.filter(p => p.originalPrice && p.originalPrice > p.price).slice(0, 4).map(product => (
-                <ProductCard key={product.id} product={product} />
+                <div key={product.id}><ProductCard product={product} /></div>
              ))}
              {products.filter(p => p.originalPrice && p.originalPrice > p.price).length === 0 && (
                <p className="text-zinc-500">No active deals right now. Check back later!</p>

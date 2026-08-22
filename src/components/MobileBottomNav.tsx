@@ -12,15 +12,15 @@ export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
     if (path === '/') setActiveTab('home');
     else if (path.startsWith('/shop')) setActiveTab('shop');
     else if (path.startsWith('/categories') || path.startsWith('/search')) setActiveTab('search');
-    else if (path.startsWith('/profile') || path.startsWith('/wishlist')) setActiveTab('wishlist');
+    else if (path.startsWith('/account/wishlist') || path.startsWith('/account')) setActiveTab('wishlist');
     // Cart is handled via modal, but we can set it active if we had a dedicated page.
   }, [location.pathname]);
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'shop', icon: Grid, label: 'Shop', path: '/shop' },
-    { id: 'search', icon: Search, label: 'Search', path: '/categories' },
-    { id: 'wishlist', icon: Heart, label: 'Wishlist', path: '/profile' },
+    { id: 'search', icon: Search, label: 'Search', path: '/search' },
+    { id: 'wishlist', icon: Heart, label: 'Wishlist', path: '/account/wishlist' },
     // Cart uses a button not a route directly usually, but let's wire it up
     { id: 'cart', icon: ShoppingBag, label: 'Cart', isCart: true },
   ];

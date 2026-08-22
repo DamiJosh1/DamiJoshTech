@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+
+const signupCode = `import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification } from 'firebase/auth';
-import { auth, db } from './firebase';
+import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { AlertCircle, Eye, EyeOff, Mail, ArrowLeft } from 'lucide-react';
-import Logo from './Logo';
+import Logo from './components/Logo';
 
 export default function SignUp() {
   const [firstName, setFirstName] = useState('');
@@ -25,7 +27,7 @@ export default function SignUp() {
   const validatePassword = (pass: string) => {
     const hasUpperCase = /[A-Z]/.test(pass);
     const hasLowerCase = /[a-z]/.test(pass);
-    const hasNumbers = /d/.test(pass);
+    const hasNumbers = /\d/.test(pass);
     const hasMinLength = pass.length >= 8;
     return hasUpperCase && hasLowerCase && hasNumbers && hasMinLength;
   };
@@ -135,11 +137,11 @@ export default function SignUp() {
             <button
               onClick={handleResend}
               disabled={resendCooldown > 0}
-              className={`w-full py-4 rounded-xl font-bold transition-all ${
+              className={\`w-full py-4 rounded-xl font-bold transition-all \${
                 resendCooldown > 0 ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 text-white hover:bg-zinc-800'
-              }`}
+              }\`}
             >
-              {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'RESEND EMAIL'}
+              {resendCooldown > 0 ? \`Resend available in \${resendCooldown}s\` : 'RESEND EMAIL'}
             </button>
             <Link to="/login" className="block text-center w-full py-4 rounded-xl font-bold text-zinc-900 bg-white border-2 border-zinc-200 hover:border-zinc-900 transition-colors">
               BACK TO LOGIN
@@ -261,20 +263,20 @@ export default function SignUp() {
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-medium text-zinc-500">
-                <div className={`flex items-center gap-1.5 ${password.length >= 8 ? 'text-success' : ''}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${password.length >= 8 ? 'bg-success' : 'bg-zinc-300'}`} />
+                <div className={\`flex items-center gap-1.5 \${password.length >= 8 ? 'text-success' : ''}\`}>
+                  <div className={\`w-1.5 h-1.5 rounded-full \${password.length >= 8 ? 'bg-success' : 'bg-zinc-300'}\`} />
                   At least 8 characters
                 </div>
-                <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(password) ? 'text-success' : ''}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${/[A-Z]/.test(password) ? 'bg-success' : 'bg-zinc-300'}`} />
+                <div className={\`flex items-center gap-1.5 \${/[A-Z]/.test(password) ? 'text-success' : ''}\`}>
+                  <div className={\`w-1.5 h-1.5 rounded-full \${/[A-Z]/.test(password) ? 'bg-success' : 'bg-zinc-300'}\`} />
                   Uppercase letter
                 </div>
-                <div className={`flex items-center gap-1.5 ${/[a-z]/.test(password) ? 'text-success' : ''}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${/[a-z]/.test(password) ? 'bg-success' : 'bg-zinc-300'}`} />
+                <div className={\`flex items-center gap-1.5 \${/[a-z]/.test(password) ? 'text-success' : ''}\`}>
+                  <div className={\`w-1.5 h-1.5 rounded-full \${/[a-z]/.test(password) ? 'bg-success' : 'bg-zinc-300'}\`} />
                   Lowercase letter
                 </div>
-                <div className={`flex items-center gap-1.5 ${/[0-9]/.test(password) ? 'text-success' : ''}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${/[0-9]/.test(password) ? 'bg-success' : 'bg-zinc-300'}`} />
+                <div className={\`flex items-center gap-1.5 \${/[0-9]/.test(password) ? 'text-success' : ''}\`}>
+                  <div className={\`w-1.5 h-1.5 rounded-full \${/[0-9]/.test(password) ? 'bg-success' : 'bg-zinc-300'}\`} />
                   Number
                 </div>
               </div>
@@ -294,9 +296,9 @@ export default function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 mt-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98] ${
+              className={\`w-full py-4 mt-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98] \${
                 loading ? 'bg-zinc-400 text-white cursor-not-allowed' : 'bg-zinc-900 hover:bg-zinc-800 text-white shadow-zinc-900/20'
-              }`}
+              }\`}
             >
               {loading ? 'Creating...' : 'CREATE ACCOUNT'}
             </button>
@@ -326,3 +328,6 @@ export default function SignUp() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/SignUp.tsx', signupCode);

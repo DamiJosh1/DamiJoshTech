@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+
+const loginCode = `import React, { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth';
-import { auth, db } from './firebase';
+import { auth, db } from '../firebase';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import Logo from './Logo';
+import Logo from './components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -150,9 +152,9 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98] ${
+                  className={\`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98] \${
                     loading ? 'bg-zinc-400 text-white cursor-not-allowed' : 'bg-zinc-900 hover:bg-zinc-800 text-white shadow-zinc-900/20'
-                  }`}
+                  }\`}
                 >
                   {loading ? 'Sending...' : 'SEND INSTRUCTIONS'}
                 </button>
@@ -241,9 +243,9 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 mt-2 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98] ${
+              className={\`w-full py-4 mt-2 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98] \${
                 loading ? 'bg-zinc-400 text-white cursor-not-allowed' : 'bg-zinc-900 hover:bg-zinc-800 text-white shadow-zinc-900/20'
-              }`}
+              }\`}
             >
               {loading ? 'Signing in...' : 'SIGN IN'}
             </button>
@@ -294,3 +296,6 @@ export default function Login() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/Login.tsx', loginCode);

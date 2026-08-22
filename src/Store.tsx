@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye, LayoutDashboard } from 'lucide-react';
 import { usePaystackPayment } from 'react-paystack';
-import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from './firebase';
 import { Product, CartItem } from './types';
@@ -21,7 +21,31 @@ import Profile from './pages/Profile';
 import Ai from './pages/Ai';
 import ProductDetail from './pages/ProductDetail';
 import Dropshipping from './pages/Dropshipping';
-import AdminDashboard from './pages/AdminDashboard';
+import Cart from './pages/Cart';
+import Wishlist from './pages/Wishlist';
+import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
+import TrackOrder from './pages/TrackOrder';
+import AccountOrders from './pages/AccountOrders';
+import OrderDetails from './pages/OrderDetails';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminCustomers from './pages/admin/AdminCustomers';
+import AccountLayout from './pages/account/AccountLayout';
+import AccountDashboard from './pages/account/AccountDashboard';
+import AccountProfile from './pages/account/AccountProfile';
+import AccountWishlist from './pages/account/AccountWishlist';
+import AccountAddresses from './pages/AccountAddresses';
+import AccountSecurity from './pages/account/AccountSecurity';
+import AccountNotifications from './pages/account/AccountNotifications';
+import AdminComingSoon from './pages/admin/AdminComingSoon';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminProductForm from './pages/admin/AdminProductForm';
+import AdminLayout from './components/admin/AdminLayout';
+
+
+import SearchInput from './components/SearchInput';
 import MobileBottomNav from './components/MobileBottomNav';
 
 export default function Store() {
@@ -43,7 +67,7 @@ export default function Store() {
     if (path === '/') return 'home';
     if (path.startsWith('/shop')) return 'shop';
     if (path.startsWith('/ai')) return 'ai';
-    if (path.startsWith('/profile')) return 'profile';
+    if (path.startsWith('/account')) return 'profile';
     if (path.startsWith('/orders')) return 'orders_tab';
     if (path.startsWith('/admin')) return 'admin';
     return '';
@@ -52,7 +76,24 @@ export default function Store() {
   const [activeFeaturedCategory, setActiveFeaturedCategory] = useState("All");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [addingToCartId, setAddingToCartId] = useState<string | null>(null);
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<string[]>(() => { const saved = localStorage.getItem("sajoda_guest_wishlist"); return saved ? JSON.parse(saved) : []; });
+
+  useEffect(() => {
+    if (user && wishlistIds.length > 0) {
+      setDoc(doc(db, 'wishlists', user.uid), { products: wishlistIds });
+    }
+  }, [wishlistIds, user]);
+  
+  useEffect(() => {
+    if (user) {
+      getDoc(doc(db, 'wishlists', user.uid)).then(snap => {
+        if (snap.exists() && snap.data().products) {
+          setWishlistIds(prev => Array.from(new Set([...prev, ...snap.data().products])));
+        }
+      });
+    }
+  }, [user]);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -213,15 +254,18 @@ export default function Store() {
     }, 1500);
   };
 
-  const handleWishlistToggle = (product: Product, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    setWishlistIds(prev => 
-      prev.includes(product.id) ? prev.filter(id => id !== product.id) : [...prev, product.id]
-    );
+  const handleWishlistToggle = (product: Product, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setWishlistIds(prev => {
+      const updated = prev.includes(product.id) ? prev.filter(id => id !== product.id) : [...prev, product.id];
+      if (!user) {
+        localStorage.setItem('sajoda_guest_wishlist', JSON.stringify(updated));
+      } else {
+        // We sync to firestore in a useEffect, but let's just let the state handle it 
+        // if there's a listener. Wait, is there a firestore sync for wishlist?
+      }
+      return updated;
+    });
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -234,6 +278,12 @@ export default function Store() {
     }).filter(item => item.quantity > 0));
   };
 
+  const handleAddToCart = addToCart;
+  const removeFromCart = (id: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== id));
+  };
+  const clearCart = () => setCartItems([]);
+
   const storeState = {
     products,
     isDarkMode,
@@ -242,8 +292,17 @@ export default function Store() {
     addingToCartId,
     prefersReducedMotion,
     handleFeaturedAddToCart,
+    handleAddToCart,
     handleWishlistToggle,
-    setQuickViewProduct
+    setQuickViewProduct,
+    cartItems,
+    cartTotal,
+    cartCount,
+    updateQuantity,
+    removeFromCart,
+    isCartOpen,
+    setIsCartOpen,
+    clearCart
   };
 
   return (
@@ -266,13 +325,10 @@ export default function Store() {
             <button onClick={() => navigate('/shop?q=deals')} className="transition-colors text-charcoal hover:text-primary-blue text-error">Deals</button>
           </nav>
 
-          <div className="flex flex-1 max-w-sm items-center rounded-full px-4 py-2 bg-light-bg border border-zinc-200 transition-colors focus-within:border-primary-blue">
-            <Search className="w-4 h-4 text-zinc-500" />
-            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleSearch} className="bg-transparent border-none outline-none w-full ml-3 text-sm text-dark-text placeholder:text-zinc-400" />
-          </div>
+          <SearchInput />
 
           <div className="flex items-center gap-4 z-10">
-             <button onClick={() => navigate('/profile')} className="p-2 transition-colors hover:text-primary-blue text-charcoal">
+             <button onClick={() => navigate('/account/wishlist')} className="hidden md:flex items-center justify-center p-2 rounded-full hover:bg-zinc-100 transition-colors relative group">
                 <Heart className="w-5 h-5" />
              </button>
              <button onClick={() => setIsCartOpen(true)} className="p-2 relative transition-colors hover:text-primary-blue text-charcoal">
@@ -281,28 +337,43 @@ export default function Store() {
              </button>
              {user ? (
                <div className="relative ml-2">
-                 <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="w-9 h-9 rounded-full overflow-hidden border border-zinc-200 hover:border-primary-blue transition-colors bg-light-bg flex items-center justify-center">
-                   {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : <User className="w-4 h-4 text-zinc-500" />}
+                 <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="w-9 h-9 rounded-full overflow-hidden border border-zinc-200 hover:border-zinc-900 transition-colors flex items-center justify-center font-bold text-sm bg-zinc-900 text-white cursor-pointer shadow-sm">
+                   {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : (user.displayName ? user.displayName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'U')}
                  </button>
                  {isProfileMenuOpen && (
-                   <div className="absolute right-0 mt-3 w-56 rounded-xl shadow-xl py-2 bg-white border border-zinc-100">
+                   <div className="absolute right-0 mt-3 w-56 rounded-xl shadow-xl py-2 bg-white border border-zinc-100 animate-fade-in-up origin-top-right">
                       <div className="px-5 py-3 border-b border-zinc-100 mb-2">
-                        <p className="text-sm font-semibold truncate text-dark-text">{user.email}</p>
+                        <p className="text-sm font-semibold truncate text-zinc-900">{user.displayName || 'Customer'}</p>
+                        <p className="text-xs truncate text-zinc-500">{user.email}</p>
                       </div>
-                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-charcoal">My Account</button>
-                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-charcoal">Orders</button>
-                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-charcoal">Wishlist</button>
-                      {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} className="w-full text-left px-5 py-2.5 text-sm transition-colors hover:bg-light-bg text-primary-blue font-medium">Admin Dashboard</button>}
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">My Account</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/orders'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">My Orders</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/wishlist'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Wishlist</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/addresses'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Addresses</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/security'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Settings</button>
+                      {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-primary-blue font-medium">Admin Dashboard</button>}
                       <div className="h-px my-1 bg-zinc-100" />
-                      <button onClick={handleLogout} className="w-full text-left px-5 py-2.5 text-sm text-error hover:bg-red-50 transition-colors">Logout</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); handleLogout(); }} className="w-full text-left px-5 py-2 text-sm text-error hover:bg-red-50 transition-colors">Log Out</button>
                    </div>
                  )}
                </div>
              ) : (
-               <button onClick={handleLogin} className="flex items-center gap-2 p-2 hover:text-primary-blue transition-colors text-charcoal">
-                 <User className="w-5 h-5" />
-                 <span className="text-sm font-medium">Account</span>
-               </button>
+               <div className="relative ml-2">
+                 <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="flex items-center gap-2 p-2 hover:text-zinc-900 transition-colors text-zinc-600">
+                   <User className="w-5 h-5" />
+                   <span className="text-sm font-medium">Account</span>
+                 </button>
+                 {isProfileMenuOpen && (
+                   <div className="absolute right-0 mt-3 w-64 rounded-xl shadow-xl p-5 bg-white border border-zinc-100 animate-fade-in-up origin-top-right">
+                      <h3 className="text-sm font-black text-zinc-900 mb-1 tracking-tight">WELCOME TO SAJODA</h3>
+                      <p className="text-xs text-zinc-500 mb-4">Sign in to your account or create a new account.</p>
+                      <div className="space-y-2">
+                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/login'); }} className="w-full py-2.5 bg-zinc-900 text-white text-sm font-bold rounded-xl hover:bg-zinc-800 transition-colors shadow-sm">LOGIN</button>
+                        <button onClick={() => { setIsProfileMenuOpen(false); navigate('/register'); }} className="w-full py-2.5 bg-zinc-100 text-zinc-900 text-sm font-bold rounded-xl hover:bg-zinc-200 transition-colors">CREATE ACCOUNT</button>
+                      </div>
+                   </div>
+                 )}
+               </div>
              )}
           </div>
         </div>
@@ -320,8 +391,14 @@ export default function Store() {
           </div>
           
           <div className="flex items-center gap-1 -mr-2 z-10">
-            <button onClick={() => navigate('/profile')} className="p-2 text-charcoal hover:bg-light-bg rounded-full transition-colors">
-              <Heart className="w-5 h-5" />
+            <button onClick={() => user ? navigate('/account') : navigate('/login')} className="p-2 text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors relative overflow-hidden flex items-center justify-center">
+              {user ? (
+                <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-[10px] overflow-hidden">
+                  {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : (user.displayName ? user.displayName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'U')}
+                </div>
+              ) : (
+                <User className="w-5 h-5" />
+              )}
             </button>
             <button onClick={() => setIsCartOpen(true)} className="p-2 relative text-charcoal hover:bg-light-bg rounded-full transition-colors">
               <ShoppingBag className="w-5 h-5" />
@@ -330,16 +407,16 @@ export default function Store() {
           </div>
         </div>
         <div className={`px-4 transition-all duration-300 overflow-hidden ${scrollY > 50 ? 'h-0 opacity-0 pb-0' : 'h-[52px] pb-3 opacity-100'}`}>
-          <div className="flex items-center rounded-full px-4 py-2 bg-zinc-100 border border-transparent transition-colors focus-within:bg-white focus-within:border-primary-blue focus-within:shadow-sm">
-            <Search className="w-4 h-4 text-zinc-500" />
-            <input 
-              type="text" 
-              placeholder="Search premium electronics..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              onKeyDown={handleSearch} 
-              className="bg-transparent border-none outline-none w-full ml-2 text-sm text-dark-text placeholder:text-zinc-500" 
-            />
+          <div className="w-full flex items-center justify-between">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2 text-zinc-500 hover:bg-zinc-100 rounded-full transition-colors mr-2">
+               <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex-1" onClick={() => navigate('/search')}>
+               <div className="w-full py-2.5 px-4 bg-zinc-100 rounded-full flex items-center gap-2 text-zinc-500">
+                 <Search className="w-4 h-4" />
+                 <span className="text-sm">Search gadgets, appliances...</span>
+               </div>
+            </div>
           </div>
         </div>
       </header>
@@ -371,12 +448,21 @@ export default function Store() {
                   <div className="h-px bg-zinc-100 my-2" />
                   
                   {user ? (
-                     <button onClick={() => { setIsMobileMenuOpen(false); navigate('/profile'); }} className="text-left flex items-center gap-3">
-                        <User className="w-5 h-5 text-zinc-400" /> My Account
+                     <button onClick={() => { setIsMobileMenuOpen(false); navigate('/account'); }} className="text-left flex items-center gap-3 hover:bg-zinc-50 p-2 -ml-2 rounded-xl transition-colors w-full">
+                        <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm overflow-hidden shadow-sm shrink-0">
+                          {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : (user.displayName ? user.displayName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'U')}
+                        </div>
+                        <div className="flex flex-col items-start overflow-hidden">
+                          <span className="font-bold text-sm text-zinc-900 truncate w-full text-left">{user.displayName || 'My Account'}</span>
+                          <span className="text-xs text-zinc-500 truncate w-full text-left">{user.email}</span>
+                        </div>
                      </button>
                   ) : (
-                     <button onClick={() => { setIsMobileMenuOpen(false); navigate('/login'); }} className="text-left flex items-center gap-3">
-                        <User className="w-5 h-5 text-zinc-400" /> Login / Sign Up
+                     <button onClick={() => { setIsMobileMenuOpen(false); navigate('/login'); }} className="text-left flex items-center gap-3 hover:bg-zinc-50 p-2 -ml-2 rounded-xl transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-500 flex items-center justify-center shrink-0">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold text-sm">Login / Sign Up</span>
                      </button>
                   )}
                 </nav>
@@ -388,12 +474,48 @@ export default function Store() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/search" element={<Shop />} />
+          <Route path="/category/:slug" element={<Shop />} />
           <Route path="/categories" element={<Categories />} />
-          <Route path="/profile" element={<Profile />} />
+          
           <Route path="/ai" element={<Ai />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmation />} />
+          <Route path="/track-order" element={<TrackOrder />} />
+          
+          <Route path="/account" element={<AccountLayout />}>
+            <Route index element={<AccountDashboard />} />
+            <Route path="orders" element={<AccountOrders />} />
+            <Route path="orders/:orderId" element={<OrderDetails />} />
+            <Route path="wishlist" element={<AccountWishlist />} />
+            <Route path="addresses" element={<AccountAddresses />} />
+            <Route path="profile" element={<AccountProfile />} />
+            <Route path="security" element={<AccountSecurity />} />
+            <Route path="notifications" element={<AccountNotifications />} />
+          </Route>
+
           <Route path="/dropshipping" element={<Dropshipping />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="products/:id" element={<AdminProductForm />} />
+            <Route path="customers" element={<AdminCustomers />} />
+            <Route path="categories" element={<AdminComingSoon />} />
+            <Route path="inventory" element={<AdminComingSoon />} />
+            <Route path="cjdropshipping" element={<AdminComingSoon />} />
+            <Route path="discounts" element={<AdminComingSoon />} />
+            <Route path="shipping" element={<AdminComingSoon />} />
+            <Route path="homepage" element={<AdminComingSoon />} />
+            <Route path="reviews" element={<AdminComingSoon />} />
+            <Route path="marketing" element={<AdminComingSoon />} />
+            <Route path="analytics" element={<AdminComingSoon />} />
+            <Route path="notifications" element={<AdminComingSoon />} />
+            <Route path="settings" element={<AdminComingSoon />} />
+          </Route>
         </Routes>
       </main>
 
@@ -489,8 +611,11 @@ export default function Store() {
       {isCartOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black/50 transition-opacity" onClick={() => setIsCartOpen(false)} />
-          <div className="fixed inset-y-0 right-0 max-w-md w-full flex">
-            <div className="w-full h-full bg-white shadow-2xl flex flex-col translate-x-0 transition-transform transform">
+          <div className="fixed inset-x-0 bottom-0 md:inset-x-auto md:inset-y-0 md:right-0 max-w-md w-full flex justify-end">
+            <div className="w-full h-[90vh] md:h-full bg-white md:shadow-2xl flex flex-col rounded-t-[2rem] md:rounded-none translate-y-0 md:translate-x-0 transition-transform transform animate-slide-up md:animate-none border-t border-zinc-200 md:border-none shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+              <div className="md:hidden w-full flex justify-center pt-3 pb-1">
+                <div className="w-12 h-1.5 rounded-full bg-zinc-200" />
+              </div>
               {/* Drawer Header */}
               <div className="px-4 py-6 border-b border-zinc-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
