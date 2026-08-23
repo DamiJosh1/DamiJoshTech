@@ -76,3 +76,15 @@ body {
   color: var(--color-body-text, #3F3F46);
   -webkit-font-smoothing: antialiased;
 }
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+.tap-highlight-transparent {
+  -webkit-tap-highlight-color: transparent;
+}

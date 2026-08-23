@@ -1,3 +1,4 @@
+import { useStore } from '../StoreContext';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -5,6 +6,7 @@ import { db } from '../firebase';
 import { Search, Package, Truck, CheckCircle2, ChevronRight, AlertCircle, Copy, Check } from 'lucide-react';
 
 export default function TrackOrder() {
+  const { formatPrice } = useStore();
   const navigate = useNavigate();
   const [orderNumber, setOrderNumber] = useState('');
   const [email, setEmail] = useState('');
@@ -49,6 +51,7 @@ export default function TrackOrder() {
   };
 
   const copyTracking = () => {
+  const { formatPrice } = useStore();
     if (order?.trackingNumber) {
       navigator.clipboard.writeText(order.trackingNumber);
       setCopied(true);
@@ -57,6 +60,7 @@ export default function TrackOrder() {
   };
 
   const getStatusIndex = (status: string) => {
+  const { formatPrice } = useStore();
     const statuses = ['Pending Payment', 'Processing', 'Submitted to CJ', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
     const idx = statuses.indexOf(status);
     return idx === -1 ? 1 : idx; // Default to Processing if unknown
@@ -220,7 +224,7 @@ export default function TrackOrder() {
                     {order.items?.map((item: any, i: number) => (
                       <div key={i} className="flex justify-between text-sm">
                         <span className="text-zinc-600"><span className="font-semibold text-zinc-900">{item.quantity}x</span> {item.name}</span>
-                        <span className="font-semibold text-zinc-900">${(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-semibold text-zinc-900">{formatPrice((item.price * item.quantity))}</span>
                       </div>
                     ))}
                   </div>
@@ -229,19 +233,19 @@ export default function TrackOrder() {
                 <div className="pt-4 border-t border-zinc-100">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm text-zinc-600">Subtotal</span>
-                    <span className="text-sm font-semibold text-zinc-900">${order.subtotal?.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-zinc-900">{formatPrice(order.subtotal || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm text-zinc-600">Shipping</span>
-                    <span className="text-sm font-semibold text-zinc-900">{order.shippingCost === 0 ? 'Free' : `$${order.shippingCost?.toFixed(2)}`}</span>
+                    <span className="text-sm font-semibold text-zinc-900">{order.shippingCost === 0 ? 'Free' : `${formatPrice(order.shippingCost || 0)}`}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-sm text-zinc-600">Tax</span>
-                    <span className="text-sm font-semibold text-zinc-900">${order.tax?.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-zinc-900">{formatPrice(order.tax || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-zinc-900">Total</span>
-                    <span className="text-xl font-black text-zinc-900">${order.total?.toFixed(2)}</span>
+                    <span className="text-xl font-black text-zinc-900">{formatPrice(order.total || 0)}</span>
                   </div>
                 </div>
 

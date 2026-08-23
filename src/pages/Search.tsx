@@ -28,6 +28,24 @@ export default function SearchPage() {
   const [draftMaxPrice, setDraftMaxPrice] = useState(maxPriceParam || '');
   const [draftAvailability, setDraftAvailability] = useState(availabilityParam);
 
+  // Calculate drafted results count
+  const draftFilteredProducts = useMemo(() => {
+    let result = products;
+    if (query) {
+      const q = query.toLowerCase();
+      result = result.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    }
+    if (draftCategory && draftCategory !== 'All') {
+      result = result.filter(p => p.category === draftCategory);
+    }
+    if (draftMinPrice) result = result.filter(p => p.price >= Number(draftMinPrice));
+    if (draftMaxPrice) result = result.filter(p => p.price <= Number(draftMaxPrice));
+    if (draftAvailability === 'in-stock') result = result.filter(p => p.inventory > 0);
+    if (draftAvailability === 'out-of-stock') result = result.filter(p => p.inventory === 0);
+    return result;
+  }, [products, query, draftCategory, draftMinPrice, draftMaxPrice, draftAvailability]);
+
+
   useEffect(() => {
     // Simulate loading for better UX
     setLoading(true);
@@ -437,7 +455,7 @@ export default function SearchPage() {
                 }} 
                 className="flex-[2] py-4 bg-zinc-900 text-white rounded-xl text-sm font-bold active:scale-[0.98] transition-all shadow-lg shadow-zinc-900/20"
               >
-                APPLY FILTERS
+                SHOW {draftFilteredProducts.length} PRODUCTS
               </button>
             </div>
           </div>

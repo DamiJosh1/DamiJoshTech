@@ -1,9 +1,13 @@
 import React, { createContext, useContext } from 'react';
-import { Product, CartItem } from './types';
+import { Product, CartItem, Promotion, AppNotification, StoreCountry, StoreCurrency, ShippingMethod, TaxRule } from './types';
 import { User as FirebaseUser } from 'firebase/auth';
 
 export interface StoreContextType {
   products: Product[];
+  promotions: Promotion[];
+  activeCoupon: Promotion | null;
+  setActiveCoupon: (coupon: Promotion | null) => void;
+  cartDiscount: number;
   isDarkMode: boolean;
   user: FirebaseUser | null;
   wishlistIds: string[];
@@ -21,6 +25,20 @@ export interface StoreContextType {
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   clearCart: () => void;
+  notifications: AppNotification[];
+  unreadNotifications: number;
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  deleteNotification: (id: string) => void;
+  countries: StoreCountry[];
+  currencies: StoreCurrency[];
+  shippingMethods: ShippingMethod[];
+  taxRules: TaxRule[];
+  activeCountry: StoreCountry | null;
+  setActiveCountry: (c: StoreCountry | null) => void;
+  activeCurrency: StoreCurrency | null;
+  setActiveCurrency: (c: StoreCurrency | null) => void;
+  formatPrice: (amount: number) => string;
 }
 
 export const StoreContext = createContext<StoreContextType | null>(null);

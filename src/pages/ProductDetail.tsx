@@ -15,7 +15,7 @@ export default function ProductDetail() {
     addingToCartId,
     handleAddToCart,
     handleWishlistToggle,
-  } = useStore();
+  formatPrice, activeCurrency } = useStore();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -120,6 +120,29 @@ export default function ProductDetail() {
   return (
     <div className="w-full min-h-screen bg-white pb-24 lg:pb-12">
       <Lightbox />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            name: product.name,
+            image: galleryImages[0],
+            description: product.description,
+            sku: product.cjSku || product.id,
+            offers: {
+              "@type": "Offer",
+              url: `https://sajodaelectronics.com/product/${product.id}`,
+              priceCurrency: activeCurrency?.code || "USD",
+              price: product.price,
+              itemCondition: "https://schema.org/NewCondition",
+              availability: "https://schema.org/InStock"
+            }
+          })
+        }}
+      />
+
       
       {/* Breadcrumb - Desktop & Tablet */}
       <div className="hidden md:block max-w-[1440px] mx-auto px-6 md:px-8 py-6 border-b border-zinc-100">
@@ -153,8 +176,29 @@ export default function ProductDetail() {
 
         {/* LEFT COLUMN: IMAGES */}
         <div className="w-full lg:w-[55%] flex flex-col gap-4">
+          {/* Mobile Swipe Gallery */}
+          <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 gap-4" style={{ overscrollBehaviorX: 'contain' }}>
+            {galleryImages.map((img, idx) => (
+              <div 
+                key={idx} 
+                className="relative w-full aspect-square shrink-0 snap-center bg-zinc-100 cursor-zoom-in"
+                onClick={() => {
+                  setActiveImageIndex(idx);
+                  setIsLightboxOpen(true);
+                }}
+              >
+                <img 
+                  src={img} 
+                  alt={product.name} 
+                  className="w-full h-full object-cover object-center" 
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Single Image View */}
           <div 
-            className="relative w-full aspect-square md:rounded-2xl overflow-hidden bg-zinc-100 cursor-zoom-in group"
+            className="hidden md:block relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-100 cursor-zoom-in group"
             onClick={() => setIsLightboxOpen(true)}
           >
             <img 
@@ -220,12 +264,12 @@ export default function ProductDetail() {
 
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-extrabold text-zinc-900">
-                ${currentPrice.toFixed(2)}
+                {formatPrice(currentPrice)}
               </span>
               {originalPrice && originalPrice > currentPrice && (
                 <>
                   <span className="text-xl line-through text-zinc-400 font-medium">
-                    ${originalPrice.toFixed(2)}
+                    {formatPrice(originalPrice)}
                   </span>
                   <span className="px-2 py-1 rounded bg-error/10 text-error text-xs font-bold tracking-wider uppercase">
                     Save {Math.round((1 - currentPrice/originalPrice) * 100)}%
@@ -408,7 +452,7 @@ export default function ProductDetail() {
                   <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
                 <h3 className="text-sm font-semibold text-zinc-900 mb-1 line-clamp-2">{p.name}</h3>
-                <span className="text-sm font-bold text-zinc-900">${p.price.toFixed(2)}</span>
+                <span className="text-sm font-bold text-zinc-900">{formatPrice(p.price)}</span>
               </div>
             ))}
           </div>
@@ -416,10 +460,10 @@ export default function ProductDetail() {
       )}
 
       {/* Sticky Mobile Purchase Bar */}
-      <div className="md:hidden fixed bottom-16 lg:bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-zinc-200 p-4 z-40 flex items-center gap-4 animate-slide-up">
+      <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom))] inset-x-0 bg-white/90 backdrop-blur-md border-t border-zinc-200 p-4 z-40 flex items-center gap-4 animate-slide-up">
         <div className="flex flex-col flex-1">
           <span className="text-sm font-bold text-zinc-900 line-clamp-1">{product.name}</span>
-          <span className="text-sm font-semibold text-primary-blue">${currentPrice.toFixed(2)}</span>
+          <span className="text-sm font-semibold text-primary-blue">{formatPrice(currentPrice)}</span>
         </div>
         <button
           onClick={() => handleAddToCart(product, 1, selectedVariant)}

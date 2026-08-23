@@ -46,5 +46,43 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+    match /notification_preferences/{userId} {
+      allow read, write: if true;
+    }
+    match /email_logs/{logId} {
+      allow read, write: if true;
+    }
+    match /broadcasts/{broadcastId} {
+      allow read, write: if true;
+    }
+
+    match /countries/{countryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /currencies/{currencyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /shipping_methods/{methodId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /tax_rules/{ruleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+
+
   }
 }

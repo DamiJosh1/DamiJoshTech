@@ -2,7 +2,6 @@ import React, { useState, useContext, useRef, useEffect } from 'react';
 import { StoreContext } from '../StoreContext';
 import { Bot, User as UserIcon, Send, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { products } from '../data';
 
 const Ai = () => {
   const { isDarkMode, user } = useContext(StoreContext);

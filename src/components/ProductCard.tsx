@@ -4,14 +4,14 @@ import { ShoppingCart, Heart, Search, X, Check, Star } from 'lucide-react';
 import { Product } from '../types';
 import { useStore } from '../StoreContext';
 
-export default function ProductCard({ product }: { product: Product }) {
+const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
   const navigate = useNavigate();
   const { 
     handleWishlistToggle, 
     wishlistIds, 
     handleAddToCart, 
     addingToCartId 
-  } = useStore();
+  , formatPrice} = useStore();
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
   const isWishlisted = wishlistIds.includes(product.id);
@@ -94,10 +94,10 @@ export default function ProductCard({ product }: { product: Product }) {
             </h3>
             
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-bold text-zinc-900 md:text-lg">${product.price.toFixed(2)}</span>
+              <span className="font-bold text-zinc-900 md:text-lg">{formatPrice(product.price)}</span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <span className="text-sm font-medium text-zinc-400 line-through">
-                  ${product.originalPrice.toFixed(2)}
+                  {formatPrice(product.originalPrice)}
                 </span>
               )}
             </div>
@@ -163,10 +163,10 @@ export default function ProductCard({ product }: { product: Product }) {
               </h2>
               
               <div className="flex items-center gap-4 mb-6">
-                <span className="text-2xl font-black text-zinc-900">${product.price.toFixed(2)}</span>
+                <span className="text-2xl font-black text-zinc-900">{formatPrice(product.price)}</span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <span className="text-lg text-zinc-400 line-through">
-                    ${product.originalPrice.toFixed(2)}
+                    {formatPrice(product.originalPrice)}
                   </span>
                 )}
               </div>
@@ -206,3 +206,4 @@ export default function ProductCard({ product }: { product: Product }) {
     </>
   );
 }
+export default ProductCard;

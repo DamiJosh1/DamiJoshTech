@@ -14,7 +14,7 @@ export default function SearchInput({ onClose, isMobile }: SearchInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
-  const { products } = useStore();
+  const { products , formatPrice} = useStore();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -92,7 +92,7 @@ export default function SearchInput({ onClose, isMobile }: SearchInputProps) {
     <div ref={wrapperRef} className={`relative ${isMobile ? 'w-full' : 'flex-1 max-w-md'}`}>
       <form onSubmit={handleSearch} className={`flex items-center rounded-full px-4 py-2 transition-colors ${isMobile ? 'bg-zinc-100 border border-transparent' : 'bg-light-bg border border-zinc-200 focus-within:bg-white focus-within:border-primary-blue focus-within:shadow-sm'}`}>
         <Search className="w-4 h-4 text-zinc-500 shrink-0" />
-        <input 
+        <input autoFocus={isMobile}  
           ref={inputRef}
           type="text" 
           placeholder="Search gadgets, appliances and more..." 
@@ -141,7 +141,7 @@ export default function SearchInput({ onClose, isMobile }: SearchInputProps) {
                          </div>
                          <div className="flex-1 overflow-hidden">
                            <p className="text-sm font-bold text-zinc-900 truncate group-hover:text-primary-blue transition-colors">{p.name}</p>
-                           <p className="text-xs text-zinc-500 font-medium">${p.price.toFixed(2)}</p>
+                           <p className="text-xs text-zinc-500 font-medium">{formatPrice(p.price)}</p>
                          </div>
                          <ArrowRight className="w-4 h-4 text-zinc-300 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 transition-all" />
                        </button>

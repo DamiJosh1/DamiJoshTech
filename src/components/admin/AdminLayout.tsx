@@ -74,6 +74,7 @@ export default function AdminLayout() {
     { name: 'Analytics', path: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
     { name: 'Notifications', path: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
     { name: 'Settings', path: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
+    { name: 'System Health', path: '/admin/system-health', icon: <Shield className="w-5 h-5" /> },
   ];
 
   if (isAdmin === null) {

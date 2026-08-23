@@ -8,7 +8,7 @@ import { ChevronRight, ArrowLeft, Package, Truck, CheckCircle2, Copy, Check, Clo
 export default function OrderDetails() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { user } = useStore();
+  const { user , formatPrice} = useStore();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -186,7 +186,7 @@ export default function OrderDetails() {
                         <h4 className="text-sm font-bold text-zinc-900">{item.name}</h4>
                         <span className="text-xs text-zinc-500 font-medium">Qty: {item.quantity}</span>
                       </div>
-                      <span className="text-sm font-bold text-zinc-900">${(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="text-sm font-bold text-zinc-900">{formatPrice((item.price * item.quantity))}</span>
                     </div>
                   ))}
                 </div>
@@ -221,19 +221,19 @@ export default function OrderDetails() {
                 <div className="pt-2 border-t border-zinc-100">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-zinc-600">Subtotal</span>
-                    <span className="text-sm font-semibold text-zinc-900">${order.subtotal?.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-zinc-900">{formatPrice(order.subtotal || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-zinc-600">Shipping</span>
-                    <span className="text-sm font-semibold text-zinc-900">{order.shippingCost === 0 ? 'Free' : `$${order.shippingCost?.toFixed(2)}`}</span>
+                    <span className="text-sm font-semibold text-zinc-900">{order.shippingCost === 0 ? 'Free' : `${formatPrice(order.shippingCost || 0)}`}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4 pb-4 border-b border-zinc-100">
                     <span className="text-sm text-zinc-600">Tax</span>
-                    <span className="text-sm font-semibold text-zinc-900">${order.tax?.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-zinc-900">{formatPrice(order.tax || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-zinc-900">Total</span>
-                    <span className="text-xl font-black text-zinc-900">${order.total?.toFixed(2)}</span>
+                    <span className="text-xl font-black text-zinc-900">{formatPrice(order.total || 0)}</span>
                   </div>
                 </div>
               </div>

@@ -1,11 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowRight, ShieldCheck, ShoppingBag, Heart } from 'lucide-react';
 import { useStore } from '../StoreContext';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { cartItems, cartTotal, updateQuantity, removeFromCart, handleWishlistToggle, wishlistIds } = useStore();
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState('');
+
+  const { cartItems, cartTotal, cartDiscount, activeCoupon, updateQuantity, removeFromCart, handleWishlistToggle, wishlistIds , formatPrice} = useStore();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -126,6 +130,12 @@ export default function Cart() {
                   <span>Subtotal</span>
                   <span className="font-semibold text-zinc-900">${cartTotal.toFixed(2)}</span>
                 </div>
+                {cartDiscount > 0 && (
+                  <div className="flex justify-between text-error font-medium">
+                    <span>Discount {activeCoupon ? `(${activeCoupon.code})` : ''}</span>
+                    <span>-${cartDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-zinc-600">
                   <span>Estimated Shipping</span>
                   <span className="font-semibold text-zinc-900">{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>

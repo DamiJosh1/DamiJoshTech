@@ -1,3 +1,4 @@
+import Footer from "./components/Footer";
 import Preloader from './Preloader';
 import Logo from './Logo';
 /**
@@ -7,18 +8,19 @@ import Logo from './Logo';
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
-import { ShoppingBag, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye, LayoutDashboard } from 'lucide-react';
+import { ShoppingBag, Zap, Bell, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye, LayoutDashboard } from 'lucide-react';
 import { usePaystackPayment } from 'react-paystack';
-import { collection, addDoc, serverTimestamp, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, onSnapshot, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from './firebase';
-import { Product, CartItem } from './types';
+import { Product, CartItem, Promotion, AppNotification, StoreCountry, StoreCurrency, ShippingMethod, TaxRule } from './types';
 import { StoreContext } from './StoreContext';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import Categories from './pages/Categories';
 import Profile from './pages/Profile';
 import Ai from './pages/Ai';
+import Deals from './pages/Deals';
 import ProductDetail from './pages/ProductDetail';
 import Dropshipping from './pages/Dropshipping';
 import Cart from './pages/Cart';
@@ -39,14 +41,22 @@ import AccountWishlist from './pages/account/AccountWishlist';
 import AccountAddresses from './pages/AccountAddresses';
 import AccountSecurity from './pages/account/AccountSecurity';
 import AccountNotifications from './pages/account/AccountNotifications';
+import AccountNotificationPreferences from './pages/account/AccountNotificationPreferences';
 import AdminComingSoon from './pages/admin/AdminComingSoon';
+import AdminCommunications from './pages/admin/AdminCommunications';
+import AdminDiscounts from './pages/admin/AdminDiscounts';
+import AdminDiscountForm from './pages/admin/AdminDiscountForm';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminProductForm from './pages/admin/AdminProductForm';
+import ContentPage from './pages/ContentPage';
+import NotFound from './pages/NotFound';
+import AdminSystemHealth from './pages/admin/AdminSystemHealth';
 import AdminLayout from './components/admin/AdminLayout';
 
 
 import SearchInput from './components/SearchInput';
 import MobileBottomNav from './components/MobileBottomNav';
+import PWAPrompt from './components/PWAPrompt';
 
 export default function Store() {
   const navigate = useNavigate();
@@ -58,10 +68,96 @@ export default function Store() {
     }
   };
   const [isDarkMode, setIsDarkMode] = useState(true);
+
+  const [countries, setCountries] = useState<StoreCountry[]>([]);
+  const [currencies, setCurrencies] = useState<StoreCurrency[]>([]);
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [taxRules, setTaxRules] = useState<TaxRule[]>([]);
+  const [activeCountry, setActiveCountry] = useState<StoreCountry | null>(null);
+  const [activeCurrency, setActiveCurrency] = useState<StoreCurrency | null>(null);
+
+  // Load international data
+  useEffect(() => {
+    const unsubCountries = onSnapshot(collection(db, 'countries'), (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as StoreCountry));
+      setCountries(docs);
+      if (docs.length > 0 && !activeCountry) {
+        setActiveCountry(docs.find(c => c.active) || docs[0]);
+      }
+    });
+
+    const unsubCurrencies = onSnapshot(collection(db, 'currencies'), (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as StoreCurrency));
+      setCurrencies(docs);
+      if (docs.length > 0 && !activeCurrency) {
+        setActiveCurrency(docs.find(c => c.code === 'USD') || docs[0]);
+      }
+    });
+
+    const unsubShipping = onSnapshot(collection(db, 'shipping_methods'), (snapshot) => {
+      setShippingMethods(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ShippingMethod)));
+    });
+
+    const unsubTaxes = onSnapshot(collection(db, 'tax_rules'), (snapshot) => {
+      setTaxRules(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TaxRule)));
+    });
+
+    return () => {
+      unsubCountries();
+      unsubCurrencies();
+      unsubShipping();
+      unsubTaxes();
+    };
+  }, []);
+
   const [user, setUser] = useState<FirebaseUser | null>(null);
+
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const unreadNotifications = notifications.filter(n => !n.read).length;
+
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs: AppNotification[] = [];
+      snapshot.forEach(doc => {
+        notifs.push({ id: doc.id, ...doc.data() } as AppNotification);
+      });
+      setNotifications(notifs);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, "notifications", id), { read: true });
+    } catch(err) { console.error(err) }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    const unread = notifications.filter(n => !n.read);
+    for (const notif of unread) {
+      if (notif.id) {
+         try {
+           await updateDoc(doc(db, "notifications", notif.id), { read: true });
+         } catch(err) {}
+      }
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "notifications", id));
+    } catch(err) { console.error(err) }
+  };
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const location = useLocation();
+  const isCheckout = location.pathname.startsWith('/checkout');
   const getActiveTab = () => {
     const path = location.pathname;
     if (path === '/') return 'home';
@@ -95,6 +191,9 @@ export default function Store() {
   }, [user]);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [activeCoupon, setActiveCoupon] = useState<Promotion | null>(null);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'details' | 'payment'>('cart');
@@ -148,7 +247,19 @@ export default function Store() {
     }, (error) => {
       console.error("Firestore connection error:", error);
     });
-    return () => unsub();
+
+    const unsubPromotions = onSnapshot(collection(db, 'promotions'), (snapshot) => {
+      const fetchedPromotions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Promotion));
+      setPromotions(fetchedPromotions);
+    }, (error) => {
+      console.error("Firestore promotions connection error:", error);
+    });
+    
+    return () => {
+      unsub();
+      unsubPromotions();
+    };
+
   }, []);
 
   const handleLogin = () => {
@@ -159,7 +270,28 @@ export default function Store() {
     signOut(auth);
   };
 
-  const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // Calculate discount
+  let cartDiscount = 0;
+  if (activeCoupon) {
+    if (activeCoupon.discountType === 'percentage') {
+      cartDiscount = cartSubtotal * (activeCoupon.discountValue / 100);
+    } else if (activeCoupon.discountType === 'fixed') {
+      cartDiscount = activeCoupon.discountValue;
+    }
+  }
+  
+  // Handle automatic promotions later if needed...
+  
+  // Ensure discount doesn't exceed subtotal
+  if (cartDiscount > cartSubtotal) {
+    cartDiscount = cartSubtotal;
+  }
+  
+  const cartTotal = cartSubtotal - cartDiscount;
+
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   // Paystack Config
@@ -279,6 +411,15 @@ export default function Store() {
   };
 
   const handleAddToCart = addToCart;
+
+  const formatPrice = (amount: number) => {
+    if (!activeCurrency) {
+      return "$" + amount.toFixed(2);
+    }
+    const converted = amount * activeCurrency.exchangeRate;
+    return activeCurrency.symbol + converted.toFixed(activeCurrency.decimalPrecision);
+  };
+
   const removeFromCart = (id: string) => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
@@ -302,16 +443,31 @@ export default function Store() {
     removeFromCart,
     isCartOpen,
     setIsCartOpen,
-    clearCart
+    clearCart,
+    notifications,
+    unreadNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    deleteNotification,
+    countries,
+    currencies,
+    shippingMethods,
+    taxRules,
+    activeCountry,
+    setActiveCountry,
+    activeCurrency,
+    setActiveCurrency,
+    formatPrice
   };
 
   return (
     <StoreContext.Provider value={storeState}>
       <Preloader isDarkMode={isDarkMode} />
-    <div className="min-h-screen font-sans flex flex-col text-dark-text bg-light-bg pb-20 lg:pb-0">
+    <div className="min-h-screen font-sans flex flex-col text-dark-text bg-light-bg pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-0">
       
                   {/* Desktop Header */}
-      <header className="hidden lg:block sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 transition-all">
+      {!isCheckout && (
+        <header className="hidden lg:block sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 transition-all">
         <div className="max-w-[1440px] mx-auto px-8 h-[80px] flex items-center justify-between gap-6">
           <button onClick={() => navigate('/')} className="z-10 hover:opacity-80 transition-opacity">
             <Logo className="h-8" variant="full" />
@@ -353,6 +509,7 @@ export default function Store() {
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/security'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Settings</button>
                       {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-primary-blue font-medium">Admin Dashboard</button>}
                       <div className="h-px my-1 bg-zinc-100" />
+                     {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsMobileMenuOpen(false); navigate('/admin'); }} className="text-left text-primary-blue font-bold transition-colors mt-2 p-2 -ml-2">Admin Dashboard</button>}
                       <button onClick={() => { setIsProfileMenuOpen(false); handleLogout(); }} className="w-full text-left px-5 py-2 text-sm text-error hover:bg-red-50 transition-colors">Log Out</button>
                    </div>
                  )}
@@ -378,20 +535,30 @@ export default function Store() {
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile Top Navbar */}
-      <header className="lg:hidden sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200">
+      {!isCheckout && (
+        <header className="lg:hidden sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 pt-safe">
         <div className="w-full h-[60px] px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 z-10">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-1 -ml-1 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors">
-              <Menu className="w-6 h-6" />
+          <button onClick={() => navigate('/')} className="z-10" aria-label="Home">
+            <Logo className="h-6" variant="full" />
+          </button>
+          <div className="flex items-center gap-1 z-10">
+            <button onClick={() => navigate('/search')} className="p-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Search">
+              <Search className="w-5 h-5" />
             </button>
-            <button onClick={() => navigate('/')}>
-              <Logo className="h-5" variant="full" />
+            <button onClick={() => navigate('/account')} className="p-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Profile">
+              <User className="w-5 h-5" />
+            </button>
+            <button onClick={() => setIsCartOpen(true)} className="p-2 relative transition-colors hover:bg-zinc-100 rounded-full text-zinc-800" aria-label="Cart">
+              <ShoppingBag className="w-5 h-5" />
+              {cartCount > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary-blue text-white text-[9px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">{cartCount}</span>}
             </button>
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
@@ -409,7 +576,7 @@ export default function Store() {
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/categories'); }} className="text-left hover:text-primary-blue">Categories</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=new'); }} className="text-left hover:text-primary-blue">New Arrivals</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=best'); }} className="text-left hover:text-primary-blue">Best Sellers</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=deals'); }} className="text-left text-error hover:text-primary-blue">Deals</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/deals'); }} className="text-left text-error hover:text-primary-blue flex items-center gap-2"><Zap className="w-4 h-4" /> Deals</button>
                   
                   <div className="h-px bg-zinc-100 my-2" />
                   
@@ -430,6 +597,7 @@ export default function Store() {
                           <span className="text-xs text-zinc-500 truncate w-full text-left">{user.email}</span>
                         </div>
                      </button>
+                     {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsMobileMenuOpen(false); navigate('/admin'); }} className="text-left text-primary-blue font-bold transition-colors mt-2 p-2 -ml-2">Admin Dashboard</button>}
                      <button onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} className="text-left text-error hover:text-red-600 font-bold transition-colors mt-2 p-2 -ml-2">Log Out</button>
                      </>
                   ) : (
@@ -448,6 +616,7 @@ export default function Store() {
 <main className="flex-1 flex flex-col w-full min-h-screen">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/deals" element={<Deals />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/search" element={<Shop />} />
           <Route path="/category/:slug" element={<Shop />} />
@@ -469,8 +638,23 @@ export default function Store() {
             <Route path="profile" element={<AccountProfile />} />
             <Route path="security" element={<AccountSecurity />} />
             <Route path="notifications" element={<AccountNotifications />} />
+            <Route path="notifications/preferences" element={<AccountNotificationPreferences />} />
           </Route>
 
+          
+          <Route path="/help" element={<ContentPage />} />
+          <Route path="/faq" element={<ContentPage />} />
+          <Route path="/contact" element={<ContentPage />} />
+          <Route path="/shipping" element={<ContentPage />} />
+          <Route path="/returns" element={<ContentPage />} />
+          <Route path="/privacy" element={<ContentPage />} />
+          <Route path="/terms" element={<ContentPage />} />
+                    <Route path="/about" element={<ContentPage />} />
+          <Route path="/why-sajoda" element={<ContentPage />} />
+          <Route path="/careers" element={<ContentPage />} />
+          <Route path="/cookies" element={<ContentPage />} />
+          <Route path="/warranty" element={<ContentPage />} />
+          
           <Route path="/dropshipping" element={<Dropshipping />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
@@ -482,15 +666,20 @@ export default function Store() {
             <Route path="categories" element={<AdminComingSoon />} />
             <Route path="inventory" element={<AdminComingSoon />} />
             <Route path="cjdropshipping" element={<AdminComingSoon />} />
-            <Route path="discounts" element={<AdminComingSoon />} />
+            <Route path="discounts" element={<AdminDiscounts />} />
+            <Route path="discounts/new" element={<AdminDiscountForm />} />
             <Route path="shipping" element={<AdminComingSoon />} />
             <Route path="homepage" element={<AdminComingSoon />} />
             <Route path="reviews" element={<AdminComingSoon />} />
             <Route path="marketing" element={<AdminComingSoon />} />
+
             <Route path="analytics" element={<AdminComingSoon />} />
-            <Route path="notifications" element={<AdminComingSoon />} />
+            <Route path="notifications" element={<AdminCommunications />} />
             <Route path="settings" element={<AdminComingSoon />} />
+            <Route path="system-health" element={<AdminSystemHealth />} />
+
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
@@ -543,44 +732,7 @@ export default function Store() {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="relative bg-zinc-950 border-t border-zinc-800 text-zinc-300 py-16 text-sm overflow-hidden z-10 p-4">
-        {/* Animated Gadgets Slideshow */}
-        <div className="absolute inset-0 bg-zinc-950 pointer-events-none"></div>
-        <div className="absolute inset-0 slide-1 bg-[url('https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
-        <div className="absolute inset-0 slide-2 bg-[url('https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
-        <div className="absolute inset-0 slide-3 bg-[url('https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
-        <div className="absolute inset-0 slide-4 bg-[url('https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?auto=format&fit=crop&q=80&w=1920')] bg-cover bg-center pointer-events-none opacity-0"></div>
-        
-        <div className="relative max-w-7xl mx-auto px-8 py-12 sm:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 z-10 bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
-          <div className="col-span-1 md:col-span-2">
-            <Logo variant="full" className="h-6" />
-            <p className="max-w-xs leading-relaxed drop-shadow-md font-medium">
-              Curating the best modern essentials for a seamless lifestyle. Quality, design, and function in every detail.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-white font-medium mb-4">Support</h4>
-            <ul className="space-y-3">
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Track Order</button></li>
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Returns & Exchanges</button></li>
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Shipping Info</button></li>
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Contact Us</button></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-medium mb-4">Legal</h4>
-            <ul className="space-y-3">
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Privacy Policy</button></li>
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Terms of Service</button></li>
-              <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Refund Policy</button></li>
-            </ul>
-          </div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-8 py-6 mt-8 sm:px-12 flex flex-col md:flex-row items-center justify-between gap-4 z-10 bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
-          <p className="drop-shadow-md font-medium text-white">&copy; 2026 VoraTech. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Cart Drawer */}
       {isCartOpen && (
@@ -642,9 +794,9 @@ export default function Store() {
                           <div className="flex-1 flex flex-col">
                             <div className="flex justify-between gap-2">
                               <h3 className="text-sm font-medium text-zinc-900 line-clamp-2">{item.name}</h3>
-                              <p className="text-sm font-medium text-zinc-900 shrink-0">${(item.price * item.quantity).toFixed(2)}</p>
+                              <p className="text-sm font-medium text-zinc-900 shrink-0">{formatPrice((item.price * item.quantity))}</p>
                             </div>
-                            <p className="text-sm text-zinc-500 mt-1">${item.price.toFixed(2)} each</p>
+                            <p className="text-sm text-zinc-500 mt-1">{formatPrice(item.price)} each</p>
                             
                             <div className="flex items-center justify-between mt-auto">
                               <div className="flex items-center border border-zinc-200">
@@ -737,7 +889,7 @@ export default function Store() {
                     <div className="bg-zinc-50 p-4 border border-zinc-200">
                       <div className="flex justify-between mb-2 text-sm">
                         <span className="text-zinc-600">Total to pay:</span>
-                        <span className="font-semibold text-zinc-900">${cartTotal.toFixed(2)} USD</span>
+                        <span className="font-semibold text-zinc-900">{formatPrice(cartTotal)} USD</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-600">Email:</span>
@@ -760,7 +912,7 @@ export default function Store() {
                 <div className="border-t border-zinc-200 p-4 bg-zinc-50 shrink-0">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-base font-medium text-zinc-900">Subtotal</span>
-                    <span className="text-lg font-semibold text-zinc-900">${cartTotal.toFixed(2)}</span>
+                    <span className="text-lg font-semibold text-zinc-900">{formatPrice(cartTotal)}</span>
                   </div>
                   <p className="text-sm text-zinc-500 mb-6">Shipping and taxes calculated at checkout.</p>
                   <button 
@@ -787,7 +939,8 @@ export default function Store() {
         </div>
       )}
     </div>
-      <MobileBottomNav cartCount={cartCount} />
+      <MobileBottomNav />
+      <PWAPrompt />
     </StoreContext.Provider>
   );
 }

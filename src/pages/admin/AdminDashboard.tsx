@@ -5,7 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { 
   DollarSign, ShoppingCart, Users, Package, ArrowUpRight, ArrowDownRight, 
   TrendingUp, Activity, CreditCard
-} from 'lucide-react';
+, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface DashboardStats {

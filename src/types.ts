@@ -58,3 +58,121 @@ export interface CartItem {
   variantSnapshot?: ProductVariant;
   createdAt: string;
 }
+
+export interface Promotion {
+  id?: string;
+  name: string;
+  description?: string;
+  type: 'coupon' | 'flash_sale' | 'automatic' | 'free_shipping';
+  code?: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  startDate: any; // Firestore Timestamp
+  endDate: any; // Firestore Timestamp
+  status: 'active' | 'scheduled' | 'paused' | 'expired' | 'draft';
+  usageLimit?: number;
+  currentUsage: number;
+  minOrderValue?: number;
+  applicableProducts?: string[];
+  applicableCategories?: string[];
+  customerEligibility?: 'all' | 'specific' | 'first_order';
+  isStackable: boolean;
+  createdAt?: any;
+}
+
+export type NotificationType = 
+  | 'ORDER_CONFIRMED'
+  | 'PAYMENT_CONFIRMED'
+  | 'PAYMENT_FAILED'
+  | 'ORDER_PROCESSING'
+  | 'ORDER_SHIPPED'
+  | 'ORDER_OUT_FOR_DELIVERY'
+  | 'ORDER_DELIVERED'
+  | 'ORDER_CANCELLED'
+  | 'REFUND_REQUESTED'
+  | 'REFUND_APPROVED'
+  | 'REFUND_COMPLETED'
+  | 'RETURN_REQUESTED'
+  | 'RETURN_APPROVED'
+  | 'RETURN_REJECTED'
+  | 'PASSWORD_CHANGED'
+  | 'EMAIL_CHANGED'
+  | 'SECURITY_ALERT'
+  | 'PROMOTION'
+  | 'BACK_IN_STOCK'
+  | 'PRICE_ALERT';
+
+export interface AppNotification {
+  id?: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  link?: string;
+  createdAt: any;
+}
+
+export interface NotificationPreferences {
+  userId: string;
+  orderUpdates: boolean;
+  promotions: boolean;
+  securityAlerts: boolean;
+  newProducts: boolean;
+}
+
+export interface EmailLog {
+  id?: string;
+  recipient: string;
+  type: string;
+  subject: string;
+  status: 'queued' | 'sending' | 'sent' | 'delivered' | 'failed' | 'bounced';
+  sentAt: any;
+  error?: string;
+}
+
+export interface BroadcastCampaign {
+  id?: string;
+  name: string;
+  subject: string;
+  message: string;
+  audience: 'all' | 'customers' | 'segment';
+  status: 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED' | 'FAILED';
+  sendDate?: any;
+  createdAt: any;
+}
+
+export interface StoreCountry {
+  id?: string;
+  code: string;
+  name: string;
+  active: boolean;
+  currencyCode: string;
+}
+
+export interface StoreCurrency {
+  id?: string;
+  code: string;
+  symbol: string;
+  active: boolean;
+  exchangeRate: number; // relative to base currency (USD)
+  decimalPrecision: number;
+}
+
+export interface ShippingMethod {
+  id?: string;
+  name: string;
+  type: 'standard' | 'express' | 'economy';
+  price: number;
+  minDays: number;
+  maxDays: number;
+  countryCodes: string[]; // which countries this applies to
+  active: boolean;
+}
+
+export interface TaxRule {
+  id?: string;
+  countryCode: string;
+  ratePercentage: number;
+  active: boolean;
+}

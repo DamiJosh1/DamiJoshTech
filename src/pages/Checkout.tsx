@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../StoreContext';
+import Logo from '../Logo';
 import { ShieldCheck, ArrowRight, Lock, CheckCircle2, ChevronRight, Check, CreditCard } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, updateDoc, doc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, cartTotal, user, clearCart } = useStore();
+  const { cartItems, cartTotal, cartDiscount, activeCoupon, user, clearCart, formatPrice, countries, shippingMethods, taxRules, activeCountry, activeCurrency } = useStore();
   
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [contactData, setContactData] = useState({ email: user?.email || '', phone: '' });
   const [shippingData, setShippingData] = useState({
     firstName: '', lastName: '', address: '', apartment: '',
-    city: '', state: '', zip: '', country: 'US'
+    city: '', state: '', zip: '', country: activeCountry?.code || 'US'
   });
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('card');
@@ -24,9 +25,27 @@ export default function Checkout() {
     window.scrollTo(0, 0);
   }, [step]);
 
-  const tax = cartTotal * 0.08;
-  const shippingCost = shippingMethod === 'express' ? 25 : (cartTotal > 100 ? 0 : 15);
+
+  // Filter shipping methods by selected country
+  const availableShippingMethods = shippingMethods.filter(m => m.active && m.countryCodes.includes(shippingData.country));
+  
+  // Set default shipping method if current one is not available
+  useEffect(() => {
+    if (availableShippingMethods.length > 0 && !availableShippingMethods.find(m => m.id === shippingMethod)) {
+      setShippingMethod(availableShippingMethods[0].id as string);
+    }
+  }, [shippingData.country, availableShippingMethods, shippingMethod]);
+
+  const selectedShipping = availableShippingMethods.find(m => m.id === shippingMethod);
+  const shippingCost = selectedShipping ? selectedShipping.price : 0;
+
+  // Calculate tax
+  const taxRule = taxRules.find(t => t.active && t.countryCode === shippingData.country);
+  const taxRate = taxRule ? taxRule.ratePercentage / 100 : 0;
+  const tax = cartTotal * taxRate;
+
   const finalTotal = cartTotal + tax + shippingCost;
+
 
   if (cartItems.length === 0) {
     return (
@@ -54,12 +73,11 @@ export default function Checkout() {
       
       const orderData = {
         orderNumber: orderId,
-        customerId: user?.uid || 'guest',
+        customerId: user?.uid || "guest",
         contact: contactData,
         customerEmail: contactData.email,
         customerName: `${contactData.firstName} ${contactData.lastName}`.trim(),
         customerPhone: contactData.phone,
-        totalAmount: finalTotal,
         shippingAddress: shippingData,
         shippingMethod,
         items: cartItems.map(i => ({
@@ -70,18 +88,47 @@ export default function Checkout() {
           variantId: i.variantId || null
         })),
         subtotal: cartTotal,
+        discount: cartDiscount,
+        couponCode: activeCoupon ? activeCoupon.code : null,
         tax,
         shippingCost,
-        total: finalTotal,
-        currency: 'USD',
-        status: 'Processing',
-        paymentStatus: 'Paid',
-        fulfillmentStatus: 'Submitted to CJ',
+        totalAmount: finalTotal,
+        currency: activeCurrency?.code || "USD",
+        status: "Processing",
+        paymentStatus: "Paid",
+        fulfillmentStatus: "Submitted to CJ",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
       await addDoc(collection(db, 'orders'), orderData);
+      if (user) {
+        try {
+          await addDoc(collection(db, 'notifications'), {
+            userId: user.uid,
+            type: 'ORDER_CONFIRMED',
+            title: 'Order Confirmed',
+            message: `Your order #${orderId} has been confirmed.`,
+            read: false,
+            link: '/account/orders',
+            createdAt: serverTimestamp()
+          });
+          await addDoc(collection(db, 'email_logs'), {
+            recipient: contactData.email,
+            type: 'ORDER_CONFIRMED',
+            subject: `Order Confirmation - #${orderId}`,
+            status: 'sent',
+            sentAt: serverTimestamp()
+          });
+        } catch(e) { console.error(e) }
+      }
+      
+      // Update coupon usage if applicable
+      if (activeCoupon && activeCoupon.id) {
+        await updateDoc(doc(db, 'promotions', activeCoupon.id), {
+          currentUsage: increment(1)
+        });
+      }
       
       clearCart();
       navigate(`/order-confirmation/${orderId}`);
@@ -284,7 +331,7 @@ export default function Checkout() {
                   disabled={isProcessing}
                   className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-xl active:scale-[0.98] ${isProcessing ? 'bg-zinc-400 text-white cursor-not-allowed' : 'bg-zinc-900 hover:bg-zinc-800 text-white shadow-zinc-900/20'}`}
                 >
-                  {isProcessing ? 'Processing Securely...' : `Pay $${finalTotal.toFixed(2)}`}
+                  {isProcessing ? 'Processing Securely...' : `Pay ${formatPrice(finalTotal)}`}
                   {!isProcessing && <Lock className="w-4 h-4" />}
                 </button>
               </div>
@@ -308,7 +355,7 @@ export default function Checkout() {
                     <h4 className="text-sm font-bold text-zinc-900 line-clamp-1">{item.productSnapshot.name}</h4>
                     {item.variantSnapshot && <span className="text-xs text-zinc-500">{item.variantSnapshot.name}</span>}
                   </div>
-                  <span className="text-sm font-bold text-zinc-900 shrink-0">${(item.unitPrice * item.quantity).toFixed(2)}</span>
+                  <span className="text-sm font-bold text-zinc-900 shrink-0">{formatPrice(item.unitPrice * item.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -316,21 +363,27 @@ export default function Checkout() {
             <div className="flex flex-col gap-3 py-6 border-y border-zinc-200 text-sm mb-6">
               <div className="flex justify-between text-zinc-600">
                 <span>Subtotal</span>
-                <span className="font-semibold text-zinc-900">${cartTotal.toFixed(2)}</span>
+                <span className="font-semibold text-zinc-900">{formatPrice(cartTotal)}</span>
               </div>
+              {cartDiscount > 0 && (
+                <div className="flex justify-between text-error font-medium">
+                  <span>Discount {activeCoupon ? `(${activeCoupon.code})` : ''}</span>
+                  <span>-{formatPrice(cartDiscount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-zinc-600">
                 <span>Shipping</span>
-                <span className="font-semibold text-zinc-900">{shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}</span>
+                <span className="font-semibold text-zinc-900">{shippingCost === 0 ? 'Free' : `${formatPrice(shippingCost)}`}</span>
               </div>
               <div className="flex justify-between text-zinc-600">
                 <span>Estimated Tax</span>
-                <span className="font-semibold text-zinc-900">${tax.toFixed(2)}</span>
+                <span className="font-semibold text-zinc-900">{formatPrice(tax)}</span>
               </div>
             </div>
 
             <div className="flex justify-between items-center mb-8">
               <span className="text-base font-bold text-zinc-900">Total</span>
-              <span className="text-2xl font-extrabold text-zinc-900">${finalTotal.toFixed(2)}</span>
+              <span className="text-2xl font-extrabold text-zinc-900">{formatPrice(finalTotal)}</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 justify-center bg-white p-4 rounded-xl border border-zinc-200">

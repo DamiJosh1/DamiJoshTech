@@ -5,7 +5,7 @@ import { ShoppingCart, Heart, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function AccountWishlist() {
-  const { products, wishlistIds, handleWishlistToggle, handleAddToCart } = useStore();
+  const { products, wishlistIds, handleWishlistToggle, handleAddToCart , formatPrice} = useStore();
   const navigate = useNavigate();
 
   const wishlistProducts = products.filter(p => wishlistIds.includes(p.id));
@@ -52,10 +52,10 @@ export default function AccountWishlist() {
                     {product.name}
                   </h3>
                   <div className="flex items-center gap-2 mb-4">
-                    <span className="font-bold text-lg">${product.price.toFixed(2)}</span>
+                    <span className="font-bold text-lg">{formatPrice(product.price)}</span>
                     {product.originalPrice && (
                       <span className="text-sm text-zinc-400 line-through">
-                        ${product.originalPrice.toFixed(2)}
+                        {formatPrice(product.originalPrice)}
                       </span>
                     )}
                   </div>
