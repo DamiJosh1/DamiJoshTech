@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, Search, Heart, ShoppingBag, Grid } from 'lucide-react';
+import { Home, Search, Heart, ShoppingBag, Grid, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../StoreContext';
 
@@ -25,9 +25,8 @@ export default function MobileBottomNav() {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'shop', icon: Grid, label: 'Shop', path: '/shop' },
-    { id: 'search', icon: Search, label: 'Search', path: '/search' },
-    { id: 'wishlist', icon: Heart, label: 'Wishlist', path: '/account/wishlist', badge: wishlistCount },
     { id: 'cart', icon: ShoppingBag, label: 'Cart', path: '/cart', badge: cartCount },
+    { id: 'account', icon: User, label: 'Account', path: '/account' },
   ];
 
     if (location.pathname.startsWith('/checkout')) return null;
@@ -53,7 +52,7 @@ export default function MobileBottomNav() {
               <div className={`relative flex items-center justify-center p-1.5 rounded-xl transition-all duration-300 ${isActive ? 'text-primary-blue bg-blue-50/50' : 'text-zinc-500'}`}>
                 <Icon className={`w-6 h-6 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-active:scale-90'}`} strokeWidth={isActive ? 2.5 : 2} />
                 
-                {item.badge > 0 && (
+                {item.badge !== undefined && item.badge > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-blue text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
                     {item.badge}
                   </span>

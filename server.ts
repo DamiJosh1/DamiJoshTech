@@ -230,17 +230,20 @@ app.post('/api/chat', async (req, res) => {
       : `You are a helpful AI shopping assistant for VoraTech. Help the customer, ${userName || 'there'}, find tech products, compare features, and learn about the latest gadgets. Be friendly, concise, and helpful. Do not mention internal store operations. Use Google Search if asked about recent tech news or reviews.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.6-flash",
       contents: message,
       config: {
         systemInstruction,
-        tools: [{ googleSearch: {} }],
+         
       }
     });
 
     res.json({ text: response.text });
   } catch (error: any) {
     console.error('Gemini API Error:', error);
+    if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('quota')) {
+        return res.json({ text: "I'm currently receiving too many requests. Please try again in a few minutes, or contact support if this continues." });
+    }
     res.status(500).json({ error: 'Failed to generate AI response' });
   }
 });
@@ -249,6 +252,38 @@ app.post('/api/chat', async (req, res) => {
 
 // CJ Dropshipping API Proxy
 // CJ Dropshipping Categories API Proxy
+
+// CJ Dropshipping Connection Status
+app.get('/api/dropshipping/status', async (req, res) => {
+  try {
+    const cjToken = process.env.CJ_ACCESS_TOKEN;
+    if (!cjToken) {
+      return res.json({ status: 'DISCONNECTED', message: 'CJ_ACCESS_TOKEN not configured in environment.' });
+    }
+    // Ping categories as a health check
+    const response = await fetch('https://developers.cjdropshipping.com/api2.0/v1/product/getCategory', {
+      method: 'GET',
+      headers: {
+        'CJ-Access-Token': cjToken,
+        'Content-Type': 'application/json'
+      },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.code === 200) {
+        return res.json({ status: 'CONNECTED', lastCheck: new Date().toISOString() });
+      } else {
+        return res.json({ status: 'CONNECTION ERROR', message: data.message || 'API responded with error code' });
+      }
+    } else {
+      return res.json({ status: 'CONNECTION ERROR', message: `HTTP ${response.status}` });
+    }
+  } catch (error: any) {
+    console.error('CJ Dropshipping Status Error:', error);
+    res.json({ status: 'CONNECTION ERROR', message: error.message || 'Failed to connect' });
+  }
+});
+
 app.get('/api/dropshipping/categories', async (req, res) => {
   try {
     const cjToken = process.env.CJ_ACCESS_TOKEN;
@@ -313,16 +348,19 @@ app.post('/api/product-reviews', async (req, res) => {
     if (!productName) return res.status(400).json({ error: 'Product name is required' });
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.6-flash",
       contents: `Search for the latest real-world reviews and news for: "${productName}". Summarize the general consensus, pros, and cons in a short 2-3 paragraph tech review style. Keep it professional and engaging.`,
       config: {
-        tools: [{ googleSearch: {} }],
+         
       }
     });
 
     res.json({ summary: response.text });
   } catch (error: any) {
     console.error('Gemini Review API Error:', error);
+    if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('quota')) {
+        return res.json({ summary: "Review summary is temporarily unavailable due to high demand. Please try again later." });
+    }
     res.status(500).json({ error: 'Failed to generate review summary due to rate limits or API error.' });
   }
 });

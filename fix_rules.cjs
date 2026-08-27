@@ -1,0 +1,117 @@
+const fs = require('fs');
+
+let rules = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    function isSignedIn() { return request.auth != null; }
+    
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == "damijosh12@gmail.com" || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    match /admins/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if true;
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+    
+    match /addresses/{addressId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /wishlists/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    match /notification_preferences/{userId} {
+      allow read, write: if true;
+    }
+
+    match /email_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    match /broadcasts/{broadcastId} {
+      allow read, write: if true;
+    }
+
+    match /countries/{countryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /currencies/{currencyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /shipping_methods/{methodId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /tax_rules/{ruleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+    match /ai_workers/{workerId} {
+      allow read, write: if true;
+    }
+    match /ai_tasks/{taskId} {
+      allow read, write: if true;
+    }
+    match /ai_approvals/{approvalId} {
+      allow read, write: if true;
+    }
+    match /ai_activity/{activityId} {
+      allow read, write: if true;
+    }
+    match /ai_rules/{ruleId} {
+      allow read, write: if true;
+    }
+    match /ai_automations/{automationId} {
+      allow read, write: if true;
+    }
+  }
+}
+`;
+fs.writeFileSync('firestore.rules', rules);

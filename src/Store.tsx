@@ -32,6 +32,7 @@ import AccountOrders from './pages/AccountOrders';
 import OrderDetails from './pages/OrderDetails';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminOrderDetails from './pages/admin/AdminOrderDetails';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AccountLayout from './pages/account/AccountLayout';
@@ -42,11 +43,103 @@ import AccountAddresses from './pages/AccountAddresses';
 import AccountSecurity from './pages/account/AccountSecurity';
 import AccountNotifications from './pages/account/AccountNotifications';
 import AccountNotificationPreferences from './pages/account/AccountNotificationPreferences';
+
+import AdminCJDropshippingLayout from './pages/admin/cjdropshipping/AdminCJDropshippingLayout';
+import AdminCJDropshippingDashboard from './pages/admin/cjdropshipping/AdminCJDropshippingDashboard';
+import AdminCJProducts from './pages/admin/cjdropshipping/AdminCJProducts';
+import AdminCJOrders from './pages/admin/cjdropshipping/AdminCJOrders';
+import AdminCJSync from './pages/admin/cjdropshipping/AdminCJSync';
+import AdminCJLogs from './pages/admin/cjdropshipping/AdminCJLogs';
+
+import AdminAiLayout from './pages/admin/ai/AdminAiLayout';
+import AdminAiDashboard from './pages/admin/ai/AdminAiDashboard';
+import AdminAiTasks from './pages/admin/ai/AdminAiTasks';
+import AdminAiProducts from './pages/admin/ai/AdminAiProducts';
+import AdminAiTrends from './pages/admin/ai/AdminAiTrends';
+import AdminAiMarkets from './pages/admin/ai/AdminAiMarkets';
+import AdminAiApprovals from './pages/admin/ai/AdminAiApprovals';
+import AdminAiActivity from './pages/admin/ai/AdminAiActivity';
+import AdminAiSettings from './pages/admin/ai/AdminAiSettings';
+
+import AdminAiResearch from './pages/admin/ai/AdminAiResearch';
+import AdminAiWatchlist from './pages/admin/ai/AdminAiWatchlist';
+import AdminAiProductDetails from './pages/admin/ai/AdminAiProductDetails';
+import AdminAiPricing from './pages/admin/ai/AdminAiPricing';
+import AdminAiProfit from './pages/admin/ai/AdminAiProfit';
+import AdminAiSuppliers from './pages/admin/ai/AdminAiSuppliers';
+import AdminAiDecisions from './pages/admin/ai/AdminAiDecisions';
+import AdminAiBuilder from './pages/admin/ai/AdminAiBuilder';
+import AdminAiBuilderDetail from './pages/admin/ai/AdminAiBuilderDetail';
+import AdminAiContent from './pages/admin/ai/AdminAiContent';
+import AdminAiSeo from './pages/admin/ai/AdminAiSeo';
+import AdminAiDrafts from './pages/admin/ai/AdminAiDrafts';
+import AdminAiPublishing from './pages/admin/ai/AdminAiPublishing';
+import AdminAiOrders from './pages/admin/ai/AdminAiOrders';
+import AdminAiOrderDetail from './pages/admin/ai/AdminAiOrderDetail';
+import AdminAiFulfillment from './pages/admin/ai/AdminAiFulfillment';
+import AdminAiShipping from './pages/admin/ai/AdminAiShipping';
+import AdminAiDelivery from './pages/admin/ai/AdminAiDelivery';
+import AdminAiIssues from './pages/admin/ai/AdminAiIssues';
+import AdminAiCustomerOps from './pages/admin/ai/AdminAiCustomerOps';
+import AdminAiMarketing from "./pages/admin/ai/AdminAiMarketing";
+import AdminAiMarketResearch from "./pages/admin/ai/AdminAiMarketResearch";
+import AdminAiCompetitors from "./pages/admin/ai/AdminAiCompetitors";
+import AdminAiCampaigns from "./pages/admin/ai/AdminAiCampaigns";
+import AdminAiMarketingAnalytics from "./pages/admin/ai/AdminAiMarketingAnalytics";
+import AdminAiGrowth from "./pages/admin/ai/AdminAiGrowth";
+import AdminAiWorkers from "./pages/admin/ai/AdminAiWorkers";
+import AdminAiWorkerDetail from "./pages/admin/ai/AdminAiWorkerDetail";
+import AdminAiMemory from "./pages/admin/ai/AdminAiMemory";
+import AdminAiAutomations from "./pages/admin/ai/AdminAiAutomations";
+import AdminAiPermissions from "./pages/admin/ai/AdminAiPermissions";
+import AdminAiTaskDetail from "./pages/admin/ai/AdminAiTaskDetail";
+
 import AdminComingSoon from './pages/admin/AdminComingSoon';
 import AdminCommunications from './pages/admin/AdminCommunications';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminDiscountForm from './pages/admin/AdminDiscountForm';
 import AdminLogin from './pages/admin/AdminLogin';
+
+import AdminAutomations from './pages/admin/automations/AdminAutomations';
+import AdminAiSupport from './pages/admin/ai/AdminAiSupport';
+import AdminAiBusiness from './pages/admin/ai/AdminAiBusiness';
+import AdminSupportLayout from './pages/admin/support/AdminSupportLayout';
+import AdminSupportDashboard from './pages/admin/support/AdminSupportDashboard';
+import AdminSupportInbox from './pages/admin/support/AdminSupportInbox';
+import AdminSupportTickets from './pages/admin/support/AdminSupportTickets';
+import AdminSupportTicketDetail from './pages/admin/support/AdminSupportTicketDetail';
+import AdminSupportCustomers from './pages/admin/support/AdminSupportCustomers';
+import AdminSupportCustomerDetail from './pages/admin/support/AdminSupportCustomerDetail';
+import AdminSupportAi from './pages/admin/support/AdminSupportAi';
+import AdminSupportMacros from './pages/admin/support/AdminSupportMacros';
+import AdminSupportAutomation from './pages/admin/support/AdminSupportAutomation';
+import AdminSupportAnalytics from './pages/admin/support/AdminSupportAnalytics';
+import AdminFinanceLayout from './pages/admin/finance/AdminFinanceLayout';
+import AdminFinanceDashboard from './pages/admin/finance/AdminFinanceDashboard';
+import AdminFinanceRevenue from './pages/admin/finance/AdminFinanceRevenue';
+import AdminFinanceProfit from './pages/admin/finance/AdminFinanceProfit';
+import AdminFinanceExpenses from './pages/admin/finance/AdminFinanceExpenses';
+import AdminFinanceCosts from './pages/admin/finance/AdminFinanceCosts';
+import AdminFinanceRefunds from './pages/admin/finance/AdminFinanceRefunds';
+import AdminFinancePayouts from './pages/admin/finance/AdminFinancePayouts';
+import AdminFinanceReports from './pages/admin/finance/AdminFinanceReports';
+import AdminFinanceAi from './pages/admin/finance/AdminFinanceAi';
+
+
+import AdminSecurityLayout from './pages/admin/security/AdminSecurityLayout';
+import AdminSecurityDashboard from './pages/admin/security/AdminSecurityDashboard';
+import AdminSecurityActivity from './pages/admin/security/AdminSecurityActivity';
+import AdminSecuritySessions from './pages/admin/security/AdminSecuritySessions';
+import AdminSecurityAuditLog from './pages/admin/security/AdminSecurityAuditLog';
+import AdminSecurityPermissions from './pages/admin/security/AdminSecurityPermissions';
+import AdminSecurityApi from './pages/admin/security/AdminSecurityApi';
+import AdminSecurityIntegrations from './pages/admin/security/AdminSecurityIntegrations';
+import AdminSecuritySystemHealth from './pages/admin/security/AdminSecuritySystemHealth';
+import AdminSecurityBackups from './pages/admin/security/AdminSecurityBackups';
+import AdminSecurityRecovery from './pages/admin/security/AdminSecurityRecovery';
+import AdminSecurityAiSafety from './pages/admin/security/AdminSecurityAiSafety';
+import AdminSecurityAlerts from './pages/admin/security/AdminSecurityAlerts';
+
 import AdminProductForm from './pages/admin/AdminProductForm';
 import ContentPage from './pages/ContentPage';
 import NotFound from './pages/NotFound';
@@ -186,7 +279,7 @@ export default function Store() {
         if (snap.exists() && snap.data().products) {
           setWishlistIds(prev => Array.from(new Set([...prev, ...snap.data().products])));
         }
-      });
+      }).catch(e => console.warn('Wishlist offline', e));
     }
   }, [user]);
 
@@ -541,19 +634,17 @@ export default function Store() {
       {!isCheckout && (
         <header className="lg:hidden sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 pt-safe">
         <div className="w-full h-[60px] px-4 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="z-10" aria-label="Home">
-            <Logo className="h-6" variant="full" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Menu">
+              <Menu className="w-5 h-5" />
+            </button>
+            <button onClick={() => navigate('/')} className="z-10" aria-label="Home">
+              <Logo className="h-6" variant="full" />
+            </button>
+          </div>
           <div className="flex items-center gap-1 z-10">
             <button onClick={() => navigate('/search')} className="p-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Search">
               <Search className="w-5 h-5" />
-            </button>
-            <button onClick={() => navigate('/account')} className="p-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Profile">
-              <User className="w-5 h-5" />
-            </button>
-            <button onClick={() => setIsCartOpen(true)} className="p-2 relative transition-colors hover:bg-zinc-100 rounded-full text-zinc-800" aria-label="Cart">
-              <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-primary-blue text-white text-[9px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">{cartCount}</span>}
             </button>
           </div>
         </div>
@@ -639,7 +730,22 @@ export default function Store() {
             <Route path="security" element={<AccountSecurity />} />
             <Route path="notifications" element={<AccountNotifications />} />
             <Route path="notifications/preferences" element={<AccountNotificationPreferences />} />
-          </Route>
+          
+            <Route path="security" element={<AdminSecurityLayout />}>
+              <Route index element={<AdminSecurityDashboard />} />
+              <Route path="activity" element={<AdminSecurityActivity />} />
+              <Route path="sessions" element={<AdminSecuritySessions />} />
+              <Route path="audit-log" element={<AdminSecurityAuditLog />} />
+              <Route path="permissions" element={<AdminSecurityPermissions />} />
+              <Route path="api" element={<AdminSecurityApi />} />
+              <Route path="integrations" element={<AdminSecurityIntegrations />} />
+              <Route path="system-health" element={<AdminSecuritySystemHealth />} />
+              <Route path="backups" element={<AdminSecurityBackups />} />
+              <Route path="recovery" element={<AdminSecurityRecovery />} />
+              <Route path="ai-safety" element={<AdminSecurityAiSafety />} />
+              <Route path="alerts" element={<AdminSecurityAlerts />} />
+            </Route>
+            </Route>
 
           
           <Route path="/help" element={<ContentPage />} />
@@ -660,12 +766,81 @@ export default function Store() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:id" element={<AdminOrderDetails />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="products/:id" element={<AdminProductForm />} />
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="categories" element={<AdminComingSoon />} />
             <Route path="inventory" element={<AdminComingSoon />} />
-            <Route path="cjdropshipping" element={<AdminComingSoon />} />
+            
+            <Route path="cjdropshipping" element={<AdminCJDropshippingLayout />}>
+              <Route index element={<AdminCJDropshippingDashboard />} />
+              <Route path="products" element={<AdminCJProducts />} />
+              <Route path="orders" element={<AdminCJOrders />} />
+              <Route path="sync" element={<AdminCJSync />} />
+              <Route path="logs" element={<AdminCJLogs />} />
+            </Route>
+
+            <Route path="automations" element={<AdminAutomations />} />
+            <Route path="ai" element={<AdminAiLayout />}>
+
+              <Route path="tasks" element={<AdminAiTasks />} />
+              <Route path="approvals" element={<AdminAiApprovals />} />
+              <Route path="products" element={<AdminAiProducts />} />
+              <Route path="trends" element={<AdminAiTrends />} />
+              <Route path="markets" element={<AdminAiMarkets />} />
+              <Route path="marketing" element={<AdminAiMarketing />} />
+              <Route path="support" element={<AdminAiSupport />} />
+              <Route path="business" element={<AdminAiBusiness />} />
+
+              <Route index element={<AdminAiDashboard />} />
+              <Route path="tasks" element={<AdminAiTasks />} />
+              <Route path="products" element={<AdminAiProducts />} />
+
+              <Route path="products/:id" element={<AdminAiProductDetails />} />
+              <Route path="research" element={<AdminAiResearch />} />
+              <Route path="watchlist" element={<AdminAiWatchlist />} />
+              <Route path="pricing" element={<AdminAiPricing />} />
+              <Route path="profit" element={<AdminAiProfit />} />
+                            <Route path="suppliers" element={<AdminAiSuppliers />} />
+              <Route path="decisions" element={<AdminAiDecisions />} />
+              
+              {/* Phase 08 Routes */}
+              <Route path="builder" element={<AdminAiBuilder />} />
+              <Route path="builder/:id" element={<AdminAiBuilderDetail />} />
+              <Route path="content" element={<AdminAiContent />} />
+              <Route path="seo" element={<AdminAiSeo />} />
+              <Route path="drafts" element={<AdminAiDrafts />} />
+              <Route path="publishing" element={<AdminAiPublishing />} />
+              
+              {/* Phase 09 Routes */}
+              <Route path="orders" element={<AdminAiOrders />} />
+              <Route path="order/:id" element={<AdminAiOrderDetail />} />
+              <Route path="fulfillment" element={<AdminAiFulfillment />} />
+              <Route path="shipping" element={<AdminAiShipping />} />
+              <Route path="delivery" element={<AdminAiDelivery />} />
+              <Route path="issues" element={<AdminAiIssues />} />
+              <Route path="customer-operations" element={<AdminAiCustomerOps />} />
+              <Route path="marketing" element={<AdminAiMarketing />} />
+              <Route path="market-research" element={<AdminAiMarketResearch />} />
+              <Route path="competitors" element={<AdminAiCompetitors />} />
+              <Route path="campaigns" element={<AdminAiCampaigns />} />
+              <Route path="marketing-analytics" element={<AdminAiMarketingAnalytics />} />
+              <Route path="growth" element={<AdminAiGrowth />} />
+              <Route path="workers" element={<AdminAiWorkers />} />
+              <Route path="workers/:id" element={<AdminAiWorkerDetail />} />
+              <Route path="memory" element={<AdminAiMemory />} />
+              <Route path="automations" element={<AdminAiAutomations />} />
+              <Route path="permissions" element={<AdminAiPermissions />} />
+              <Route path="task/:id" element={<AdminAiTaskDetail />} />
+
+              <Route path="trends" element={<AdminAiTrends />} />
+              <Route path="markets" element={<AdminAiMarkets />} />
+              <Route path="approvals" element={<AdminAiApprovals />} />
+              <Route path="activity" element={<AdminAiActivity />} />
+              <Route path="settings" element={<AdminAiSettings />} />
+            </Route>
+
             <Route path="discounts" element={<AdminDiscounts />} />
             <Route path="discounts/new" element={<AdminDiscountForm />} />
             <Route path="shipping" element={<AdminComingSoon />} />
@@ -677,6 +852,32 @@ export default function Store() {
             <Route path="notifications" element={<AdminCommunications />} />
             <Route path="settings" element={<AdminComingSoon />} />
             <Route path="system-health" element={<AdminSystemHealth />} />
+
+            <Route path="support" element={<AdminSupportLayout />}>
+              <Route index element={<AdminSupportDashboard />} />
+              <Route path="inbox" element={<AdminSupportInbox />} />
+              <Route path="tickets" element={<AdminSupportTickets />} />
+              <Route path="tickets/:id" element={<AdminSupportTicketDetail />} />
+              <Route path="customers" element={<AdminSupportCustomers />} />
+              <Route path="customers/:id" element={<AdminSupportCustomerDetail />} />
+              <Route path="ai" element={<AdminSupportAi />} />
+              <Route path="macros" element={<AdminSupportMacros />} />
+              <Route path="automation" element={<AdminSupportAutomation />} />
+              <Route path="analytics" element={<AdminSupportAnalytics />} />
+            </Route>
+
+            <Route path="finance" element={<AdminFinanceLayout />}>
+              <Route index element={<AdminFinanceDashboard />} />
+              <Route path="revenue" element={<AdminFinanceRevenue />} />
+              <Route path="profit" element={<AdminFinanceProfit />} />
+              <Route path="expenses" element={<AdminFinanceExpenses />} />
+              <Route path="costs" element={<AdminFinanceCosts />} />
+              <Route path="refunds" element={<AdminFinanceRefunds />} />
+              <Route path="payouts" element={<AdminFinancePayouts />} />
+              <Route path="reports" element={<AdminFinanceReports />} />
+              <Route path="ai" element={<AdminFinanceAi />} />
+            </Route>
+
 
           </Route>
           <Route path="*" element={<NotFound />} />

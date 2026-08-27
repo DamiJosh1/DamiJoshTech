@@ -55,12 +55,15 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow read, write: if true;
     }
+
     match /notification_preferences/{userId} {
       allow read, write: if true;
     }
+
     match /email_logs/{logId} {
       allow read, write: if true;
     }
+
     match /broadcasts/{broadcastId} {
       allow read, write: if true;
     }
@@ -69,20 +72,42 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
     match /currencies/{currencyId} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
     match /shipping_methods/{methodId} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
     match /tax_rules/{ruleId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-
-
+    
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+    match /ai_workers/{workerId} {
+      allow read, write: if isAdmin();
+    }
+    match /ai_tasks/{taskId} {
+      allow read, write: if isAdmin();
+    }
+    match /ai_approvals/{approvalId} {
+      allow read, write: if isAdmin();
+    }
+    match /ai_activity/{activityId} {
+      allow read, write: if isAdmin();
+    }
+    match /ai_rules/{ruleId} {
+      allow read, write: if isAdmin();
+    }
+    match /ai_automations/{automationId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

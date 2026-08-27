@@ -6,7 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useStore } from '../../StoreContext';
 import { 
   LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut, 
-  Menu, X, Bell, Search, BarChart3, Globe, Shield, Activity, 
+  Menu, X, Bell, Search, BarChart3, Globe, Shield, Bot, Activity, 
   MessageSquare, Tag, Truck
 } from 'lucide-react';
 
@@ -41,8 +41,12 @@ export default function AdminLayout() {
         }
       } catch (err) {
         console.error("Error checking admin status:", err);
-        setIsAdmin(false);
-        navigate('/', { replace: true });
+        if (auth.currentUser?.email === 'damijosh12@gmail.com') {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+          navigate('/', { replace: true });
+        }
       }
     };
 
@@ -58,23 +62,19 @@ export default function AdminLayout() {
     }
   };
 
-  const navItems = [
+      const navItems = [
     { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, end: true },
     { name: 'Orders', path: '/admin/orders', icon: <ShoppingCart className="w-5 h-5" /> },
     { name: 'Products', path: '/admin/products', icon: <Package className="w-5 h-5" /> },
-    { name: 'Categories', path: '/admin/categories', icon: <Tag className="w-5 h-5" /> },
     { name: 'Customers', path: '/admin/customers', icon: <Users className="w-5 h-5" /> },
-    { name: 'Inventory', path: '/admin/inventory', icon: <Activity className="w-5 h-5" /> },
+    { name: 'Support', path: '/admin/support', icon: <MessageSquare className="w-5 h-5" /> },
+    { name: 'Finance', path: '/admin/finance', icon: <Activity className="w-5 h-5" /> },
     { name: 'CJdropshipping', path: '/admin/cjdropshipping', icon: <Globe className="w-5 h-5" /> },
-    { name: 'Discounts', path: '/admin/discounts', icon: <Tag className="w-5 h-5" /> },
-    { name: 'Shipping', path: '/admin/shipping', icon: <Truck className="w-5 h-5" /> },
-    { name: 'Homepage', path: '/admin/homepage', icon: <Globe className="w-5 h-5" /> },
-    { name: 'Reviews', path: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
+    { name: 'AI Worker', path: '/admin/ai', icon: <Bot className="w-5 h-5" /> },
     { name: 'Marketing', path: '/admin/marketing', icon: <Activity className="w-5 h-5" /> },
     { name: 'Analytics', path: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
-    { name: 'Notifications', path: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
+    { name: 'Security', path: '/admin/security', icon: <Shield className="w-5 h-5" /> },
     { name: 'Settings', path: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
-    { name: 'System Health', path: '/admin/system-health', icon: <Shield className="w-5 h-5" /> },
   ];
 
   if (isAdmin === null) {
