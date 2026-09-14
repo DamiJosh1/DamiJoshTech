@@ -1,6 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function Logo({ className = "h-8", variant = "full" }: { className?: string, variant?: "full" | "icon" }) {
+  const [imgError, setImgError] = useState(false);
+
+  // If the user uploaded damilogo.jpg or favicondami.ico into /public or /public/images, prefer displaying the uploaded image
+  const [triedAltPath, setTriedAltPath] = useState(false);
+
+  if (!imgError) {
+    if (variant === "icon") {
+      return (
+        <img 
+          src={triedAltPath ? "/images/favicondami.ico" : "/favicondami.ico"} 
+          alt="Sajoda Favicon" 
+          className={className} 
+          onError={() => {
+            if (!triedAltPath) {
+              setTriedAltPath(true);
+            } else {
+              setImgError(true);
+            }
+          }} 
+        />
+      );
+    }
+    return (
+      <img 
+        src={triedAltPath ? "/images/damilogo.jpg" : "/damilogo.jpg"} 
+        alt="Sajoda Logo" 
+        className={`${className} object-contain`} 
+        onError={() => {
+          if (!triedAltPath) {
+            setTriedAltPath(true);
+          } else {
+            setImgError(true);
+          }
+        }} 
+      />
+    );
+  }
+
   if (variant === "icon") {
     return (
       <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -10,7 +48,7 @@ export default function Logo({ className = "h-8", variant = "full" }: { classNam
     );
   }
 
-  // The full logo SVG approximation
+  // The full logo SVG fallback
   return (
     <svg className={className} viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M60 25C40 25 25 35 25 50C25 65 40 70 55 75C65 78 70 82 70 90C70 105 50 110 30 110" stroke="#1F2937" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
