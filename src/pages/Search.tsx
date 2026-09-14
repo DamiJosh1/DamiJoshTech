@@ -2,13 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../StoreContext';
 import ProductCard from '../components/ProductCard';
+import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { Search, ChevronDown, Filter, X, Loader2, Check } from 'lucide-react';
 import SearchInput from '../components/SearchInput';
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { products } = useStore();
+  const { products, productsLoading } = useStore();
   
   const query = searchParams.get('q') || '';
   const { slug } = useParams();
@@ -20,6 +21,7 @@ export default function SearchPage() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const isSearching = loading || productsLoading;
 
   // Filter state for mobile drawer (unapplied until 'Apply' is clicked)
   const [draftCategory, setDraftCategory] = useState(categoryParam);
@@ -32,8 +34,13 @@ export default function SearchPage() {
   const draftFilteredProducts = useMemo(() => {
     let result = products;
     if (query) {
-      const q = query.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+      const q = (query || '').toLowerCase();
+      result = result.filter(p => 
+        (p.name && p.name.toLowerCase().includes(q)) || 
+        (p.category && p.category.toLowerCase().includes(q)) || 
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.brand && p.brand.toLowerCase().includes(q))
+      );
     }
     if (draftCategory && draftCategory !== 'All') {
       result = result.filter(p => p.category === draftCategory);
@@ -71,9 +78,9 @@ export default function SearchPage() {
 
     // Search query
     if (query) {
-      const q = query.toLowerCase();
+      const q = (query || '').toLowerCase();
       result = result.filter(p => 
-        p.name.toLowerCase().includes(q) || 
+        (p.name && p.name.toLowerCase().includes(q)) || 
         (p.category && p.category.toLowerCase().includes(q)) ||
         (p.brand && p.brand.toLowerCase().includes(q)) ||
         (p.description && p.description.toLowerCase().includes(q)) ||
@@ -331,10 +338,13 @@ export default function SearchPage() {
             </div>
 
             {/* Loading / Results */}
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Loader2 className="w-8 h-8 text-primary-blue animate-spin mb-4" />
-                <p className="text-zinc-500 font-medium">Searching...</p>
+            {isSearching ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                  <div key={i}>
+                    <ProductCardSkeleton />
+                  </div>
+                ))}
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center bg-white border border-zinc-200 rounded-3xl shadow-sm">

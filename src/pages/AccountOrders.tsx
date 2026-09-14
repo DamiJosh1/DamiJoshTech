@@ -36,7 +36,8 @@ export default function AccountOrders() {
 
   const filteredOrders = orders.filter(order => {
     const matchesFilter = filter === 'All' || (order.status || 'Processing') === filter;
-    const matchesSearch = order.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = (searchQuery || '').toLowerCase();
+    const matchesSearch = !q || (order.orderNumber || order.id || '')?.toLowerCase().includes(q);
     return matchesFilter && matchesSearch;
   });
 

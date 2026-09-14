@@ -5,6 +5,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Logo from './Logo';
+import { formatFirebaseAuthError } from './utils/authErrorHelper';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -64,7 +65,8 @@ export default function Login() {
       
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Google authentication failed.');
+      console.error('Google login error:', err);
+      setError(formatFirebaseAuthError(err));
     } finally {
       setLoading(false);
     }

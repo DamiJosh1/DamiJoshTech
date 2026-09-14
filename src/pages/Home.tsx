@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../StoreContext';
 import ProductCard from '../components/ProductCard';
+import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { ArrowRight, ChevronRight, ShieldCheck, Truck, CreditCard, HeadphonesIcon, RefreshCw, Mail, Heart, ShoppingBag, Star } from 'lucide-react';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { products, handleFeaturedAddToCart, addingToCartId, wishlistIds, handleWishlistToggle } = useStore();
+  const { products, productsLoading, handleFeaturedAddToCart, addingToCartId, wishlistIds, handleWishlistToggle } = useStore();
 
   const [email, setEmail] = useState('');
   const [subscribeStatus, setSubscribeStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -111,12 +112,22 @@ export default function Home() {
             </button>
           </div>
           
-          {products.length === 0 ? (
-            <div className="py-12 text-center text-zinc-500">Loading products...</div>
+          {productsLoading ? (
+            <div className="flex overflow-x-auto gap-6 pb-8 -mx-6 px-6 sm:mx-0 sm:px-0 snap-x snap-mandatory scrollbar-hide">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] snap-center">
+                  <ProductCardSkeleton />
+                </div>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <div className="py-12 text-center text-zinc-500">No products available at this time.</div>
           ) : (
             <div className="flex overflow-x-auto gap-6 pb-8 -mx-6 px-6 sm:mx-0 sm:px-0 snap-x snap-mandatory scrollbar-hide">
               {products.slice(0, 6).map(product => (
-                <div key={product.id}><ProductCard product={product} /></div>
+                <div key={product.id} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] snap-center">
+                  <ProductCard product={product} />
+                </div>
               ))}
             </div>
           )}
@@ -158,7 +169,13 @@ export default function Home() {
           <p className="text-zinc-500 text-lg">Everyday technology made smarter.</p>
         </div>
         
-        {products.length > 0 && (
+        {productsLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i}><ProductCardSkeleton /></div>
+            ))}
+          </div>
+        ) : products.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {products.filter(p => !p.category || p.category.includes('Gadget') || p.category.includes('Audio')).slice(0, 4).map(product => (
               <div key={product.id}><ProductCard product={product} /></div>

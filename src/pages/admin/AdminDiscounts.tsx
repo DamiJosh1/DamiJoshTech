@@ -16,6 +16,9 @@ export default function AdminDiscounts() {
       const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Promotion));
       setPromotions(fetched);
       setLoading(false);
+    }, (err) => {
+      console.warn('Admin discounts listener error:', err.message);
+      setLoading(false);
     });
     return () => unsub();
   }, []);
@@ -32,10 +35,11 @@ export default function AdminDiscounts() {
     }
   };
 
-  const filteredPromos = promotions.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    (p.code && p.code.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredPromos = promotions.filter(p => {
+    const q = (search || '').toLowerCase();
+    return (p.name && p.name.toLowerCase().includes(q)) || 
+      (p.code && p.code.toLowerCase().includes(q));
+  });
 
   return (
     <div className="animate-fade-in-up">

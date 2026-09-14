@@ -51,6 +51,10 @@ export default function AdminOrders() {
       setStats(newStats);
       setIsLoading(false);
       setIsRefreshing(false);
+    }, (err) => {
+      console.warn('Admin orders listener error:', err.message);
+      setIsLoading(false);
+      setIsRefreshing(false);
     });
   };
 
@@ -65,10 +69,11 @@ export default function AdminOrders() {
   };
 
   const filteredOrders = orders.filter(order => {
+    const q = (searchQuery || '').toLowerCase();
     const matchesSearch = 
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (order.contact?.email || order.customerEmail || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (order.contact?.firstName || order.customerName || '').toLowerCase().includes(searchQuery.toLowerCase());
+      (order.id && order.id.toString().toLowerCase().includes(q)) ||
+      (order.contact?.email || order.customerEmail || '').toLowerCase().includes(q) ||
+      (order.contact?.firstName || order.customerName || '').toLowerCase().includes(q);
       
     if (activeTab === 'All') return matchesSearch;
     if (activeTab === 'Pending') return matchesSearch && order.status === 'pending';

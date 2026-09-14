@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { useNavigate, Link } from 'react-router-dom';
 import { Shield, ShieldAlert, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { formatFirebaseAuthError } from '../../utils/authErrorHelper';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -58,7 +59,8 @@ export default function AdminLogin() {
         setError('Unauthorized access. This account does not have administrator privileges.');
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please try again.');
+      console.error('Admin Google login error:', err);
+      setError(formatFirebaseAuthError(err));
     } finally {
       setIsLoading(false);
     }

@@ -3,7 +3,7 @@ import { collection, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase
 import { db } from '../../firebase';
 import { 
   Package, Search, Filter, Eye, Edit2, Trash2, Plus, Download, 
-  RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon
+  RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon, FolderGit2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../StoreContext';
@@ -49,6 +49,10 @@ export default function AdminProducts() {
       setStats(newStats);
       setIsLoading(false);
       setIsRefreshing(false);
+    }, (err) => {
+      console.warn('Admin products listener error:', err.message);
+      setIsLoading(false);
+      setIsRefreshing(false);
     });
   };
 
@@ -63,11 +67,12 @@ export default function AdminProducts() {
   };
 
   const filteredProducts = products.filter(product => {
+    const q = (searchQuery || '').toLowerCase();
     const matchesSearch = 
-      product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.cjSku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.id.toLowerCase().includes(searchQuery.toLowerCase());
+      (product.name && product.name.toLowerCase().includes(q)) ||
+      (product.sku && product.sku.toLowerCase().includes(q)) ||
+      (product.cjSku && product.cjSku.toLowerCase().includes(q)) ||
+      (product.id && product.id.toString().toLowerCase().includes(q));
       
     if (activeTab === 'All') return matchesSearch;
     if (activeTab === 'Active') return matchesSearch && product.status === 'active';
@@ -116,6 +121,12 @@ export default function AdminProducts() {
         </div>
         
         <div className="flex items-center gap-3">
+          <Link 
+            to="/admin/drive-import"
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
+          >
+            <FolderGit2 className="w-4 h-4 text-emerald-600" /> Drive AI Import
+          </Link>
           <Link 
             to="/admin/cjdropshipping"
             className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"

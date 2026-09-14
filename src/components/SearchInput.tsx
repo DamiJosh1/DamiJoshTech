@@ -64,7 +64,7 @@ export default function SearchInput({ onClose, isMobile }: SearchInputProps) {
     
     // Exact product matches or relevant product names
     const exactMatches = products.filter(p => 
-      p.name.toLowerCase().includes(searchLower) || 
+      (p.name && p.name.toLowerCase().includes(searchLower)) || 
       (p.brand && p.brand.toLowerCase().includes(searchLower)) ||
       (p.category && p.category.toLowerCase().includes(searchLower))
     ).slice(0, 5);

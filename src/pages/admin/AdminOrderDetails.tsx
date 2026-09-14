@@ -28,6 +28,9 @@ export default function AdminOrderDetails() {
         setOrder(null);
       }
       setIsLoading(false);
+    }, (err) => {
+      console.warn('Order details listener error:', err.message);
+      setIsLoading(false);
     });
 
     return () => unsub();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, RefreshCw, AlertCircle, Search, Download, Package, ShoppingCart, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import { Globe, RefreshCw, AlertCircle, Search, Download, Package, ShoppingCart, FileText, CheckCircle2, XCircle, Key, ExternalLink } from 'lucide-react';
 import { collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '../../../firebase';
 
@@ -124,6 +124,24 @@ export default function AdminCJDropshippingDashboard() {
             </button>
           </div>
         </div>
+
+        {status !== 'CONNECTED' && status !== 'LOADING' && (
+          <div className="mt-6 pt-6 border-t border-zinc-100 bg-zinc-50 -mx-6 -mb-6 p-6">
+            <div className="flex items-start gap-3">
+              <Key className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <h4 className="font-bold text-zinc-900">How to fix the CJ Dropshipping API connection:</h4>
+                <ol className="mt-2 space-y-1.5 text-zinc-600 list-decimal list-inside text-xs leading-relaxed">
+                  <li>Go to <a href="https://developers.cjdropshipping.com" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold">CJ Dropshipping Developers Portal <ExternalLink className="w-3 h-3 inline" /></a>.</li>
+                  <li>Log in with your CJ Dropshipping account.</li>
+                  <li>Navigate to <strong>API &gt; Authorization</strong> to obtain your current <strong>Access Token</strong> (note: CJ tokens expire periodically or require generating via API Key).</li>
+                  <li>Copy the token and paste it into your AI Studio project settings under <strong>Settings &gt; Secrets &gt; CJ_ACCESS_TOKEN</strong>.</li>
+                  <li>Click <strong>"Test Connection"</strong> above once saved.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Metrics Grid */}

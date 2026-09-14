@@ -23,11 +23,16 @@ export default function AdminCommunications() {
     const qEmail = query(collection(db, 'email_logs'), orderBy('sentAt', 'desc'));
     const unsubEmail = onSnapshot(qEmail, (snap) => {
       setEmailLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      console.warn('Email logs listener error:', err.message);
     });
 
     const qBroad = query(collection(db, 'broadcasts'), orderBy('createdAt', 'desc'));
     const unsubBroad = onSnapshot(qBroad, (snap) => {
       setBroadcasts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (err) => {
+      console.warn('Broadcasts listener error:', err.message);
       setLoading(false);
     });
 

@@ -35,7 +35,9 @@ export default function TrackOrder() {
         setOrder(null);
       } else {
         const foundOrder = querySnapshot.docs[0].data();
-        if (foundOrder.contact?.email?.toLowerCase() !== email.toLowerCase()) {
+        const orderEmail = (foundOrder.contact?.email || '').toLowerCase().trim();
+        const inputEmail = (email || '').toLowerCase().trim();
+        if (orderEmail !== inputEmail) {
           setError('Email does not match the order records.');
           setOrder(null);
         } else {

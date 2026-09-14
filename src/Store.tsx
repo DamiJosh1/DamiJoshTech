@@ -141,6 +141,7 @@ import AdminSecurityAiSafety from './pages/admin/security/AdminSecurityAiSafety'
 import AdminSecurityAlerts from './pages/admin/security/AdminSecurityAlerts';
 
 import AdminProductForm from './pages/admin/AdminProductForm';
+import AdminDriveProducts from './pages/admin/AdminDriveProducts';
 import ContentPage from './pages/ContentPage';
 import NotFound from './pages/NotFound';
 import AdminSystemHealth from './pages/admin/AdminSystemHealth';
@@ -177,7 +178,7 @@ export default function Store() {
       if (docs.length > 0 && !activeCountry) {
         setActiveCountry(docs.find(c => c.active) || docs[0]);
       }
-    });
+    }, (err) => console.warn('Countries listener error:', err.message));
 
     const unsubCurrencies = onSnapshot(collection(db, 'currencies'), (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as StoreCurrency));
@@ -185,15 +186,15 @@ export default function Store() {
       if (docs.length > 0 && !activeCurrency) {
         setActiveCurrency(docs.find(c => c.code === 'USD') || docs[0]);
       }
-    });
+    }, (err) => console.warn('Currencies listener error:', err.message));
 
     const unsubShipping = onSnapshot(collection(db, 'shipping_methods'), (snapshot) => {
       setShippingMethods(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ShippingMethod)));
-    });
+    }, (err) => console.warn('Shipping listener error:', err.message));
 
     const unsubTaxes = onSnapshot(collection(db, 'tax_rules'), (snapshot) => {
       setTaxRules(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TaxRule)));
-    });
+    }, (err) => console.warn('Tax listener error:', err.message));
 
     return () => {
       unsubCountries();
@@ -220,6 +221,8 @@ export default function Store() {
         notifs.push({ id: doc.id, ...doc.data() } as AppNotification);
       });
       setNotifications(notifs);
+    }, (err) => {
+      console.warn('Notifications listener error:', err.message);
     });
     return () => unsubscribe();
   }, [user]);
@@ -284,6 +287,7 @@ export default function Store() {
   }, [user]);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [activeCoupon, setActiveCoupon] = useState<Promotion | null>(null);
 
@@ -337,6 +341,7 @@ export default function Store() {
     const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
       const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
       setProducts(fetchedProducts);
+      setProductsLoading(false);
     }, (error) => {
       console.error("Firestore connection error:", error);
     });
@@ -635,16 +640,16 @@ export default function Store() {
         <header className="lg:hidden sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 pt-safe">
         <div className="w-full h-[60px] px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Menu">
-              <Menu className="w-5 h-5" />
-            </button>
-            <button onClick={() => navigate('/')} className="z-10" aria-label="Home">
+            <button onClick={() => navigate('/')} className="z-10 -ml-2" aria-label="Home">
               <Logo className="h-6" variant="full" />
             </button>
           </div>
           <div className="flex items-center gap-1 z-10">
             <button onClick={() => navigate('/search')} className="p-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Search">
               <Search className="w-5 h-5" />
+            </button>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -mr-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Menu">
+              <Menu className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -769,6 +774,7 @@ export default function Store() {
             <Route path="orders/:id" element={<AdminOrderDetails />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="products/:id" element={<AdminProductForm />} />
+            <Route path="drive-import" element={<AdminDriveProducts />} />
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="categories" element={<AdminComingSoon />} />
             <Route path="inventory" element={<AdminComingSoon />} />

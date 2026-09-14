@@ -7,7 +7,7 @@ import { useStore } from '../../StoreContext';
 import { 
   LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut, 
   Menu, X, Bell, Search, BarChart3, Globe, Shield, Bot, Activity, 
-  MessageSquare, Tag, Truck
+  MessageSquare, Tag, Truck, FolderGit2
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -66,6 +66,7 @@ export default function AdminLayout() {
     { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, end: true },
     { name: 'Orders', path: '/admin/orders', icon: <ShoppingCart className="w-5 h-5" /> },
     { name: 'Products', path: '/admin/products', icon: <Package className="w-5 h-5" /> },
+    { name: 'Drive AI Import', path: '/admin/drive-import', icon: <FolderGit2 className="w-5 h-5 text-emerald-400" /> },
     { name: 'Customers', path: '/admin/customers', icon: <Users className="w-5 h-5" /> },
     { name: 'Support', path: '/admin/support', icon: <MessageSquare className="w-5 h-5" /> },
     { name: 'Finance', path: '/admin/finance', icon: <Activity className="w-5 h-5" /> },

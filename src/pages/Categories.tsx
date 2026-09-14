@@ -5,7 +5,7 @@ import { useStore } from '../StoreContext';
 
 export default function Categories() {
   const navigate = useNavigate();
-  const { products } = useStore();
+  const { products, productsLoading } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
@@ -92,7 +92,16 @@ export default function Categories() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((cat, i) => {
+          {productsLoading ? (
+            [1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-zinc-200 animate-pulse">
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <div className="h-6 w-32 bg-zinc-300 rounded-full mb-2" />
+                  <div className="h-4 w-24 bg-zinc-300 rounded-full" />
+                </div>
+              </div>
+            ))
+          ) : categories.map((cat, i) => {
             const catProducts = products.filter(p => p.category === cat);
             const coverImage = catProducts[0]?.image || 'https://images.unsplash.com/photo-1550009158-9efff6c97364?auto=format&fit=crop&q=80&w=1000';
             

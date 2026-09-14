@@ -38,8 +38,8 @@ export default function AdminCustomers() {
   };
 
   const filteredCustomers = customers.filter(customer => {
-    const searchString = `${customer.firstName || ''} ${customer.lastName || ''} ${customer.email || ''}`.toLowerCase();
-    return searchString.includes(searchTerm.toLowerCase());
+    const searchString = `${customer?.firstName || ''} ${customer?.lastName || ''} ${customer?.email || ''}`.toLowerCase();
+    return searchString.includes((searchTerm || '').toLowerCase());
   });
 
   if (isLoading) {

@@ -4,6 +4,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 
 export interface StoreContextType {
   products: Product[];
+  productsLoading: boolean;
   promotions: Promotion[];
   activeCoupon: Promotion | null;
   setActiveCoupon: (coupon: Promotion | null) => void;

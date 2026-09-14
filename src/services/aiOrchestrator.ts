@@ -61,7 +61,7 @@ class AIOrchestratorService {
     return onSnapshot(q, (snapshot) => {
       const workers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AIWorker));
       callback(workers);
-    });
+    }, (err) => console.warn('AI workers listener error:', err.message));
   }
 
   // Tasks
@@ -87,7 +87,7 @@ class AIOrchestratorService {
     return onSnapshot(q, (snapshot) => {
       const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AITask));
       callback(tasks);
-    });
+    }, (err) => console.warn('AI tasks listener error:', err.message));
   }
 
   // Approvals
@@ -119,7 +119,7 @@ class AIOrchestratorService {
     return onSnapshot(q, (snapshot) => {
       const approvals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AIApproval));
       callback(approvals);
-    });
+    }, (err) => console.warn('AI approvals listener error:', err.message));
   }
 
   // Activity Stream
@@ -137,7 +137,7 @@ class AIOrchestratorService {
     return onSnapshot(q, (snapshot) => {
       const activities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       callback(activities);
-    });
+    }, (err) => console.warn('AI activity listener error:', err.message));
   }
 
   // Global settings

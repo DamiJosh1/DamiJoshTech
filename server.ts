@@ -248,6 +248,84 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// AI Analyze Single or Batch Image for Product Generation
+app.post('/api/ai/analyze-drive-image', async (req, res) => {
+  try {
+    const { imageBase64, mimeType, instructions, currency, existingCategories } = req.body;
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'Image base64 data is required' });
+    }
+
+    const categoriesPrompt = existingCategories && existingCategories.length > 0 
+      ? `Available categories include: ${existingCategories.join(', ')}. Pick the best match or suggest a clear new one if none fits.` 
+      : 'Select a clean, standard e-commerce category (e.g., Electronics, Smart Home, Audio, Mobile Accessories, Kitchen, Wearables, etc.).';
+
+    const promptText = `You are an expert e-commerce catalog specialist and merchandiser.
+Analyze the provided product image and generate a complete, high-converting product listing.
+
+User Context / Custom Instructions:
+"${instructions || 'Generate an appealing product name, engaging description, competitive price, and fitting category.'}"
+
+Store currency preference: ${currency || 'NGN'}
+
+Category guideline:
+${categoriesPrompt}
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "name": "Concise, appealing product title (under 70 chars)",
+  "price": 25000,
+  "originalPrice": 32000,
+  "category": "Matching category name",
+  "shortDescription": "One or two sentences summarizing the key selling point",
+  "description": "Full engaging product description detailing what the product does, benefits, and build quality.",
+  "features": [
+    "Key feature 1",
+    "Key feature 2",
+    "Key feature 3",
+    "Key feature 4"
+  ],
+  "specifications": [
+    { "name": "Material/Type", "value": "Extracted or inferred value" },
+    { "name": "Compatibility/Usage", "value": "Extracted or inferred value" }
+  ],
+  "brand": "Inferred brand or 'Sajoda'",
+  "tags": ["tag1", "tag2", "tag3"]
+}
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              data: imageBase64,
+              mimeType: mimeType || 'image/jpeg',
+            },
+          },
+          {
+            text: promptText,
+          },
+        ],
+      },
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const parsedData = JSON.parse(response.text || '{}');
+    res.json({ success: true, product: parsedData });
+  } catch (error: any) {
+    console.error('Gemini Image Analysis Error:', error);
+    res.status(500).json({ 
+      error: error?.message || 'Failed to analyze product image with AI',
+      details: error?.toString()
+    });
+  }
+});
+
+
 // Product Review Summarization Webhook
 
 // CJ Dropshipping API Proxy
@@ -258,7 +336,7 @@ app.get('/api/dropshipping/status', async (req, res) => {
   try {
     const cjToken = process.env.CJ_ACCESS_TOKEN;
     if (!cjToken) {
-      return res.json({ status: 'DISCONNECTED', message: 'CJ_ACCESS_TOKEN not configured in environment.' });
+      return res.json({ status: 'DISCONNECTED', message: 'CJ_ACCESS_TOKEN environment secret is not configured.' });
     }
     // Ping categories as a health check
     const response = await fetch('https://developers.cjdropshipping.com/api2.0/v1/product/getCategory', {
@@ -268,15 +346,12 @@ app.get('/api/dropshipping/status', async (req, res) => {
         'Content-Type': 'application/json'
       },
     });
-    if (response.ok) {
-      const data = await response.json();
-      if (data.code === 200) {
-        return res.json({ status: 'CONNECTED', lastCheck: new Date().toISOString() });
-      } else {
-        return res.json({ status: 'CONNECTION ERROR', message: data.message || 'API responded with error code' });
-      }
+    const data = await response.json().catch(() => null);
+    if (response.ok && data?.code === 200) {
+      return res.json({ status: 'CONNECTED', lastCheck: new Date().toISOString() });
     } else {
-      return res.json({ status: 'CONNECTION ERROR', message: `HTTP ${response.status}` });
+      const errMsg = data?.message || (response.status === 401 ? 'Invalid or expired CJ Access Token. Please refresh token from CJ Dropshipping developer center.' : `HTTP ${response.status}`);
+      return res.json({ status: 'CONNECTION ERROR', message: errMsg });
     }
   } catch (error: any) {
     console.error('CJ Dropshipping Status Error:', error);
@@ -311,16 +386,17 @@ app.get('/api/dropshipping/products', async (req, res) => {
   try {
     const cjToken = process.env.CJ_ACCESS_TOKEN;
     if (!cjToken) {
-      return res.status(500).json({ error: 'CJ Dropshipping access token not configured.' });
+      return res.status(500).json({ error: 'CJ Dropshipping access token not configured. Please add CJ_ACCESS_TOKEN in Settings > Secrets.' });
     }
 
-    const { page = 1, size = 20, keyWord = '', categoryId = '' } = req.query;
+    const { page = 1, size = 20, keyWord = '', keyword = '', categoryId = '' } = req.query;
+    const searchTerm = String(keyWord || keyword || '');
     const queryParams = new URLSearchParams({
       pageNum: String(page),
       pageSize: String(size),
     });
-    if (keyWord) {
-      queryParams.append('keyWord', String(keyWord));
+    if (searchTerm) {
+      queryParams.append('keyWord', searchTerm);
     }
     if (categoryId) {
       queryParams.append('categoryId', String(categoryId));
@@ -335,10 +411,41 @@ app.get('/api/dropshipping/products', async (req, res) => {
     });
 
     const data = await response.json();
+    if (data?.code !== 200 && !data?.result) {
+      return res.status(response.status === 200 ? 400 : response.status).json({
+        error: data?.message || 'CJ Dropshipping API returned an error',
+        raw: data
+      });
+    }
     res.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error('[CJ Dropshipping] Fetch Error:', error);
-    res.status(500).json({ error: 'Failed to fetch dropshipping products' });
+    res.status(500).json({ error: error?.message || 'Failed to fetch dropshipping products' });
+  }
+});
+
+// Single CJ Product Details
+app.get('/api/dropshipping/product/:pid', async (req, res) => {
+  try {
+    const cjToken = process.env.CJ_ACCESS_TOKEN;
+    if (!cjToken) {
+      return res.status(500).json({ error: 'CJ Dropshipping access token not configured.' });
+    }
+
+    const { pid } = req.params;
+    const response = await fetch(`https://developers.cjdropshipping.com/api2.0/v1/product/query?pid=${encodeURIComponent(pid)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'CJ-Access-Token': cjToken
+      }
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    console.error('[CJ Dropshipping] Product Detail Error:', error);
+    res.status(500).json({ error: error?.message || 'Failed to fetch CJ product details' });
   }
 });
 

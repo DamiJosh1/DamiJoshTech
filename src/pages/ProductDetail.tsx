@@ -11,6 +11,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { 
     products, 
+    productsLoading, 
     wishlistIds, 
     addingToCartId,
     handleAddToCart,
@@ -29,6 +30,14 @@ export default function ProductDetail() {
   }, [id]);
 
   if (!product) {
+    if (productsLoading) {
+      return (
+        <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-white text-zinc-900 px-6">
+           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-blue mb-4"></div>
+           <p className="text-zinc-500 font-medium">Loading product details...</p>
+        </div>
+      );
+    }
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-white text-zinc-900 px-6">
         <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>

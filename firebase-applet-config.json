@@ -1,12 +1,11 @@
 {
-  "projectId": "peerless-smithy-c7c1c",
-  "appId": "1:1066830844965:web:b50ba1e2118d799b4fdbcc",
-  "apiKey": "AIzaSyBezjRvyMWFczNls3JmHVM5PTmWJx82tzA",
-  "authDomain": "peerless-smithy-c7c1c.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-shipswift-633f2727-7a5c-43c6-8392-aca9299a6e46",
-  "storageBucket": "peerless-smithy-c7c1c.firebasestorage.app",
-  "messagingSenderId": "1066830844965",
+  "projectId": "gen-lang-client-0817050634",
+  "appId": "1:46085819989:web:c00b8eb2846fb6da5d8edc",
+  "apiKey": "AIzaSyDgHQYZBKBszRGBvQlPPyYCW-NK9vs1HjQ",
+  "authDomain": "gen-lang-client-0817050634.firebaseapp.com",
+  "storageBucket": "gen-lang-client-0817050634.firebasestorage.app",
+  "messagingSenderId": "46085819989",
   "measurementId": "",
-  "oAuthClientId": "1066830844965-1fee1ubfsmmvtt00jbco64vnq87fapoa.apps.googleusercontent.com",
+  "oAuthClientId": "46085819989-23hb5ft5hsj5bv1lj8autdrnnjulf5pr.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

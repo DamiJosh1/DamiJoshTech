@@ -47,7 +47,7 @@ const Ai = () => {
       let aiResponse: { role: 'ai', content: string, actionUrl?: string, actionText?: string } = { role: 'ai' as const, content: data.text || 'I am sorry, I am having trouble connecting to my database right now.' };
 
       // Optional manual overrides for explicit store directions 
-      const query = userQuery.toLowerCase();
+      const query = (userQuery || '').toLowerCase();
       if (isAdmin && (query.includes('stats') || query.includes('sales'))) {
         aiResponse.actionUrl = "/admin";
         aiResponse.actionText = "View Full Dashboard";
