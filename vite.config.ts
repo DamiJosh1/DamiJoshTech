@@ -11,7 +11,7 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg'],
+        includeAssets: ['favicondami.ico', 'images/favicondami.ico', 'images/damilogo.jpg'],
         manifest: {
           name: 'SAJODA ELECTRONICS',
           short_name: 'SAJODA',
@@ -22,19 +22,14 @@ export default defineConfig(() => {
           start_url: '/',
           icons: [
             {
-              src: 'favicon.svg',
-              sizes: '192x192',
-              type: 'image/svg+xml'
+              src: '/images/favicondami.ico',
+              sizes: '244x244',
+              type: 'image/x-icon'
             },
             {
-              src: 'favicon.svg',
-              sizes: '512x512',
-              type: 'image/svg+xml'
-            },
-            {
-              src: 'favicon.svg',
-              sizes: '512x512',
-              type: 'image/svg+xml',
+              src: '/images/favicondami.ico',
+              sizes: '244x244',
+              type: 'image/x-icon',
               purpose: 'any maskable'
             }
           ]

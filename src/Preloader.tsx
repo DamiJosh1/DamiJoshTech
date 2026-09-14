@@ -50,9 +50,17 @@ export default function Preloader({ isDarkMode }: { isDarkMode: boolean }) {
               muted
               playsInline
               preload="auto"
+              onCanPlay={(e) => {
+                // Ensure autoplay starts without being blocked
+                try {
+                  (e.target as HTMLVideoElement).play();
+                } catch (err) {
+                  // Browser policy fallback
+                }
+              }}
               onEnded={handleVideoEnded}
               onError={() => {
-                // If video fails to load or hasn't finished uploading yet, fallback gracefully
+                // If video fails to load, fallback gracefully
                 setVideoError(true);
               }}
               className="w-full h-full object-cover sm:object-contain shadow-2xl"

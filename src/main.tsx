@@ -10,6 +10,22 @@ import './index.css';
 
 // Intercept harmless browser/IndexedDB tab-switching and transient Firestore offline errors
 if (typeof window !== 'undefined') {
+  // Ensure the custom favicon is dynamically applied to all favicon links in the document
+  try {
+    const faviconUrl = '/images/favicondami.ico?v=' + Date.now();
+    const existingLinks = document.querySelectorAll("link[rel*='icon']");
+    if (existingLinks.length > 0) {
+      existingLinks.forEach(link => link.setAttribute('href', faviconUrl));
+    } else {
+      const link = document.createElement('link');
+      link.rel = 'shortcut icon';
+      link.href = faviconUrl;
+      document.head.appendChild(link);
+    }
+  } catch (e) {
+    // Ignore DOM favicon replacement error
+  }
+
   const isIgnorableFirebaseError = (msg: string) => {
     return (
       msg.includes('Database is closing') ||
