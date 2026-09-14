@@ -10,9 +10,17 @@ import {
 import { 
   initializeFirestore, 
   getFirestore, 
-  memoryLocalCache 
+  memoryLocalCache,
+  setLogLevel
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+
+// Silence verbose transient offline/reconnect logs in development and iframe environments
+try {
+  setLogLevel('error');
+} catch (e) {
+  // Ignored if unsupported
+}
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 

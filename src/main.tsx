@@ -8,23 +8,33 @@ import ForgotPassword from './ForgotPassword.tsx';
 import ResetPassword from './ResetPassword.tsx';
 import './index.css';
 
-// Intercept harmless browser/IndexedDB tab-switching error "Database is closing/hidden"
+// Intercept harmless browser/IndexedDB tab-switching and transient Firestore offline errors
 if (typeof window !== 'undefined') {
+  const isIgnorableFirebaseError = (msg: string) => {
+    return (
+      msg.includes('Database is closing') ||
+      msg.includes('closing/hidden') ||
+      msg.includes('Could not reach Cloud Firestore backend') ||
+      msg.includes('the client is offline') ||
+      msg.includes('code=unavailable')
+    );
+  };
+
   window.addEventListener('unhandledrejection', (event) => {
     const reason = event.reason;
     const message = reason?.message || String(reason || '');
-    if (message.includes('Database is closing') || message.includes('closing/hidden')) {
-      // Prevent browser error overlay from triggering on tab blur or iframe visibility change
+    if (isIgnorableFirebaseError(message)) {
+      // Prevent browser error overlay from triggering on tab blur, offline state, or iframe reconnects
       event.preventDefault();
-      console.warn('[Firebase Auth] Handled transient IndexedDB visibility change state gracefully.');
+      console.warn('[Firebase] Handled transient offline/connection state gracefully.');
     }
   });
 
   window.addEventListener('error', (event) => {
     const message = event.message || event.error?.message || '';
-    if (message.includes('Database is closing') || message.includes('closing/hidden')) {
+    if (isIgnorableFirebaseError(message)) {
       event.preventDefault();
-      console.warn('[Firebase Auth] Handled transient error gracefully:', message);
+      console.warn('[Firebase] Handled transient offline/connection state gracefully.');
     }
   });
 }

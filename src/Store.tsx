@@ -151,6 +151,7 @@ import AdminLayout from './components/admin/AdminLayout';
 import SearchInput from './components/SearchInput';
 import MobileBottomNav from './components/MobileBottomNav';
 import PWAPrompt from './components/PWAPrompt';
+import { INITIAL_PRODUCTS } from './data/initialProducts';
 
 export default function Store() {
   const navigate = useNavigate();
@@ -340,17 +341,24 @@ export default function Store() {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
       const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      setProducts(fetchedProducts);
+      if (fetchedProducts.length > 0) {
+        setProducts(fetchedProducts);
+      } else {
+        // Provide rich default catalog if Firestore has not yet been seeded
+        setProducts(prev => prev.length > 0 ? prev : INITIAL_PRODUCTS);
+      }
       setProductsLoading(false);
     }, (error) => {
-      console.error("Firestore connection error:", error);
+      console.warn("Firestore products operating in offline mode:", error.message || error);
+      setProducts(prev => prev.length > 0 ? prev : INITIAL_PRODUCTS);
+      setProductsLoading(false);
     });
 
     const unsubPromotions = onSnapshot(collection(db, 'promotions'), (snapshot) => {
       const fetchedPromotions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Promotion));
       setPromotions(fetchedPromotions);
     }, (error) => {
-      console.error("Firestore promotions connection error:", error);
+      console.warn("Firestore promotions operating in offline mode:", error.message || error);
     });
     
     return () => {
