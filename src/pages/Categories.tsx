@@ -9,8 +9,8 @@ export default function Categories() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
-  const recentSearches = ['Headphones', 'Smart Watch', 'Speaker'];
-  const trendingSearches = ['Sony WH-1000XM5', 'Dyson Airwrap', 'Samsung S24 Ultra'];
+  const recentSearches = ['Robot Vacuum', 'Smart Air Fryer', 'AMOLED Smartwatch', 'HEPA Purifier'];
+  const trendingSearches = ['Robot Vacuum Mop', '4K Smart Projector', '3-in-1 Wireless Hub', 'Espresso Machine'];
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim()) {

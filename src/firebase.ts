@@ -17,7 +17,7 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 // Silence verbose transient offline/reconnect logs in development and iframe environments
 try {
-  setLogLevel('error');
+  setLogLevel('silent');
 } catch (e) {
   // Ignored if unsupported
 }

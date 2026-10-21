@@ -1,0 +1,12 @@
+{
+  "firestore": [
+    {
+      "database": "(default)",
+      "rules": "firestore.rules"
+    },
+    {
+      "database": "ai-studio-shipswift-633f2727-7a5c-43c6-8392-aca9299a6e46",
+      "rules": "firestore.rules"
+    }
+  ]
+}

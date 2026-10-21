@@ -26,24 +26,13 @@ export default function Checkout() {
   }, [step]);
 
 
-  // Filter shipping methods by selected country
-  const availableShippingMethods = shippingMethods.filter(m => m.active && m.countryCodes.includes(shippingData.country));
-  
-  // Set default shipping method if current one is not available
-  useEffect(() => {
-    if (availableShippingMethods.length > 0 && !availableShippingMethods.find(m => m.id === shippingMethod)) {
-      setShippingMethod(availableShippingMethods[0].id as string);
-    }
-  }, [shippingData.country, availableShippingMethods, shippingMethod]);
+  const availableShipping = shippingMethods.filter(m => m.active);
+  const selectedCustomShipping = availableShipping.find(m => m.id === shippingMethod);
+  const shippingCost = selectedCustomShipping 
+    ? selectedCustomShipping.price 
+    : (shippingMethod === 'express' ? 25 : (cartTotal > 100 ? 0 : 15));
 
-  const selectedShipping = availableShippingMethods.find(m => m.id === shippingMethod);
-  const shippingCost = selectedShipping ? selectedShipping.price : 0;
-
-  // Calculate tax
-  const taxRule = taxRules.find(t => t.active && t.countryCode === shippingData.country);
-  const taxRate = taxRule ? taxRule.ratePercentage / 100 : 0;
-  const tax = cartTotal * taxRate;
-
+  const tax = 0; // Simplified domestic store checkout
   const finalTotal = cartTotal + tax + shippingCost;
 
 
@@ -75,9 +64,9 @@ export default function Checkout() {
         orderNumber: orderId,
         customerId: user?.uid || "guest",
         contact: contactData,
-        customerEmail: contactData.email,
-        customerName: `${contactData.firstName} ${contactData.lastName}`.trim(),
-        customerPhone: contactData.phone,
+        customerEmail: contactData.email || user?.email || '',
+        customerName: `${shippingData.firstName || ''} ${shippingData.lastName || ''}`.trim() || user?.displayName || 'Valued Customer',
+        customerPhone: contactData.phone || '',
         shippingAddress: shippingData,
         shippingMethod,
         items: cartItems.map(i => ({
@@ -256,10 +245,10 @@ export default function Checkout() {
                       </div>
                       <div>
                         <span className="block font-bold text-zinc-900">Standard Delivery</span>
-                        <span className="block text-sm text-zinc-500">Estimated 7-15 business days</span>
+                        <span className="block text-sm text-zinc-500">Estimated 2-4 business days</span>
                       </div>
                     </div>
-                    <span className="font-bold text-zinc-900">{cartTotal > 100 ? 'Free' : '$15.00'}</span>
+                    <span className="font-bold text-zinc-900">{cartTotal > 100 ? 'Free' : formatPrice(15)}</span>
                     <input type="radio" name="shipping" value="standard" checked={shippingMethod === 'standard'} onChange={() => setShippingMethod('standard')} className="hidden" />
                   </label>
 
@@ -269,11 +258,11 @@ export default function Checkout() {
                         {shippingMethod === 'express' && <div className="w-2.5 h-2.5 bg-zinc-900 rounded-full" />}
                       </div>
                       <div>
-                        <span className="block font-bold text-zinc-900">Express Delivery</span>
-                        <span className="block text-sm text-zinc-500">Estimated 3-5 business days</span>
+                        <span className="block font-bold text-zinc-900">Express Priority Courier</span>
+                        <span className="block text-sm text-zinc-500">Estimated 1-2 business days</span>
                       </div>
                     </div>
-                    <span className="font-bold text-zinc-900">$25.00</span>
+                    <span className="font-bold text-zinc-900">{formatPrice(25)}</span>
                     <input type="radio" name="shipping" value="express" checked={shippingMethod === 'express'} onChange={() => setShippingMethod('express')} className="hidden" />
                   </label>
                 </div>

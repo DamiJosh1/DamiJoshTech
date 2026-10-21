@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { 
   Package, Search, Filter, Eye, Edit2, Trash2, Plus, Download, 
-  RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon, FolderGit2
+  RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon, FolderGit2,
+  Sparkles, CheckCircle2, Loader2, Wand2, X, Zap
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../StoreContext';
+import { INITIAL_PRODUCTS } from '../../data/initialProducts';
 
 export default function AdminProducts() {
   const { user, formatPrice } = useStore();
@@ -27,6 +29,96 @@ export default function AdminProducts() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const itemsPerPage = 25;
+
+  // AI Catalog Generator State
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiCategory, setAiCategory] = useState<'All' | 'Home Appliances' | 'Latest Gadgets' | 'Electronics'>('All');
+  const [aiCount, setAiCount] = useState<number>(5);
+  const [aiCustomPrompt, setAiCustomPrompt] = useState('');
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [aiStatusMsg, setAiStatusMsg] = useState('');
+  const [aiSuccessResult, setAiSuccessResult] = useState<string | null>(null);
+  const [isSeedingDefaults, setIsSeedingDefaults] = useState(false);
+
+  const handleAiAutoUpload = async (customCat?: string, customCnt?: number, customP?: string) => {
+    setIsAiGenerating(true);
+    setAiSuccessResult(null);
+    setAiStatusMsg('Gemini AI is analyzing specs, photos and curating products...');
+
+    const categoryToUse = customCat || aiCategory;
+    const countToUse = customCnt || aiCount;
+    const promptToUse = customP !== undefined ? customP : aiCustomPrompt;
+
+    try {
+      const res = await fetch('/api/ai/generate-catalog-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: categoryToUse,
+          count: countToUse,
+          customPrompt: promptToUse
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success || !Array.isArray(data.products)) {
+        throw new Error(data.error || 'Failed to generate products');
+      }
+
+      setAiStatusMsg(`Publishing ${data.products.length} products to live Firestore catalog...`);
+
+      let addedCount = 0;
+      for (const prod of data.products) {
+        const prodId = prod.id || `sajoda-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        await setDoc(doc(db, 'products', prodId), {
+          ...prod,
+          id: prodId,
+          status: 'active',
+          inStock: true,
+          inventory: prod.stockCount || 40,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        addedCount++;
+      }
+
+      setAiSuccessResult(`Successfully generated and uploaded ${addedCount} products to your store!`);
+      setIsAiGenerating(false);
+      setAiStatusMsg('');
+    } catch (err: any) {
+      console.error('AI Product Upload Error:', err);
+      setAiStatusMsg(`Error: ${err.message || 'Failed to generate products'}`);
+      setIsAiGenerating(false);
+    }
+  };
+
+  const handleSeedDefaults = async () => {
+    setIsSeedingDefaults(true);
+    try {
+      let count = 0;
+      for (const prod of INITIAL_PRODUCTS) {
+        await setDoc(doc(db, 'products', prod.id), {
+          ...prod,
+          status: 'active',
+          inStock: true,
+          inventory: prod.stockCount || 30,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        count++;
+      }
+      alert(`Successfully seeded ${count} premier Home Appliances, Latest Gadgets, and Electronics to Firestore!`);
+    } catch (err: any) {
+      console.error('Seed error:', err);
+      alert('Error seeding products: ' + err.message);
+    } finally {
+      setIsSeedingDefaults(false);
+    }
+  };
 
   const fetchProducts = () => {
     setIsLoading(true);
@@ -120,18 +212,27 @@ export default function AdminProducts() {
           <p className="text-lg text-zinc-500 font-medium">Manage your SAJODA Electronics catalog.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button 
+            onClick={() => setShowAiModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-purple-500/20 whitespace-nowrap cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" /> AI Auto-Upload Products
+          </button>
+          <button 
+            onClick={handleSeedDefaults}
+            disabled={isSeedingDefaults}
+            className="flex items-center gap-2 px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-sm font-bold transition-all whitespace-nowrap cursor-pointer"
+            title="Seed 10 Premier Appliances & Gadgets directly to Firestore"
+          >
+            {isSeedingDefaults ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-500" />}
+            Seed 10 Defaults
+          </button>
           <Link 
             to="/admin/drive-import"
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
           >
             <FolderGit2 className="w-4 h-4 text-emerald-600" /> Drive AI Import
-          </Link>
-          <Link 
-            to="/admin/cjdropshipping"
-            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
-          >
-            <Download className="w-4 h-4" /> Import from CJ
           </Link>
           <Link 
             to="/admin/products/new"
@@ -377,6 +478,176 @@ export default function AdminProducts() {
         )}
 
       </div>
+
+      {/* AI Product Auto-Upload Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-zinc-100 w-full max-w-2xl overflow-hidden animate-scale-up">
+            
+            {/* Modal Header */}
+            <div className="p-6 bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md">
+                  <Sparkles className="w-6 h-6 text-amber-300" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black tracking-tight">AI Product Auto-Generator</h3>
+                  <p className="text-xs text-purple-200">Generate & upload trending home appliances and gadgets without stress</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setShowAiModal(false); setAiSuccessResult(null); }}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+              
+              {/* Success Banner */}
+              {aiSuccessResult && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-bold">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>{aiSuccessResult}</span>
+                </div>
+              )}
+
+              {/* Status or Progress */}
+              {isAiGenerating && (
+                <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl flex items-center gap-4 text-purple-900">
+                  <Loader2 className="w-6 h-6 text-purple-600 animate-spin shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold">AI Merchandiser is Working...</p>
+                    <p className="text-xs text-purple-700">{aiStatusMsg || 'Generating listings, pricing, and images...'}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Presets */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
+                  1-Click Quick Presets
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    disabled={isAiGenerating}
+                    onClick={() => handleAiAutoUpload('Home Appliances', 5, 'Curate trending smart home appliances like robot vacuums, air fryers, purifiers, and espresso machines.')}
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-purple-500 hover:bg-purple-50/50 text-left transition-all group disabled:opacity-50"
+                  >
+                    <span className="text-base block mb-0.5">🏠 <strong>5 Home Appliances</strong></span>
+                    <span className="text-xs text-zinc-500 group-hover:text-purple-700">Air fryers, robot vacuums, purifiers</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isAiGenerating}
+                    onClick={() => handleAiAutoUpload('Latest Gadgets', 5, 'Curate cutting-edge personal gadgets like smartwatches, foldable drones, wireless chargers, and smart lamps.')}
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-left transition-all group disabled:opacity-50"
+                  >
+                    <span className="text-base block mb-0.5">⚡ <strong>5 Latest Gadgets</strong></span>
+                    <span className="text-xs text-zinc-500 group-hover:text-indigo-700">AMOLED watches, drones, charging hubs</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isAiGenerating}
+                    onClick={() => handleAiAutoUpload('Electronics', 5, 'Curate high-performance electronics like 4K portable projectors, ANC earbuds, soundbars, and displays.')}
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-blue-500 hover:bg-blue-50/50 text-left transition-all group disabled:opacity-50"
+                  >
+                    <span className="text-base block mb-0.5">📺 <strong>5 Electronics</strong></span>
+                    <span className="text-xs text-zinc-500 group-hover:text-blue-700">Cinema projectors, studio audio, soundbars</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isAiGenerating}
+                    onClick={() => handleAiAutoUpload('All', 8, 'A mixed catalog of best-selling home appliances, gadgets, and electronics.')}
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-purple-600 hover:bg-purple-50/50 text-left transition-all group disabled:opacity-50"
+                  >
+                    <span className="text-base block mb-0.5">🌟 <strong>8 Mixed Best-Sellers</strong></span>
+                    <span className="text-xs text-zinc-500 group-hover:text-purple-700">Complete balanced assortment</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Generator Form */}
+              <div className="pt-4 border-t border-zinc-100 space-y-4">
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  Or Custom AI Prompt
+                </label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">Target Category</label>
+                    <select
+                      value={aiCategory}
+                      onChange={(e: any) => setAiCategory(e.target.value)}
+                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500"
+                    >
+                      <option value="All">All Categories</option>
+                      <option value="Home Appliances">Home Appliances</option>
+                      <option value="Latest Gadgets">Latest Gadgets</option>
+                      <option value="Electronics">Electronics</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">Number of Products</label>
+                    <select
+                      value={aiCount}
+                      onChange={(e) => setAiCount(Number(e.target.value))}
+                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500"
+                    >
+                      <option value={3}>3 Products</option>
+                      <option value={5}>5 Products (Recommended)</option>
+                      <option value={8}>8 Products</option>
+                      <option value={10}>10 Products</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                    Specific Product Concept (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={aiCustomPrompt}
+                    onChange={(e) => setAiCustomPrompt(e.target.value)}
+                    placeholder="e.g. Smart induction cookers, robot window cleaners, MagSafe stands..."
+                    className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isAiGenerating}
+                  onClick={() => handleAiAutoUpload()}
+                  className="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-90 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {isAiGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Generating & Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-5 h-5" />
+                      Generate {aiCount} Products & Upload to Store
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

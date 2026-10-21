@@ -312,43 +312,121 @@ export default function AdminOrderDetails() {
           </div>
 
           {/* Fulfillment */}
+          {/* Fulfillment & Tracking */}
           <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
               <div className="flex items-center gap-2">
                 <Truck className="w-5 h-5 text-zinc-900" />
-                <h2 className="text-lg font-black text-zinc-900 tracking-tight">FULFILLMENT</h2>
+                <h2 className="text-lg font-black text-zinc-900 tracking-tight">PARCEL TRACKING & FULFILLMENT</h2>
               </div>
             </div>
             <div className="p-5 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-500">Supplier</span>
-                <span className="text-sm font-bold text-zinc-900">CJ Dropshipping</span>
-              </div>
               
-              {order.cjOrderId ? (
-                <>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">CJ Order ID</span>
-                    <span className="text-sm font-mono font-medium text-zinc-900 bg-zinc-100 px-2 py-1 rounded w-fit">{order.cjOrderId}</span>
-                  </div>
-                  {order.trackingNumber && (
-                    <div className="flex flex-col gap-1 mt-2">
-                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Tracking</span>
-                      <a href={`https://t.17track.net/en#nums=${order.trackingNumber}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-bold text-primary-blue hover:underline w-fit">
-                        {order.trackingNumber} <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center p-4 bg-zinc-50 rounded-xl border border-zinc-200 border-dashed text-center">
-                  <Box className="w-6 h-6 text-zinc-400 mb-2" />
-                  <span className="text-sm font-medium text-zinc-600 mb-3">Not yet submitted to CJ</span>
-                  <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold shadow-sm">
-                    Submit to CJ
-                  </button>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Current Status</span>
+                <span className={`px-2.5 py-1 text-xs font-bold uppercase rounded-lg border ${getStatusStyle(order.status)}`}>
+                  {order.status || 'Processing'}
+                </span>
+              </div>
+
+              {/* Status Change Buttons */}
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-zinc-100">
+                <span className="text-xs font-bold text-zinc-700">Update Order Stage</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'].map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={() => updateStatus(st)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        order.status === st 
+                          ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm' 
+                          : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              {/* Courier & Tracking Waybill */}
+              <div className="flex flex-col gap-3 pt-3 border-t border-zinc-100">
+                <span className="text-xs font-bold text-zinc-700 uppercase tracking-wider">Customer Tracking Code</span>
+                
+                <div>
+                  <label className="text-[11px] font-semibold text-zinc-500 block mb-1">Carrier / Dispatch Courier</label>
+                  <input
+                    type="text"
+                    defaultValue={order.carrier || 'Express Direct Courier'}
+                    id="admin-carrier-input"
+                    placeholder="e.g. DHL, FedEx, GIG Logistics, Dispatch"
+                    className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium outline-none focus:border-zinc-900 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-zinc-500 block mb-1">Tracking Number / Waybill</label>
+                  <input
+                    type="text"
+                    defaultValue={order.trackingNumber || ''}
+                    id="admin-tracking-input"
+                    placeholder="e.g. EXP-84920492"
+                    className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold outline-none focus:border-zinc-900 focus:bg-white uppercase"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isUpdating}
+                  onClick={async () => {
+                    const trackingVal = (document.getElementById('admin-tracking-input') as HTMLInputElement)?.value.trim();
+                    const carrierVal = (document.getElementById('admin-carrier-input') as HTMLInputElement)?.value.trim();
+                    if (!id) return;
+                    setIsUpdating(true);
+                    try {
+                      await updateDoc(doc(db, 'orders', id), {
+                        trackingNumber: trackingVal || null,
+                        carrier: carrierVal || 'Express Direct Courier',
+                        fulfillmentStatus: trackingVal ? 'Shipped' : order.status,
+                        status: trackingVal && order.status === 'Processing' ? 'Shipped' : order.status,
+                        updatedAt: serverTimestamp(),
+                        timeline: arrayUnion({
+                          event: `Tracking updated: ${carrierVal} #${trackingVal}`,
+                          timestamp: new Date(),
+                          actor: auth.currentUser?.email || 'Admin'
+                        })
+                      });
+                      alert('Tracking details saved! Customer tracking page is now updated.');
+                    } catch (e: any) {
+                      alert('Error updating tracking: ' + e.message);
+                    } finally {
+                      setIsUpdating(false);
+                    }
+                  }}
+                  className="w-full py-2.5 bg-primary-blue hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  <Truck className="w-3.5 h-3.5" /> Save Tracking for Customer
+                </button>
+
+                {order.trackingNumber && (
+                  <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-zinc-900 block font-mono">{order.trackingNumber}</span>
+                      <span className="text-[11px] text-zinc-500">{order.carrier || 'Express'}</span>
+                    </div>
+                    <Link
+                      to={`/track-order?order=${order.orderNumber}`}
+                      target="_blank"
+                      className="text-xs font-bold text-primary-blue hover:underline flex items-center gap-1"
+                    >
+                      Customer View <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
 

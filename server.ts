@@ -325,6 +325,178 @@ Return ONLY valid JSON matching this exact structure:
   }
 });
 
+// Image pools for fallback/high-resolution verified product photos
+const CURATED_IMAGES = {
+  'Home Appliances': [
+    'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1570222094114-d054a817e56b?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=800'
+  ],
+  'Latest Gadgets': [
+    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1622445262464-84b1456045b6?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1609592424368-e4b2d1d0537d?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800'
+  ],
+  'Electronics': [
+    'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=800'
+  ]
+};
+
+// AI Generate Batch Catalog of Home Appliances, Latest Gadgets, and Electronics
+app.post('/api/ai/generate-catalog-products', async (req, res) => {
+  try {
+    const { category = 'All', count = 5, customPrompt = '' } = req.body;
+    const targetCount = Math.min(Math.max(Number(count) || 5, 1), 12);
+
+    const promptText = `You are a chief e-commerce merchandiser and tech product curator for 'Sajoda', a premier store specializing in Home Appliances, Latest Gadgets, and Electronics.
+The store owner wants you to effortlessly generate and catalog ${targetCount} top-selling, realistic, highly desirable products.
+
+Category requested: ${category}
+${customPrompt ? `User instructions / focus: "${customPrompt}"` : ''}
+
+Categories allowed: "Home Appliances", "Latest Gadgets", "Electronics", or "Smart Living".
+
+Generate an array of exactly ${targetCount} unique, cutting-edge products. Each item must have:
+- name: catchy, modern commercial brand & product name (under 60 characters)
+- price: realistic retail price in USD (between 29.99 and 599.99)
+- originalPrice: crossed-out MSRP price (15-30% higher than price)
+- category: one of "Home Appliances", "Latest Gadgets", "Electronics"
+- badge: one of "BESTSELLER", "HOT", "NEW", "ECO", "TRENDING", or "PREMIUM"
+- brand: "Sajoda Home" or "Sajoda Tech" or "Sajoda Audio"
+- shortDescription: punchy one-sentence customer benefit (under 100 characters)
+- description: engaging 2-3 sentence overview highlighting real-world benefits and high-end build quality
+- inStock: true
+- stockCount: random integer between 15 and 65
+- rating: floating point between 4.7 and 5.0
+- reviewCount: integer between 35 and 250
+- features: 4 specific, technical bullet points (e.g., motor power, battery life, connectivity, safety)
+- specifications: array of 3 objects with name and value (e.g., Power, Dimensions, Connectivity, Material)
+- tags: array of 3-4 searchable keywords
+
+Return ONLY a valid JSON array of objects matching this exact structure:
+[
+  {
+    "name": "...",
+    "price": 99.99,
+    "originalPrice": 129.99,
+    "category": "Home Appliances",
+    "badge": "BESTSELLER",
+    "brand": "Sajoda Home",
+    "shortDescription": "...",
+    "description": "...",
+    "inStock": true,
+    "stockCount": 40,
+    "rating": 4.9,
+    "reviewCount": 118,
+    "features": ["Feature 1", "Feature 2", "Feature 3", "Feature 4"],
+    "specifications": [{"name": "Capacity", "value": "5.5 Liters"}, {"name": "Power", "value": "1700W"}],
+    "tags": ["appliances", "kitchen", "smart"]
+  }
+]`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: promptText,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const parsedProducts = JSON.parse(response.text || '[]');
+    
+    // Assign curated high-res images to each generated product based on category
+    const productsWithImages = parsedProducts.map((p: any, index: number) => {
+      const cat = p.category as keyof typeof CURATED_IMAGES;
+      const pool = CURATED_IMAGES[cat] || CURATED_IMAGES['Latest Gadgets'];
+      const img = pool[index % pool.length];
+      const secondImg = pool[(index + 1) % pool.length];
+      return {
+        ...p,
+        id: 'sajoda-' + (p.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) + '-' + Math.random().toString(36).slice(2, 6),
+        image: img,
+        images: [img, secondImg],
+        createdAt: new Date().toISOString()
+      };
+    });
+
+    res.json({ success: true, count: productsWithImages.length, products: productsWithImages });
+  } catch (error: any) {
+    console.error('Gemini Catalog Generation Error:', error);
+    res.status(500).json({ error: error?.message || 'Failed to generate catalog products with AI' });
+  }
+});
+
+// AI Generate Single Product from Prompt
+app.post('/api/ai/generate-single-product', async (req, res) => {
+  try {
+    const { prompt, category } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const promptText = `Generate a complete, ready-to-sell e-commerce product based on this request: "${prompt}".
+Store specializes in: Home Appliances, Latest Gadgets, and Electronics.
+Category suggestion: ${category || 'infer best matching category'}.
+
+Return ONLY valid JSON matching this schema:
+{
+  "name": "Catchy commercial product title (under 60 chars)",
+  "price": 149.99,
+  "originalPrice": 189.99,
+  "category": "Home Appliances" or "Latest Gadgets" or "Electronics",
+  "badge": "NEW" or "BESTSELLER" or "FEATURED",
+  "brand": "Sajoda Home" or "Sajoda Tech",
+  "shortDescription": "One sentence summary",
+  "description": "2-3 paragraphs detailing features, benefits, specifications, and what makes it extraordinary",
+  "features": ["Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4"],
+  "specifications": [
+    {"name": "Power/Battery", "value": "..."},
+    {"name": "Material", "value": "..."},
+    {"name": "Dimensions/Weight", "value": "..."}
+  ],
+  "tags": ["tag1", "tag2", "tag3"]
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: promptText,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    const cat = (parsed.category as keyof typeof CURATED_IMAGES) || 'Latest Gadgets';
+    const pool = CURATED_IMAGES[cat] || CURATED_IMAGES['Latest Gadgets'];
+    const chosenImg = pool[Math.floor(Math.random() * pool.length)];
+
+    res.json({ 
+      success: true, 
+      product: {
+        ...parsed,
+        image: chosenImg,
+        images: [chosenImg],
+        inStock: true,
+        stockCount: 35
+      }
+    });
+  } catch (error: any) {
+    console.error('Gemini Single Product Generation Error:', error);
+    res.status(500).json({ error: error?.message || 'Failed to generate product with AI' });
+  }
+});
+
 
 // Product Review Summarization Webhook
 

@@ -1,5 +1,4 @@
 import Footer from "./components/Footer";
-import Preloader from './Preloader';
 import Logo from './Logo';
 /**
  * @license
@@ -568,7 +567,6 @@ export default function Store() {
 
   return (
     <StoreContext.Provider value={storeState}>
-      <Preloader isDarkMode={isDarkMode} />
     <div className="min-h-screen font-sans flex flex-col text-dark-text bg-light-bg pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-0">
       
                   {/* Desktop Header */}
@@ -579,12 +577,14 @@ export default function Store() {
             <Logo className="h-8" variant="full" />
           </button>
 
-          <nav className="flex items-center gap-8 text-[15px] font-medium z-10">
-            <button onClick={() => navigate('/shop')} className="transition-colors text-charcoal hover:text-primary-blue">Shop</button>
-            <button onClick={() => navigate('/categories')} className="transition-colors text-charcoal hover:text-primary-blue">Categories</button>
-            <button onClick={() => navigate('/shop?q=new')} className="transition-colors text-charcoal hover:text-primary-blue">New Arrivals</button>
-            <button onClick={() => navigate('/shop?q=best')} className="transition-colors text-charcoal hover:text-primary-blue">Best Sellers</button>
-            <button onClick={() => navigate('/shop?q=deals')} className="transition-colors text-charcoal hover:text-primary-blue text-error">Deals</button>
+          <nav className="flex items-center gap-6 text-[14px] font-medium z-10">
+            <button onClick={() => navigate('/shop')} className="transition-colors text-charcoal hover:text-primary-blue">All Products</button>
+            <button onClick={() => navigate('/shop?category=Home+Appliances')} className="transition-colors text-charcoal hover:text-primary-blue font-semibold">Home Appliances</button>
+            <button onClick={() => navigate('/shop?category=Latest+Gadgets')} className="transition-colors text-charcoal hover:text-primary-blue font-semibold">Latest Gadgets</button>
+            <button onClick={() => navigate('/shop?category=Electronics')} className="transition-colors text-charcoal hover:text-primary-blue font-semibold">Electronics</button>
+            <button onClick={() => navigate('/track-order')} className="transition-colors text-zinc-900 hover:text-primary-blue font-bold flex items-center gap-1.5 bg-zinc-100 hover:bg-zinc-200 px-3.5 py-1.5 rounded-full text-xs border border-zinc-200 shadow-xs">
+              <Truck className="w-3.5 h-3.5 text-primary-blue" /> Track Order
+            </button>
           </nav>
 
           <SearchInput />
@@ -676,15 +676,15 @@ export default function Store() {
              <div className="p-6 flex-1 overflow-y-auto flex flex-col gap-6">
                 <nav className="flex flex-col gap-6 text-[15px] font-medium text-dark-text">
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} className="text-left hover:text-primary-blue">Home</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop'); }} className="text-left hover:text-primary-blue">Shop</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/categories'); }} className="text-left hover:text-primary-blue">Categories</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=new'); }} className="text-left hover:text-primary-blue">New Arrivals</button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?q=best'); }} className="text-left hover:text-primary-blue">Best Sellers</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop'); }} className="text-left hover:text-primary-blue">All Products</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?category=Home+Appliances'); }} className="text-left hover:text-primary-blue font-semibold">Home Appliances</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?category=Latest+Gadgets'); }} className="text-left hover:text-primary-blue font-semibold">Latest Gadgets</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?category=Electronics'); }} className="text-left hover:text-primary-blue font-semibold">Electronics</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/deals'); }} className="text-left text-error hover:text-primary-blue flex items-center gap-2"><Zap className="w-4 h-4" /> Deals</button>
                   
                   <div className="h-px bg-zinc-100 my-2" />
                   
-                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/orders'); }} className="text-left hover:text-primary-blue">Track Order</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/track-order'); }} className="text-left font-bold text-zinc-900 hover:text-primary-blue flex items-center gap-2"><Truck className="w-4 h-4 text-primary-blue" /> Track Order</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/about'); }} className="text-left hover:text-primary-blue">About</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/contact'); }} className="text-left hover:text-primary-blue">Contact</button>
                   
