@@ -52,6 +52,12 @@ export default function AdminProductForm() {
     seoDescription: '',
     slug: '',
     
+    condition: 'new',
+    conditionGrade: 'Brand New - Factory Sealed',
+    newPrice: '',
+    usedPrice: '',
+    warrantyInfo: '1-Year Sajoda Official Warranty',
+    
     status: 'draft',
     
     cjSku: '',
@@ -74,6 +80,11 @@ export default function AdminProductForm() {
               price: data.price?.toString() || '',
               originalPrice: data.originalPrice?.toString() || '',
               costPrice: data.costPrice?.toString() || '',
+              newPrice: data.newPrice?.toString() || '',
+              usedPrice: data.usedPrice?.toString() || '',
+              condition: data.condition || 'new',
+              conditionGrade: data.conditionGrade || (data.condition === 'used' ? 'Certified Pre-Owned - Grade A' : 'Brand New - Factory Sealed'),
+              warrantyInfo: data.warrantyInfo || (data.condition === 'used' ? '90-Day Sajoda Certified Guarantee' : '1-Year Sajoda Official Warranty'),
               inventory: data.inventory?.toString() || '',
               lowStockThreshold: data.lowStockThreshold?.toString() || '5',
               weight: data.weight?.toString() || '',
@@ -263,6 +274,11 @@ export default function AdminProductForm() {
         price: parseFloat(formData.price) || 0,
         originalPrice: parseFloat(formData.originalPrice) || null,
         costPrice: parseFloat(formData.costPrice) || null,
+        condition: formData.condition || 'new',
+        conditionGrade: formData.conditionGrade || (formData.condition === 'used' ? 'Certified Pre-Owned - Grade A' : 'Brand New - Factory Sealed'),
+        newPrice: parseFloat(formData.newPrice) || (formData.condition === 'new' ? parseFloat(formData.price) : null),
+        usedPrice: parseFloat(formData.usedPrice) || (formData.condition === 'used' ? parseFloat(formData.price) : null),
+        warrantyInfo: formData.warrantyInfo || (formData.condition === 'used' ? '90-Day Sajoda Certified Guarantee' : '1-Year Sajoda Official Warranty'),
         image: formData.image || (formData.images.length > 0 ? formData.images[0] : ''),
         images: formData.images,
         category: formData.category,
@@ -553,6 +569,82 @@ export default function AdminProductForm() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Condition & Dual Options */}
+          <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <h2 className="text-lg font-black text-zinc-900 tracking-tight">CONDITION & DUAL PRICING (BRAND NEW VS USED)</h2>
+              <span className="text-xs font-bold text-zinc-500">Customer Choice</span>
+            </div>
+            <div className="p-6 flex flex-col gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-zinc-700">Primary Listing Condition</label>
+                  <select
+                    name="condition"
+                    value={formData.condition || 'new'}
+                    onChange={handleChange}
+                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-bold outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all cursor-pointer"
+                  >
+                    <option value="new">Brand New (Factory Sealed)</option>
+                    <option value="used">Pre-Owned / Refurbished / Open Box</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-zinc-700">Condition Grade Label</label>
+                  <input 
+                    type="text" 
+                    name="conditionGrade"
+                    value={formData.conditionGrade || ''}
+                    onChange={handleChange}
+                    placeholder="e.g. Brand New - Factory Sealed OR Certified Refurbished - Grade A"
+                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-zinc-100">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-zinc-700">Brand New Price ($)</label>
+                  <input 
+                    type="number" 
+                    name="newPrice"
+                    value={formData.newPrice || ''}
+                    onChange={handleChange}
+                    placeholder="Price for Brand New"
+                    min="0" step="0.01"
+                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
+                  />
+                  <span className="text-[11px] text-zinc-500">Allows shoppers to buy brand new</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-zinc-700">Pre-Owned / Used Price ($)</label>
+                  <input 
+                    type="number" 
+                    name="usedPrice"
+                    value={formData.usedPrice || ''}
+                    onChange={handleChange}
+                    placeholder="Price for Pre-Owned"
+                    min="0" step="0.01"
+                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
+                  />
+                  <span className="text-[11px] text-zinc-500">Discounted price for certified pre-owned</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-zinc-700">Warranty / Guarantee Terms</label>
+                  <input 
+                    type="text" 
+                    name="warrantyInfo"
+                    value={formData.warrantyInfo || ''}
+                    onChange={handleChange}
+                    placeholder="e.g. 1-Year Official Warranty or 90-Day Guarantee"
+                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
+                  />
+                  <span className="text-[11px] text-zinc-500">Displayed on product page & badge</span>
+                </div>
+              </div>
             </div>
           </div>
 

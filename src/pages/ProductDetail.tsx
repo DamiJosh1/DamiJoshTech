@@ -5,6 +5,7 @@ import {
   CheckCircle2, Minus, Plus, ShoppingBag, X, ChevronRight, Share2 
 } from 'lucide-react';
 import { useStore } from '../StoreContext';
+import { Product } from '../types';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -24,10 +25,15 @@ export default function ProductDetail() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   const product = products.find(p => p.id === id);
+  const [selectedCondition, setSelectedCondition] = useState<'new' | 'used'>('new');
+  const [copiedToast, setCopiedToast] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
+    if (product) {
+      setSelectedCondition(product.condition || 'new');
+    }
+  }, [id, product]);
 
   if (!product) {
     if (productsLoading) {
@@ -50,6 +56,22 @@ export default function ProductDetail() {
     );
   }
 
+  // Calculate pricing for both Brand New and Used conditions
+  const brandNewPrice = product.newPrice ?? (product.condition === 'new' ? product.price : Math.round(product.price * 1.35 * 100) / 100);
+  const usedPrice = product.usedPrice ?? (product.condition === 'used' ? product.price : Math.round(product.price * 0.72 * 100) / 100);
+  
+  const basePriceForCondition = selectedCondition === 'used' ? usedPrice : brandNewPrice;
+  const currentPrice = selectedVariant ? (selectedVariant.price ? selectedVariant.price * (selectedCondition === 'used' ? 0.75 : 1) : basePriceForCondition) : basePriceForCondition;
+  const originalPrice = selectedCondition === 'used' ? brandNewPrice : product.originalPrice;
+
+  const currentConditionGrade = selectedCondition === 'used'
+    ? (product.condition === 'used' && product.conditionGrade ? product.conditionGrade : 'Certified Pre-Owned - Grade A (Pristine)')
+    : (product.condition === 'new' && product.conditionGrade ? product.conditionGrade : 'Brand New - Factory Sealed');
+
+  const currentWarranty = selectedCondition === 'used'
+    ? '90-Day Sajoda Certified Replacement Guarantee'
+    : (product.warrantyInfo || '1-Year Official Manufacturer Warranty');
+
   // Generate some dummy variants and specs if they don't exist
   const variants = product.variants || [
     { id: 'v1', name: 'Standard Edition', type: 'Model', price: product.price, inStock: true },
@@ -71,9 +93,6 @@ export default function ProductDetail() {
     'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=800'
   ];
 
-  const currentPrice = selectedVariant ? selectedVariant.price : product.price;
-  const originalPrice = product.originalPrice; // Only if overall product is on sale
-
   const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   const handleShare = async () => {
@@ -88,7 +107,8 @@ export default function ProductDetail() {
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
+      setCopiedToast(true);
+      setTimeout(() => setCopiedToast(false), 2500);
     }
   };
 
@@ -247,12 +267,27 @@ export default function ProductDetail() {
         {/* RIGHT COLUMN: DETAILS */}
         <div className="w-full lg:w-[45%] flex flex-col px-6 md:px-0 py-6 md:py-0">
           <div className="flex flex-col mb-6 border-b border-zinc-100 pb-6">
-            <span className="text-xs font-bold tracking-widest uppercase text-primary-blue mb-3 block">
-              {product.brand || 'SAJODA'} • {product.category}
-            </span>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-900 mb-4 leading-tight">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-bold tracking-widest uppercase text-primary-blue">
+                {product.brand || 'SAJODA'} • {product.category}
+              </span>
+              <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
+                selectedCondition === 'used'
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+              }`}>
+                {selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'}
+              </span>
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-900 mb-3 leading-tight">
               {product.name}
             </h1>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 mb-4">
+              <span>Condition:</span>
+              <span className="font-bold text-zinc-900 bg-zinc-100 px-2.5 py-1 rounded-md">{currentConditionGrade}</span>
+            </div>
             
             <div className="flex items-center flex-wrap gap-4 mb-6">
               <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80">
@@ -280,11 +315,79 @@ export default function ProductDetail() {
                   <span className="text-xl line-through text-zinc-400 font-medium">
                     {formatPrice(originalPrice)}
                   </span>
-                  <span className="px-2 py-1 rounded bg-error/10 text-error text-xs font-bold tracking-wider uppercase">
+                  <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-black tracking-wider uppercase">
                     Save {Math.round((1 - currentPrice/originalPrice) * 100)}%
                   </span>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* CHOOSE CONDITION SELECTOR (BRAND NEW VS CERTIFIED PRE-OWNED) */}
+          <div className="mb-8 p-4 bg-zinc-50 rounded-2xl border border-zinc-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-primary-blue" /> Choose Item Condition
+              </h3>
+              <span className="text-[11px] font-bold text-zinc-500">Dual Condition Options</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Option 1: Brand New */}
+              <button
+                type="button"
+                onClick={() => setSelectedCondition('new')}
+                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                  selectedCondition === 'new'
+                    ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500 shadow-xs'
+                    : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-black text-sm text-zinc-900 flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${selectedCondition === 'new' ? 'bg-emerald-600' : 'bg-zinc-300'}`} />
+                    Brand New
+                  </span>
+                  <span className="font-extrabold text-sm text-zinc-900">{formatPrice(brandNewPrice)}</span>
+                </div>
+                <p className="text-[11px] text-zinc-500 mb-2">Factory sealed original box</p>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded w-fit">
+                  1-Year Official Warranty
+                </span>
+              </button>
+
+              {/* Option 2: Pre-Owned / Used */}
+              <button
+                type="button"
+                onClick={() => setSelectedCondition('used')}
+                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                  selectedCondition === 'used'
+                    ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-500 shadow-xs'
+                    : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-black text-sm text-zinc-900 flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${selectedCondition === 'used' ? 'bg-amber-600' : 'bg-zinc-300'}`} />
+                    Pre-Owned / Used
+                  </span>
+                  <span className="font-extrabold text-sm text-zinc-900">{formatPrice(usedPrice)}</span>
+                </div>
+                <p className="text-[11px] text-zinc-500 mb-2">35-point tested & sanitized</p>
+                <span className="text-[10px] font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded w-fit">
+                  Save {Math.round((1 - usedPrice / brandNewPrice) * 100)}% • 90-Day Guarantee
+                </span>
+              </button>
+            </div>
+
+            {/* Quality inspection details box */}
+            <div className="mt-3 pt-3 border-t border-zinc-200/80 flex items-center justify-between text-[11px] text-zinc-600">
+              <span className="font-medium">
+                {selectedCondition === 'used' 
+                  ? '🛡️ Certified: 100% Functional, All Accessories & 90-Day Guarantee'
+                  : '✨ 100% Brand New, Unopened Factory Packaging with 1-Year Warranty'}
+              </span>
+              <span className="text-primary-blue font-bold hidden sm:inline">{currentWarranty}</span>
             </div>
           </div>
 
@@ -342,7 +445,16 @@ export default function ProductDetail() {
               
               {/* Add to Cart Button */}
               <button
-                onClick={() => handleAddToCart(product, quantity, selectedVariant)}
+                onClick={() => {
+                  const productToAdd: Product = {
+                    ...product,
+                    price: currentPrice,
+                    condition: selectedCondition,
+                    conditionGrade: currentConditionGrade,
+                    warrantyInfo: currentWarranty
+                  };
+                  handleAddToCart(productToAdd, quantity, selectedVariant);
+                }}
                 disabled={addingToCartId === product.id || (variants.length > 0 && !selectedVariant)}
                 className={`flex-1 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg ${
                   addingToCartId === product.id
@@ -353,15 +465,22 @@ export default function ProductDetail() {
                 }`}
               >
                 <ShoppingBag className="w-5 h-5" />
-                {addingToCartId === product.id ? 'Adding...' : 'Add to Cart'}
+                {addingToCartId === product.id ? 'Adding...' : `Add to Cart (${selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'})`}
               </button>
             </div>
 
             {/* Buy Now Button */}
             <button
               onClick={() => {
-                handleAddToCart(product, quantity, selectedVariant);
-                // In a real app, this would redirect directly to checkout after adding
+                const productToAdd: Product = {
+                  ...product,
+                  price: currentPrice,
+                  condition: selectedCondition,
+                  conditionGrade: currentConditionGrade,
+                  warrantyInfo: currentWarranty
+                };
+                handleAddToCart(productToAdd, quantity, selectedVariant);
+                navigate('/checkout');
               }}
               disabled={(variants.length > 0 && !selectedVariant)}
               className={`w-full h-14 rounded-xl font-bold text-base transition-all flex items-center justify-center border-2 ${
@@ -370,7 +489,7 @@ export default function ProductDetail() {
                   : 'border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white active:scale-[0.98]'
               }`}
             >
-              Buy it Now
+              Buy it Now • {selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'}
             </button>
           </div>
 
@@ -471,11 +590,23 @@ export default function ProductDetail() {
       {/* Sticky Mobile Purchase Bar */}
       <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom))] inset-x-0 bg-white/90 backdrop-blur-md border-t border-zinc-200 p-4 z-40 flex items-center gap-4 animate-slide-up">
         <div className="flex flex-col flex-1">
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary-blue">
+            {selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'}
+          </span>
           <span className="text-sm font-bold text-zinc-900 line-clamp-1">{product.name}</span>
           <span className="text-sm font-semibold text-primary-blue">{formatPrice(currentPrice)}</span>
         </div>
         <button
-          onClick={() => handleAddToCart(product, 1, selectedVariant)}
+          onClick={() => {
+            const productToAdd = {
+              ...product,
+              price: currentPrice,
+              condition: selectedCondition,
+              conditionGrade: currentConditionGrade,
+              warrantyInfo: currentWarranty
+            };
+            handleAddToCart(productToAdd, 1, selectedVariant);
+          }}
           disabled={addingToCartId === product.id || (variants.length > 0 && !selectedVariant)}
           className={`px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${
             addingToCartId === product.id
@@ -488,6 +619,14 @@ export default function ProductDetail() {
           {addingToCartId === product.id ? 'Added' : 'Add to Cart'}
         </button>
       </div>
+
+      {/* Copied Toast Notification */}
+      {copiedToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>Product link copied to clipboard</span>
+        </div>
+      )}
 
     </div>
   );

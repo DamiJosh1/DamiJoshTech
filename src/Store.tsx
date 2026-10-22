@@ -456,13 +456,31 @@ export default function Store() {
     console.log('Payment closed');
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity = 1, variant?: any) => {
+    const itemCondition = product.condition || 'new';
+    const itemCartId = `${product.id}-${itemCondition}${variant ? `-${variant.id}` : ''}`;
+    const effectivePrice = product.price || 0;
+
     setCartItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      const existing = prev.find(item => item.id === itemCartId);
       if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+        return prev.map(item => item.id === itemCartId ? { ...item, quantity: item.quantity + (quantity || 1) } : item);
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, {
+        id: itemCartId,
+        productId: product.id,
+        variantId: variant?.id,
+        quantity: quantity || 1,
+        unitPrice: effectivePrice,
+        price: effectivePrice,
+        name: product.name,
+        image: product.image,
+        condition: itemCondition,
+        conditionGrade: product.conditionGrade || (itemCondition === 'used' ? 'Certified Pre-Owned' : 'Brand New - Sealed'),
+        productSnapshot: product,
+        variantSnapshot: variant,
+        createdAt: new Date().toISOString()
+      }];
     });
     setIsCartOpen(true);
     setCheckoutStep('cart');
@@ -477,14 +495,7 @@ export default function Store() {
     }
 
     setAddingToCartId(product.id);
-    
-    setCartItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
-      return [...prev, { ...product, quantity: 1 }];
-    });
+    addToCart(product, 1);
     
     setTimeout(() => {
       setAddingToCartId(null);
@@ -1009,9 +1020,18 @@ export default function Store() {
                           <div className="flex-1 flex flex-col">
                             <div className="flex justify-between gap-2">
                               <h3 className="text-sm font-medium text-zinc-900 line-clamp-2">{item.name}</h3>
-                              <p className="text-sm font-medium text-zinc-900 shrink-0">{formatPrice((item.price * item.quantity))}</p>
+                              <p className="text-sm font-medium text-zinc-900 shrink-0">{formatPrice(((item.price || item.unitPrice || 0) * item.quantity))}</p>
                             </div>
-                            <p className="text-sm text-zinc-500 mt-1">{formatPrice(item.price)} each</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
+                                item.condition === 'used'
+                                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                              }`}>
+                                {item.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                              </span>
+                              <p className="text-xs text-zinc-500">{formatPrice(item.price || item.unitPrice || 0)} each</p>
+                            </div>
                             
                             <div className="flex items-center justify-between mt-auto">
                               <div className="flex items-center border border-zinc-200">

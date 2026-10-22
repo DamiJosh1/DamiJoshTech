@@ -353,16 +353,23 @@ const CURATED_IMAGES = {
   ]
 };
 
-// AI Generate Batch Catalog of Home Appliances, Latest Gadgets, and Electronics
+// AI Generate Batch Catalog of Home Appliances, Latest Gadgets, and Electronics (Brand New & Used)
 app.post('/api/ai/generate-catalog-products', async (req, res) => {
   try {
-    const { category = 'All', count = 5, customPrompt = '' } = req.body;
+    const { category = 'All', count = 5, customPrompt = '', condition = 'both' } = req.body;
     const targetCount = Math.min(Math.max(Number(count) || 5, 1), 12);
+
+    const conditionGuideline = condition === 'used' 
+      ? 'All items should be Certified Pre-Owned / Refurbished / Open-Box with condition grades like "Grade A Refurbished" or "Open Box - Like New".'
+      : condition === 'new'
+      ? 'All items should be Brand New with "Brand New - Factory Sealed" grade.'
+      : 'Generate an exciting mix of both Brand New and Certified Pre-Owned / Used products, with dual pricing (both newPrice and usedPrice) on every item so users can toggle between buying new or used.';
 
     const promptText = `You are a chief e-commerce merchandiser and tech product curator for 'Sajoda', a premier store specializing in Home Appliances, Latest Gadgets, and Electronics.
 The store owner wants you to effortlessly generate and catalog ${targetCount} top-selling, realistic, highly desirable products.
 
 Category requested: ${category}
+Condition preference: ${conditionGuideline}
 ${customPrompt ? `User instructions / focus: "${customPrompt}"` : ''}
 
 Categories allowed: "Home Appliances", "Latest Gadgets", "Electronics", or "Smart Living".
@@ -370,9 +377,14 @@ Categories allowed: "Home Appliances", "Latest Gadgets", "Electronics", or "Smar
 Generate an array of exactly ${targetCount} unique, cutting-edge products. Each item must have:
 - name: catchy, modern commercial brand & product name (under 60 characters)
 - price: realistic retail price in USD (between 29.99 and 599.99)
+- newPrice: retail price for Brand New condition (e.g. 149.99)
+- usedPrice: discounted price for Certified Pre-Owned / Used condition (approx 25-35% lower than newPrice, e.g. 99.99)
+- condition: 'new' or 'used' (alternate or provide a balanced mix)
+- conditionGrade: e.g. "Brand New - Factory Sealed" (if new) or "Certified Refurbished - Grade A" / "Open Box - Like New" (if used)
+- warrantyInfo: e.g. "1-Year Official Warranty" (if new) or "90-Day Sajoda Certified Guarantee" (if used)
 - originalPrice: crossed-out MSRP price (15-30% higher than price)
 - category: one of "Home Appliances", "Latest Gadgets", "Electronics"
-- badge: one of "BESTSELLER", "HOT", "NEW", "ECO", "TRENDING", or "PREMIUM"
+- badge: one of "BESTSELLER", "HOT", "NEW", "ECO", "REFURBISHED", "TRENDING", or "PREMIUM"
 - brand: "Sajoda Home" or "Sajoda Tech" or "Sajoda Audio"
 - shortDescription: punchy one-sentence customer benefit (under 100 characters)
 - description: engaging 2-3 sentence overview highlighting real-world benefits and high-end build quality
@@ -389,7 +401,12 @@ Return ONLY a valid JSON array of objects matching this exact structure:
   {
     "name": "...",
     "price": 99.99,
-    "originalPrice": 129.99,
+    "newPrice": 129.99,
+    "usedPrice": 89.99,
+    "condition": "new",
+    "conditionGrade": "Brand New - Factory Sealed",
+    "warrantyInfo": "1-Year Official Warranty",
+    "originalPrice": 159.99,
     "category": "Home Appliances",
     "badge": "BESTSELLER",
     "brand": "Sajoda Home",
@@ -421,9 +438,19 @@ Return ONLY a valid JSON array of objects matching this exact structure:
       const pool = CURATED_IMAGES[cat] || CURATED_IMAGES['Latest Gadgets'];
       const img = pool[index % pool.length];
       const secondImg = pool[(index + 1) % pool.length];
+      const isUsed = p.condition === 'used' || (index % 2 === 1 && !p.condition);
+      const calculatedNewPrice = p.newPrice || p.price || 99.99;
+      const calculatedUsedPrice = p.usedPrice || Math.round(calculatedNewPrice * 0.72 * 100) / 100;
+
       return {
         ...p,
-        id: 'sajoda-' + (p.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) + '-' + Math.random().toString(36).slice(2, 6),
+        id: 'sajoda-' + (p.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) + '-' + (isUsed ? 'used-' : '') + Math.random().toString(36).slice(2, 6),
+        condition: isUsed ? 'used' : 'new',
+        conditionGrade: p.conditionGrade || (isUsed ? 'Certified Refurbished - Grade A' : 'Brand New - Factory Sealed'),
+        warrantyInfo: p.warrantyInfo || (isUsed ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty'),
+        newPrice: calculatedNewPrice,
+        usedPrice: calculatedUsedPrice,
+        price: isUsed ? calculatedUsedPrice : calculatedNewPrice,
         image: img,
         images: [img, secondImg],
         createdAt: new Date().toISOString()
@@ -440,7 +467,7 @@ Return ONLY a valid JSON array of objects matching this exact structure:
 // AI Generate Single Product from Prompt
 app.post('/api/ai/generate-single-product', async (req, res) => {
   try {
-    const { prompt, category } = req.body;
+    const { prompt, category, condition = 'new' } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
@@ -448,11 +475,17 @@ app.post('/api/ai/generate-single-product', async (req, res) => {
     const promptText = `Generate a complete, ready-to-sell e-commerce product based on this request: "${prompt}".
 Store specializes in: Home Appliances, Latest Gadgets, and Electronics.
 Category suggestion: ${category || 'infer best matching category'}.
+Condition preference: ${condition === 'used' ? 'Pre-Owned / Refurbished' : 'Brand New'}.
 
 Return ONLY valid JSON matching this schema:
 {
   "name": "Catchy commercial product title (under 60 chars)",
   "price": 149.99,
+  "newPrice": 149.99,
+  "usedPrice": 109.99,
+  "condition": "${condition === 'used' ? 'used' : 'new'}",
+  "conditionGrade": "${condition === 'used' ? 'Certified Refurbished - Grade A' : 'Brand New - Factory Sealed'}",
+  "warrantyInfo": "${condition === 'used' ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty'}",
   "originalPrice": 189.99,
   "category": "Home Appliances" or "Latest Gadgets" or "Electronics",
   "badge": "NEW" or "BESTSELLER" or "FEATURED",
@@ -493,7 +526,7 @@ Return ONLY valid JSON matching this schema:
     });
   } catch (error: any) {
     console.error('Gemini Single Product Generation Error:', error);
-    res.status(500).json({ error: error?.message || 'Failed to generate product with AI' });
+    res.status(500).json({ error: error?.message || 'Failed to generate single product with AI' });
   }
 });
 

@@ -42,14 +42,24 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           
           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
-          <div className="absolute top-3 left-3 md:top-5 md:left-5 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 md:top-5 md:left-5 flex flex-col gap-1.5 z-10">
+            {product.condition === 'used' ? (
+              <span className="bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                PRE-OWNED
+              </span>
+            ) : (
+              <span className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+                BRAND NEW
+              </span>
+            )}
             {product.badge && (
-              <span className="bg-white text-zinc-900 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
+              <span className="bg-white/95 backdrop-blur-xs text-zinc-900 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
                 {product.badge}
               </span>
             )}
             {product.originalPrice && product.originalPrice > product.price && (
-              <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
+              <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
                 -{Math.round((1 - product.price / product.originalPrice) * 100)}%
               </span>
             )}
@@ -83,10 +93,19 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
 
         <div className="p-4 md:p-6 flex flex-col flex-1">
           <div className="flex-1">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Star className="w-3.5 h-3.5 text-zinc-900 fill-current" />
-              <span className="text-[11px] font-bold text-zinc-900">{product.rating || "4.9"}</span>
-              <span className="text-[11px] text-zinc-400">({product.reviewCount || Math.floor(Math.random() * 100 + 50)})</span>
+            <div className="flex items-center justify-between gap-1.5 mb-2">
+              <div className="flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 text-zinc-900 fill-current" />
+                <span className="text-[11px] font-bold text-zinc-900">{product.rating || "4.9"}</span>
+                <span className="text-[11px] text-zinc-400">({product.reviewCount || Math.floor(Math.random() * 100 + 50)})</span>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                product.condition === 'used' 
+                  ? 'bg-amber-50 text-amber-800 border border-amber-200' 
+                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              }`}>
+                {product.condition === 'used' ? (product.conditionGrade || 'Certified Pre-Owned') : (product.conditionGrade || 'Brand New')}
+              </span>
             </div>
             
             <h3 className="font-bold text-zinc-900 text-sm md:text-base leading-snug line-clamp-2 mb-2 group-hover:text-primary-blue transition-colors">
@@ -98,6 +117,11 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
               {product.originalPrice && product.originalPrice > product.price && (
                 <span className="text-sm font-medium text-zinc-400 line-through">
                   {formatPrice(product.originalPrice)}
+                </span>
+              )}
+              {product.usedPrice && product.newPrice && (
+                <span className="text-[10px] font-semibold text-zinc-500 ml-auto bg-zinc-100 px-2 py-0.5 rounded">
+                  New & Used
                 </span>
               )}
             </div>
@@ -151,6 +175,13 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
             <div className="flex-1 p-6 md:p-10 flex flex-col overflow-y-auto">
               <div className="flex items-center gap-2 mb-3">
                 {product.category && <span className="text-xs font-bold uppercase tracking-wider text-primary-blue">{product.category}</span>}
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                  product.condition === 'used'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                }`}>
+                  {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                </span>
                 {product.inStock === false ? (
                   <span className="text-xs font-bold uppercase tracking-wider text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Out of Stock</span>
                 ) : (
@@ -158,9 +189,14 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                 )}
               </div>
               
-              <h2 className="text-2xl md:text-3xl font-black text-zinc-900 leading-tight mb-4">
+              <h2 className="text-2xl md:text-3xl font-black text-zinc-900 leading-tight mb-2">
                 {product.name}
               </h2>
+
+              <p className="text-xs font-semibold text-zinc-500 mb-4">
+                Condition: <span className="text-zinc-900 font-bold">{product.conditionGrade || (product.condition === 'used' ? 'Certified Pre-Owned' : 'Brand New')}</span>
+                {product.warrantyInfo && <span className="ml-2 text-primary-blue">• {product.warrantyInfo}</span>}
+              </p>
               
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-2xl font-black text-zinc-900">{formatPrice(product.price)}</span>

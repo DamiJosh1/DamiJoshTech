@@ -28,6 +28,11 @@ export interface Product {
   name: string;
   price: number;
   originalPrice?: number;
+  condition?: 'new' | 'used';
+  conditionGrade?: string; // e.g. "Brand New - Factory Sealed", "Certified Pre-Owned - Grade A", "Open Box - Like New"
+  usedPrice?: number; // Optional alternate price if item is also available pre-owned
+  newPrice?: number;  // Optional alternate price if item is also available brand new
+  warrantyInfo?: string; // e.g. "1-Year Official Manufacturer Warranty" or "90-Day Certified Guarantee"
   image: string;
   images?: string[];
   video?: string;
@@ -54,6 +59,11 @@ export interface CartItem {
   variantId?: string;
   quantity: number;
   unitPrice: number;
+  price?: number; // convenience alias
+  name?: string;  // convenience alias
+  image?: string; // convenience alias
+  condition?: 'new' | 'used';
+  conditionGrade?: string;
   productSnapshot: Product;
   variantSnapshot?: ProductVariant;
   createdAt: string;

@@ -18,6 +18,7 @@ export default function SearchPage() {
   const minPriceParam = searchParams.get('minPrice');
   const maxPriceParam = searchParams.get('maxPrice');
   const availabilityParam = searchParams.get('availability') || 'all';
+  const conditionParam = searchParams.get('condition') || 'all';
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,7 @@ export default function SearchPage() {
   const [draftMinPrice, setDraftMinPrice] = useState(minPriceParam || '');
   const [draftMaxPrice, setDraftMaxPrice] = useState(maxPriceParam || '');
   const [draftAvailability, setDraftAvailability] = useState(availabilityParam);
+  const [draftCondition, setDraftCondition] = useState(conditionParam);
 
   // Calculate drafted results count
   const draftFilteredProducts = useMemo(() => {
@@ -45,12 +47,17 @@ export default function SearchPage() {
     if (draftCategory && draftCategory !== 'All') {
       result = result.filter(p => p.category === draftCategory);
     }
+    if (draftCondition === 'new') {
+      result = result.filter(p => p.condition === 'new' || (!p.condition && !p.id.includes('used')));
+    } else if (draftCondition === 'used') {
+      result = result.filter(p => p.condition === 'used' || p.id.includes('used'));
+    }
     if (draftMinPrice) result = result.filter(p => p.price >= Number(draftMinPrice));
     if (draftMaxPrice) result = result.filter(p => p.price <= Number(draftMaxPrice));
     if (draftAvailability === 'in-stock') result = result.filter(p => p.inventory > 0);
     if (draftAvailability === 'out-of-stock') result = result.filter(p => p.inventory === 0);
     return result;
-  }, [products, query, draftCategory, draftMinPrice, draftMaxPrice, draftAvailability]);
+  }, [products, query, draftCategory, draftCondition, draftMinPrice, draftMaxPrice, draftAvailability]);
 
 
   useEffect(() => {
@@ -58,7 +65,7 @@ export default function SearchPage() {
     setLoading(true);
     const timer = setTimeout(() => setLoading(false), 400);
     return () => clearTimeout(timer);
-  }, [query, categoryParam, sortParam, minPriceParam, maxPriceParam, availabilityParam]);
+  }, [query, categoryParam, sortParam, minPriceParam, maxPriceParam, availabilityParam, conditionParam]);
 
   useEffect(() => {
     setDraftCategory(categoryParam);
@@ -66,7 +73,8 @@ export default function SearchPage() {
     setDraftMinPrice(minPriceParam || '');
     setDraftMaxPrice(maxPriceParam || '');
     setDraftAvailability(availabilityParam);
-  }, [categoryParam, sortParam, minPriceParam, maxPriceParam, availabilityParam]);
+    setDraftCondition(conditionParam);
+  }, [categoryParam, sortParam, minPriceParam, maxPriceParam, availabilityParam, conditionParam]);
 
   const allCategories = useMemo(() => {
     const cats = new Set(products.map(p => p.category).filter(Boolean));
@@ -91,6 +99,13 @@ export default function SearchPage() {
     // Category
     if (categoryParam !== 'All') {
       result = result.filter(p => p.category === categoryParam);
+    }
+
+    // Condition (Brand New vs Used / Pre-Owned)
+    if (conditionParam === 'new') {
+      result = result.filter(p => p.condition === 'new' || (!p.condition && !p.id.includes('used')));
+    } else if (conditionParam === 'used') {
+      result = result.filter(p => p.condition === 'used' || p.id.includes('used'));
     }
 
     // Price
@@ -127,13 +142,13 @@ export default function SearchPage() {
     }
 
     return result;
-  }, [products, query, categoryParam, sortParam, minPriceParam, maxPriceParam, availabilityParam]);
+  }, [products, query, categoryParam, sortParam, minPriceParam, maxPriceParam, availabilityParam, conditionParam]);
 
   const applyFilters = (updates: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams);
     
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === '' || (key === 'category' && value === 'All') || (key === 'availability' && value === 'all') || (key === 'sort' && value === 'relevance')) {
+      if (value === null || value === '' || (key === 'category' && value === 'All') || (key === 'availability' && value === 'all') || (key === 'condition' && value === 'all') || (key === 'sort' && value === 'relevance')) {
         newParams.delete(key);
       } else {
         newParams.set(key, value);
@@ -241,6 +256,49 @@ export default function SearchPage() {
                 </div>
               </div>
 
+              {/* Item Condition */}
+              <div className="mb-8">
+                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Item Condition</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="condition" 
+                      checked={conditionParam === 'all'}
+                      onChange={() => applyFilters({ condition: null })}
+                      className="w-4 h-4 text-zinc-900 focus:ring-zinc-900 border-zinc-300"
+                    />
+                    <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors">All Conditions</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="condition" 
+                      checked={conditionParam === 'new'}
+                      onChange={() => applyFilters({ condition: 'new' })}
+                      className="w-4 h-4 text-emerald-600 focus:ring-emerald-600 border-zinc-300"
+                    />
+                    <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Brand New (Sealed)
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="condition" 
+                      checked={conditionParam === 'used'}
+                      onChange={() => applyFilters({ condition: 'used' })}
+                      className="w-4 h-4 text-amber-500 focus:ring-amber-500 border-zinc-300"
+                    />
+                    <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      Pre-Owned / Refurbished
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               {/* Availability */}
               <div className="mb-8">
                 <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Availability</h3>
@@ -283,6 +341,42 @@ export default function SearchPage() {
           {/* Main Content Area */}
           <div className="flex-1 w-full">
             
+            {/* Condition Quick Filter Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+              <button
+                onClick={() => applyFilters({ condition: null })}
+                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                  conditionParam === 'all'
+                    ? 'bg-zinc-900 text-white shadow-sm'
+                    : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                All Products
+              </button>
+              <button
+                onClick={() => applyFilters({ condition: 'new' })}
+                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                  conditionParam === 'new'
+                    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 ring-2 ring-emerald-500'
+                    : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-emerald-50/50 hover:border-emerald-300'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                Brand New
+              </button>
+              <button
+                onClick={() => applyFilters({ condition: 'used' })}
+                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                  conditionParam === 'used'
+                    ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20 ring-2 ring-amber-500'
+                    : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-amber-50/50 hover:border-amber-300'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                Certified Pre-Owned & Used
+              </button>
+            </div>
+
             {/* Top Toolbar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
               
@@ -299,6 +393,11 @@ export default function SearchPage() {
                 {categoryParam !== 'All' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white border border-zinc-200 text-xs font-medium text-zinc-700 shadow-sm">
                     Category: {categoryParam} <button onClick={() => removeFilter('category')} className="hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+                  </span>
+                )}
+                {conditionParam !== 'all' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white border border-zinc-200 text-xs font-medium text-zinc-700 shadow-sm">
+                    Condition: {conditionParam === 'new' ? 'Brand New' : 'Pre-Owned'} <button onClick={() => removeFilter('condition')} className="hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
                   </span>
                 )}
                 {minPriceParam && (
@@ -430,6 +529,31 @@ export default function SearchPage() {
                 </div>
               </div>
 
+              {/* Mobile Condition */}
+              <div>
+                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Item Condition</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  <button 
+                    onClick={() => setDraftCondition('all')} 
+                    className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'all' ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
+                  >
+                    All
+                  </button>
+                  <button 
+                    onClick={() => setDraftCondition('new')} 
+                    className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'new' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
+                  >
+                    Brand New
+                  </button>
+                  <button 
+                    onClick={() => setDraftCondition('used')} 
+                    className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'used' ? 'bg-amber-600 text-white border-amber-600 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
+                  >
+                    Pre-Owned
+                  </button>
+                </div>
+              </div>
+
               {/* Mobile Availability */}
               <div>
                 <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Availability</h3>
@@ -445,6 +569,7 @@ export default function SearchPage() {
               <button 
                 onClick={() => {
                   setDraftCategory('All');
+                  setDraftCondition('all');
                   setDraftMinPrice('');
                   setDraftMaxPrice('');
                   setDraftAvailability('all');
@@ -457,6 +582,7 @@ export default function SearchPage() {
                 onClick={() => {
                   applyFilters({
                     category: draftCategory === 'All' ? null : draftCategory,
+                    condition: draftCondition === 'all' ? null : draftCondition,
                     minPrice: draftMinPrice || null,
                     maxPrice: draftMaxPrice || null,
                     availability: draftAvailability === 'all' ? null : draftAvailability,

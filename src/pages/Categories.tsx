@@ -101,32 +101,58 @@ export default function Categories() {
                 </div>
               </div>
             ))
-          ) : categories.map((cat, i) => {
+          ) : (
+            categories.map((cat, i) => {
             const catProducts = products.filter(p => p.category === cat);
             const coverImage = catProducts[0]?.image || 'https://images.unsplash.com/photo-1550009158-9efff6c97364?auto=format&fit=crop&q=80&w=1000';
             
             return (
               <div 
                 key={cat}
-                onClick={() => navigate(`/shop?category=${encodeURIComponent(cat)}`)} 
-                className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer"
+                className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-sm border border-zinc-200/50 flex flex-col justify-end p-6"
               >
                 <img 
                   src={coverImage} 
                   alt={cat} 
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out" 
+                  className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out" 
                 />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1">{cat}</h3>
-                  <div className="flex items-center gap-2 text-zinc-300 group-hover:text-white transition-colors">
-                    <span className="text-sm font-medium">{catProducts.length} Products</span>
-                    <ArrowRight className="w-4 h-4" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent group-hover:opacity-95 transition-opacity" />
+                
+                <div className="relative z-10">
+                  <div 
+                    onClick={() => navigate(`/shop?category=${encodeURIComponent(cat)}`)}
+                    className="cursor-pointer"
+                  >
+                    <h3 className="text-xl md:text-2xl font-black text-white mb-1 group-hover:text-blue-300 transition-colors">{cat}</h3>
+                    <p className="text-xs text-zinc-300 mb-4">{catProducts.length} Products Available</p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/20">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/shop?category=${encodeURIComponent(cat)}&condition=new`);
+                      }}
+                      className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-emerald-600 backdrop-blur-md text-white text-xs font-bold transition-colors flex items-center gap-1"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      Brand New
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/shop?category=${encodeURIComponent(cat)}&condition=used`);
+                      }}
+                      className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-amber-600 backdrop-blur-md text-white text-xs font-bold transition-colors flex items-center gap-1"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      Pre-Owned
+                    </button>
                   </div>
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
     </div>

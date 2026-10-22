@@ -58,25 +58,37 @@ export default function Cart() {
                 <div className="flex-1 flex flex-col">
                   <div className="flex justify-between items-start gap-4 mb-2 md:mb-4">
                     <div>
-                      <span className="text-[10px] md:text-xs font-bold tracking-widest text-zinc-400 uppercase mb-1 block">
-                        {item.productSnapshot.brand || 'SAJODA'}
-                      </span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] md:text-xs font-bold tracking-widest text-zinc-400 uppercase">
+                          {item.productSnapshot?.brand || 'SAJODA'}
+                        </span>
+                        <span className={`text-[9px] md:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                          (item.condition === 'used' || item.productSnapshot?.condition === 'used')
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        }`}>
+                          {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Pre-Owned' : 'Brand New'}
+                        </span>
+                      </div>
                       <h3 
                         className="text-sm md:text-lg font-bold text-zinc-900 leading-snug cursor-pointer hover:text-primary-blue transition-colors line-clamp-2"
-                        onClick={() => navigate(`/product/${item.productId}`)}
+                        onClick={() => navigate(`/product/${item.productId || item.productSnapshot?.id}`)}
                       >
-                        {item.productSnapshot.name}
+                        {item.name || item.productSnapshot?.name}
                       </h3>
-                      {item.variantSnapshot && (
-                        <p className="text-xs md:text-sm text-zinc-500 mt-1 flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-zinc-100 font-medium">{item.variantSnapshot.name}</span>
-                        </p>
-                      )}
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-[11px] text-zinc-500 font-medium">
+                          {item.conditionGrade || item.productSnapshot?.conditionGrade || ((item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Certified Pre-Owned' : 'Factory Sealed')}
+                        </span>
+                        {item.variantSnapshot && (
+                          <span className="px-2 py-0.5 rounded bg-zinc-100 text-xs font-medium text-zinc-700">{item.variantSnapshot.name}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-base md:text-xl font-extrabold text-zinc-900 block">${(item.unitPrice * item.quantity).toFixed(2)}</span>
+                      <span className="text-base md:text-xl font-extrabold text-zinc-900 block">{formatPrice ? formatPrice((item.price || item.unitPrice) * item.quantity) : `$${((item.price || item.unitPrice) * item.quantity).toFixed(2)}`}</span>
                       {item.quantity > 1 && (
-                        <span className="text-xs text-zinc-500 font-medium">${item.unitPrice.toFixed(2)} each</span>
+                        <span className="text-xs text-zinc-500 font-medium">{formatPrice ? formatPrice(item.price || item.unitPrice) : `$${(item.price || item.unitPrice).toFixed(2)}`} each</span>
                       )}
                     </div>
                   </div>

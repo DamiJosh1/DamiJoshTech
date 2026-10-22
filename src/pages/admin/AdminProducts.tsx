@@ -33,6 +33,7 @@ export default function AdminProducts() {
   // AI Catalog Generator State
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiCategory, setAiCategory] = useState<'All' | 'Home Appliances' | 'Latest Gadgets' | 'Electronics'>('All');
+  const [aiCondition, setAiCondition] = useState<'both' | 'new' | 'used'>('both');
   const [aiCount, setAiCount] = useState<number>(5);
   const [aiCustomPrompt, setAiCustomPrompt] = useState('');
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -40,7 +41,7 @@ export default function AdminProducts() {
   const [aiSuccessResult, setAiSuccessResult] = useState<string | null>(null);
   const [isSeedingDefaults, setIsSeedingDefaults] = useState(false);
 
-  const handleAiAutoUpload = async (customCat?: string, customCnt?: number, customP?: string) => {
+  const handleAiAutoUpload = async (customCat?: string, customCnt?: number, customP?: string, customCond?: 'both' | 'new' | 'used') => {
     setIsAiGenerating(true);
     setAiSuccessResult(null);
     setAiStatusMsg('Gemini AI is analyzing specs, photos and curating products...');
@@ -48,6 +49,7 @@ export default function AdminProducts() {
     const categoryToUse = customCat || aiCategory;
     const countToUse = customCnt || aiCount;
     const promptToUse = customP !== undefined ? customP : aiCustomPrompt;
+    const conditionToUse = customCond || aiCondition;
 
     try {
       const res = await fetch('/api/ai/generate-catalog-products', {
@@ -56,7 +58,8 @@ export default function AdminProducts() {
         body: JSON.stringify({
           category: categoryToUse,
           count: countToUse,
-          customPrompt: promptToUse
+          customPrompt: promptToUse,
+          condition: conditionToUse
         })
       });
 
@@ -167,6 +170,8 @@ export default function AdminProducts() {
       (product.id && product.id.toString().toLowerCase().includes(q));
       
     if (activeTab === 'All') return matchesSearch;
+    if (activeTab === 'Brand New') return matchesSearch && (product.condition === 'new' || (!product.condition && !product.id.includes('used')));
+    if (activeTab === 'Pre-Owned') return matchesSearch && (product.condition === 'used' || product.id.includes('used'));
     if (activeTab === 'Active') return matchesSearch && product.status === 'active';
     if (activeTab === 'Draft') return matchesSearch && product.status === 'draft';
     if (activeTab === 'Out of Stock') return matchesSearch && (product.status === 'out_of_stock' || (product.inventory !== undefined && product.inventory <= 0));
@@ -267,7 +272,7 @@ export default function AdminProducts() {
         <div className="p-4 border-b border-zinc-100 flex flex-col md:flex-row gap-4 items-center justify-between bg-zinc-50/50">
           
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto snap-x hide-scrollbar">
-            {['All', 'Active', 'Draft', 'Out of Stock', 'Archived'].map((tab) => (
+            {['All', 'Brand New', 'Pre-Owned', 'Active', 'Draft', 'Out of Stock', 'Archived'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setPage(1); }}
@@ -336,7 +341,19 @@ export default function AdminProducts() {
                               <ImageIcon className="w-4 h-4 text-zinc-300" />
                             )}
                           </div>
-                          <div className="flex flex-col max-w-[200px]">
+                          <div className="flex flex-col max-w-[220px]">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                product.condition === 'used'
+                                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                              }`}>
+                                {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                              </span>
+                              {product.usedPrice && product.newPrice && (
+                                <span className="text-[9px] font-bold text-zinc-400 bg-zinc-100 px-1 rounded">Dual Price</span>
+                              )}
+                            </div>
                             <Link to={`/admin/products/${product.id}`} className="text-sm font-bold text-zinc-900 hover:text-primary-blue truncate transition-colors">
                               {product.name}
                             </Link>
@@ -396,6 +413,15 @@ export default function AdminProducts() {
                         )}
                       </div>
                       <div className="flex-1 flex flex-col">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
+                            product.condition === 'used'
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                          }`}>
+                            {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                          </span>
+                        </div>
                         <Link to={`/admin/products/${product.id}`} className="text-sm font-bold text-zinc-900 hover:text-primary-blue line-clamp-1 transition-colors">
                           {product.name}
                         </Link>
@@ -579,7 +605,7 @@ export default function AdminProducts() {
                   Or Custom AI Prompt
                 </label>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 mb-1">Target Category</label>
                     <select
@@ -591,6 +617,19 @@ export default function AdminProducts() {
                       <option value="Home Appliances">Home Appliances</option>
                       <option value="Latest Gadgets">Latest Gadgets</option>
                       <option value="Electronics">Electronics</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">Condition Model</label>
+                    <select
+                      value={aiCondition}
+                      onChange={(e: any) => setAiCondition(e.target.value)}
+                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500"
+                    >
+                      <option value="both">Both New & Pre-Owned</option>
+                      <option value="new">Brand New Only</option>
+                      <option value="used">Pre-Owned / Refurbished</option>
                     </select>
                   </div>
 

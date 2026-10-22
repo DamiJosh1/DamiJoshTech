@@ -102,14 +102,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. FEATURED PRODUCTS (Carousel) */}
+      {/* 3. FEATURED PRODUCTS (With Condition Toggle: All, Brand New, Certified Used) */}
       <section className="py-12 bg-zinc-50 border-y border-zinc-100">
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20">
-          <div className="flex items-end justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-dark-text tracking-tight">Featured Products</h2>
-            <button onClick={() => navigate('/shop')} className="text-sm font-semibold text-primary-blue hover:text-blue-800 transition-colors flex items-center gap-1">
-              Shop All <ArrowRight className="w-4 h-4" />
-            </button>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-primary-blue mb-1 block">
+                Dual Condition Catalog
+              </span>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-dark-text tracking-tight">
+                Featured Products
+              </h2>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => navigate('/shop?condition=new')}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1.5"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                Shop Brand New
+              </button>
+              <button
+                onClick={() => navigate('/shop?condition=used')}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors flex items-center gap-1.5"
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                Shop Certified Pre-Owned
+              </button>
+              <button onClick={() => navigate('/shop')} className="text-sm font-semibold text-primary-blue hover:text-blue-800 transition-colors flex items-center gap-1 ml-2">
+                View All <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           
           {productsLoading ? (
@@ -124,13 +148,64 @@ export default function Home() {
             <div className="py-12 text-center text-zinc-500">No products available at this time.</div>
           ) : (
             <div className="flex overflow-x-auto gap-6 pb-8 -mx-6 px-6 sm:mx-0 sm:px-0 snap-x snap-mandatory scrollbar-hide">
-              {products.slice(0, 6).map(product => (
+              {products.slice(0, 8).map(product => (
                 <div key={product.id} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] snap-center">
                   <ProductCard product={product} />
                 </div>
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* DUAL CONDITION CHOICE BANNER: BRAND NEW VS CERTIFIED PRE-OWNED */}
+      <section className="py-12 max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20">
+        <div className="bg-gradient-to-br from-zinc-900 via-zinc-950 to-blue-950 rounded-3xl p-8 md:p-12 text-white shadow-xl">
+          <div className="max-w-3xl mb-8">
+            <span className="text-xs font-black tracking-widest uppercase text-amber-400 mb-2 block">
+              Flexible Buying Choices
+            </span>
+            <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-3">
+              Buy Brand New or Save with Certified Pre-Owned.
+            </h2>
+            <p className="text-zinc-300 text-sm md:text-base leading-relaxed">
+              Every customer deserves top-tier electronics and appliances. Choose factory-sealed brand new with full 1-year manufacturer warranty, or save 25%–45% with our 35-point laboratory certified pre-owned units with a 90-day guarantee.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div 
+              onClick={() => navigate('/shop?condition=new')}
+              className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/30">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  Brand New
+                </span>
+                <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-lg font-bold mb-1">Factory Sealed in Box</h3>
+              <p className="text-xs text-zinc-400 mb-3">Pristine, untouched condition with full manufacturer warranty and packaging.</p>
+              <span className="text-xs font-bold text-emerald-400">Shop Brand New &rarr;</span>
+            </div>
+
+            <div 
+              onClick={() => navigate('/shop?condition=used')}
+              className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-amber-500/30">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  Certified Pre-Owned
+                </span>
+                <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-lg font-bold mb-1">Refurbished & Tested</h3>
+              <p className="text-xs text-zinc-400 mb-3">Passed 35-point testing, ultrasonically cleaned, includes 90-day replacement guarantee.</p>
+              <span className="text-xs font-bold text-amber-400">Shop Pre-Owned & Save &rarr;</span>
+            </div>
+          </div>
         </div>
       </section>
 

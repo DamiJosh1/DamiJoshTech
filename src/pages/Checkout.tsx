@@ -70,11 +70,13 @@ export default function Checkout() {
         shippingAddress: shippingData,
         shippingMethod,
         items: cartItems.map(i => ({
-          id: i.productId,
-          name: i.productSnapshot.name,
-          price: i.unitPrice,
+          id: i.productId || i.id,
+          name: i.name || i.productSnapshot?.name,
+          price: i.unitPrice || i.price,
           quantity: i.quantity,
-          variantId: i.variantId || null
+          variantId: i.variantId || null,
+          condition: i.condition || i.productSnapshot?.condition || 'new',
+          conditionGrade: i.conditionGrade || i.productSnapshot?.conditionGrade || ((i.condition === 'used' || i.productSnapshot?.condition === 'used') ? 'Certified Pre-Owned' : 'Brand New')
         })),
         subtotal: cartTotal,
         discount: cartDiscount,
@@ -337,14 +339,23 @@ export default function Checkout() {
               {cartItems.map((item) => (
                 <div key={item.id} className="flex gap-4 items-center">
                   <div className="relative w-16 h-16 rounded-xl bg-white border border-zinc-200 overflow-hidden shrink-0">
-                    <img src={item.productSnapshot.image} alt="" className="w-full h-full object-cover" />
+                    <img src={item.image || item.productSnapshot?.image} alt="" className="w-full h-full object-cover" />
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-zinc-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white z-10">{item.quantity}</span>
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-sm font-bold text-zinc-900 line-clamp-1">{item.productSnapshot.name}</h4>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
+                        (item.condition === 'used' || item.productSnapshot?.condition === 'used')
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      }`}>
+                        {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Pre-Owned' : 'Brand New'}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-bold text-zinc-900 line-clamp-1">{item.name || item.productSnapshot?.name}</h4>
                     {item.variantSnapshot && <span className="text-xs text-zinc-500">{item.variantSnapshot.name}</span>}
                   </div>
-                  <span className="text-sm font-bold text-zinc-900 shrink-0">{formatPrice(item.unitPrice * item.quantity)}</span>
+                  <span className="text-sm font-bold text-zinc-900 shrink-0">{formatPrice((item.price || item.unitPrice) * item.quantity)}</span>
                 </div>
               ))}
             </div>
