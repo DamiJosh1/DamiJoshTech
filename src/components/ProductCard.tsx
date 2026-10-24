@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Heart, Search, X, Check, Star } from 'lucide-react';
+import { ShoppingCart, Heart, Search, X, Check, Star, TrendingDown, Bell } from 'lucide-react';
 import { Product } from '../types';
 import { useStore } from '../StoreContext';
 
@@ -10,10 +10,14 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
     handleWishlistToggle, 
     wishlistIds, 
     handleAddToCart, 
-    addingToCartId 
-  , formatPrice} = useStore();
+    addingToCartId,
+    formatPrice,
+    setPriceAlertModalProduct,
+    getActiveAlertForProduct
+  } = useStore();
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
+  const activeAlert = getActiveAlertForProduct(product.id);
   const isWishlisted = wishlistIds.includes(product.id);
   const isAdding = addingToCartId === product.id;
 
@@ -74,8 +78,25 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           <button 
             onClick={(e) => handleWishlistToggle(product, e)}
             className="absolute top-3 right-3 md:top-5 md:right-5 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform z-10"
+            title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart className={`w-4 h-4 transition-colors ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-zinc-400'}`} />
+          </button>
+
+          {/* Price Drop Alert Trigger Button */}
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setPriceAlertModalProduct(product);
+            }}
+            className={`absolute top-14 right-3 md:top-16 md:right-5 w-10 h-10 rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform z-10 ${
+              activeAlert 
+                ? 'bg-emerald-600 text-white' 
+                : 'bg-white/95 backdrop-blur-xs text-zinc-600 hover:text-emerald-700'
+            }`}
+            title={activeAlert ? `Price alert active: target ${formatPrice(activeAlert.targetPrice)}` : "Set Price Drop Alert"}
+          >
+            <TrendingDown className="w-4 h-4" />
           </button>
 
           {/* Quick View Button (Desktop) */}
@@ -225,12 +246,23 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                 >
                   {product.inStock === false ? 'OUT OF STOCK' : isAdding ? 'ADDED TO CART' : 'ADD TO CART'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsQuickViewOpen(false);
+                    setPriceAlertModalProduct(product);
+                  }}
+                  className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors text-sm"
+                >
+                  <TrendingDown className="w-4 h-4 text-emerald-700" />
+                  {activeAlert ? `PRICE ALERT ACTIVE (${formatPrice(activeAlert.targetPrice)})` : 'SET PRICE DROP ALERT'}
+                </button>
                 <button 
                   onClick={() => {
                     setIsQuickViewOpen(false);
                     navigate(`/product/${product.id}`);
                   }}
-                  className="w-full py-4 rounded-xl flex items-center justify-center font-bold bg-zinc-100 text-zinc-900 hover:bg-zinc-200 transition-colors"
+                  className="w-full py-3.5 rounded-xl flex items-center justify-center font-bold bg-zinc-100 text-zinc-900 hover:bg-zinc-200 transition-colors text-sm"
                 >
                   VIEW FULL DETAILS
                 </button>

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Heart, Star, ArrowLeft, ShieldCheck, Truck, RotateCcw, 
-  CheckCircle2, Minus, Plus, ShoppingBag, X, ChevronRight, Share2 
+  CheckCircle2, Minus, Plus, ShoppingBag, X, ChevronRight, Share2,
+  TrendingDown, Bell, Sparkles 
 } from 'lucide-react';
 import { useStore } from '../StoreContext';
 import { Product } from '../types';
@@ -17,7 +18,11 @@ export default function ProductDetail() {
     addingToCartId,
     handleAddToCart,
     handleWishlistToggle,
-  formatPrice, activeCurrency } = useStore();
+    formatPrice, 
+    activeCurrency,
+    setPriceAlertModalProduct,
+    getActiveAlertForProduct
+  } = useStore();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -56,6 +61,7 @@ export default function ProductDetail() {
   const isUsed = product.condition === 'used';
   const currentPrice = selectedVariant && selectedVariant.price ? selectedVariant.price : product.price;
   const originalPrice = product.originalPrice;
+  const activeAlert = product ? getActiveAlertForProduct(product.id) : undefined;
 
   const currentConditionGrade = product.conditionGrade || (isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Factory Sealed Box');
   const currentWarranty = product.warrantyInfo || (isUsed ? '90-Day Sajoda Certified Replacement Guarantee' : '1-Year Official Manufacturer Warranty');
@@ -496,6 +502,49 @@ export default function ProductDetail() {
               }`}
             >
               Buy it Now • {isUsed ? 'Pre-Owned' : 'Brand New'}
+            </button>
+          </div>
+
+          {/* Price Drop Alert Trigger Card */}
+          <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-emerald-50/70 via-blue-50/50 to-white border border-emerald-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                activeAlert 
+                  ? 'bg-emerald-600 text-white shadow-xs' 
+                  : 'bg-emerald-100 text-emerald-800'
+              }`}>
+                <TrendingDown className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-zinc-900">
+                    {activeAlert ? 'Price Drop Alert Active' : 'Waiting for a Price Drop?'}
+                  </h4>
+                  {activeAlert && (
+                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Target: {formatPrice(activeAlert.targetPrice)}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-zinc-600 mt-0.5">
+                  {activeAlert 
+                    ? `We'll notify you automatically the instant this item drops to or below ${formatPrice(activeAlert.targetPrice)}.` 
+                    : 'Set your target threshold and we will notify you the moment the price falls.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPriceAlertModalProduct(product)}
+              className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
+                activeAlert
+                  ? 'bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-200'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>{activeAlert ? 'Modify Threshold' : 'Set Price Alert'}</span>
             </button>
           </div>
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../../StoreContext';
-import { Package, Heart, MapPin, Shield, Bell, ArrowRight, User as UserIcon, LogOut } from 'lucide-react';
+import { Package, Heart, MapPin, Shield, Bell, ArrowRight, User as UserIcon, LogOut, TrendingDown } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useNavigate, Link } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { collection, query, where, getDocs, limit, orderBy } from 'firebase/fire
 import { db } from '../../firebase';
 
 export default function AccountDashboard() {
-  const { user, products, wishlistIds } = useStore();
+  const { user, products, wishlistIds, priceAlerts } = useStore();
   const navigate = useNavigate();
   const [recentOrder, setRecentOrder] = useState<any>(null);
   const [loadingOrder, setLoadingOrder] = useState(true);
@@ -65,6 +65,15 @@ export default function AccountDashboard() {
           <h3 className="font-bold text-zinc-900 mb-1">Wishlist ({wishlistIds.length})</h3>
           <p className="text-sm text-zinc-500">Your saved items for later</p>
           <ArrowRight className="absolute bottom-6 right-6 w-5 h-5 text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-1 transition-all" />
+        </Link>
+
+        <Link to="/account/price-alerts" className="group bg-white p-6 rounded-2xl border border-zinc-200 hover:border-emerald-600 transition-colors shadow-sm relative overflow-hidden">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <TrendingDown className="w-6 h-6 text-emerald-600" />
+          </div>
+          <h3 className="font-bold text-zinc-900 mb-1">Price Drop Alerts ({priceAlerts.length})</h3>
+          <p className="text-sm text-zinc-500">Track price drops & discount notifications</p>
+          <ArrowRight className="absolute bottom-6 right-6 w-5 h-5 text-zinc-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
         </Link>
 
         <Link to="/account/profile" className="group bg-white p-6 rounded-2xl border border-zinc-200 hover:border-zinc-900 transition-colors shadow-sm relative overflow-hidden">

@@ -117,6 +117,22 @@ export type NotificationType =
   | 'BACK_IN_STOCK'
   | 'PRICE_ALERT';
 
+export interface PriceAlert {
+  id?: string;
+  userId: string;
+  userEmail?: string;
+  productId: string;
+  productName: string;
+  productImage: string;
+  initialPrice: number;
+  targetPrice: number;
+  currencyCode?: string;
+  status: 'active' | 'triggered' | 'cancelled';
+  triggeredAt?: any;
+  createdAt: any;
+  updatedAt?: any;
+}
+
 export interface AppNotification {
   id?: string;
   userId: string;
@@ -125,6 +141,12 @@ export interface AppNotification {
   message: string;
   read: boolean;
   link?: string;
+  productImage?: string;
+  priceData?: {
+    oldPrice: number;
+    newPrice: number;
+    targetPrice: number;
+  };
   createdAt: any;
 }
 
@@ -134,6 +156,7 @@ export interface NotificationPreferences {
   promotions: boolean;
   securityAlerts: boolean;
   newProducts: boolean;
+  priceAlerts?: boolean;
 }
 
 export interface EmailLog {

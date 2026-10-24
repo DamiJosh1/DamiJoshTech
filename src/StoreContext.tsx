@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { Product, CartItem, Promotion, AppNotification, StoreCountry, StoreCurrency, ShippingMethod, TaxRule } from './types';
+import { Product, CartItem, Promotion, AppNotification, StoreCountry, StoreCurrency, ShippingMethod, TaxRule, PriceAlert } from './types';
 import { User as FirebaseUser } from 'firebase/auth';
 
 export interface StoreContextType {
@@ -31,6 +31,13 @@ export interface StoreContextType {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   deleteNotification: (id: string) => void;
+  priceAlerts: PriceAlert[];
+  priceAlertModalProduct: Product | null;
+  setPriceAlertModalProduct: (product: Product | null) => void;
+  createPriceAlert: (product: Product, targetPrice: number, email?: string) => Promise<{ success: boolean; message: string; alert?: PriceAlert }>;
+  removePriceAlert: (alertId: string) => Promise<void>;
+  simulatePriceDrop: (productId: string, testPrice?: number) => Promise<void>;
+  getActiveAlertForProduct: (productId: string) => PriceAlert | undefined;
   countries: StoreCountry[];
   currencies: StoreCurrency[];
   shippingMethods: ShippingMethod[];

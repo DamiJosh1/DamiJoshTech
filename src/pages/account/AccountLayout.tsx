@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../../StoreContext';
 import { useNavigate, Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Heart, MapPin, Shield, Bell, LogOut, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, Package, Heart, MapPin, Shield, Bell, LogOut, User as UserIcon, TrendingDown } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 
@@ -27,6 +27,7 @@ export default function AccountLayout() {
     { name: 'Dashboard', path: '/account', icon: LayoutDashboard },
     { name: 'My Orders', path: '/account/orders', icon: Package },
     { name: 'Wishlist', path: '/account/wishlist', icon: Heart },
+    { name: 'Price Alerts', path: '/account/price-alerts', icon: TrendingDown },
     { name: 'Profile', path: '/account/profile', icon: UserIcon },
     { name: 'Addresses', path: '/account/addresses', icon: MapPin },
     { name: 'Security', path: '/account/security', icon: Shield },

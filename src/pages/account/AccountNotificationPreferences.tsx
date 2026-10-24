@@ -12,7 +12,8 @@ export default function AccountNotificationPreferences() {
     orderUpdates: true,
     promotions: false,
     securityAlerts: true,
-    newProducts: true
+    newProducts: true,
+    priceAlerts: true
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,7 +29,8 @@ export default function AccountNotificationPreferences() {
              orderUpdates: docSnap.data().orderUpdates ?? true,
              promotions: docSnap.data().promotions ?? false,
              securityAlerts: docSnap.data().securityAlerts ?? true,
-             newProducts: docSnap.data().newProducts ?? true
+             newProducts: docSnap.data().newProducts ?? true,
+             priceAlerts: docSnap.data().priceAlerts ?? true
           });
         }
       } catch (err) {
@@ -101,6 +103,12 @@ export default function AccountNotificationPreferences() {
           disabled={true} 
         />
         <p className="text-xs text-zinc-400 -mt-2 mb-4 px-2">Security and critical transaction notifications cannot be disabled.</p>
+        <Toggle 
+          label="Price Drop Alerts" 
+          description="Instant notification when a product you are tracking drops below your target price threshold."
+          checked={preferences.priceAlerts}
+          onChange={(val: boolean) => setPreferences(prev => ({...prev, priceAlerts: val}))}
+        />
         <Toggle 
           label="Promotions & Deals" 
           description="Flash sales, coupons, and special offers."

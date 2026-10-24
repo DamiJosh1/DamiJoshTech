@@ -96,6 +96,40 @@
           "createdAt"
         ]
       }
+    },
+    "price_alerts": {
+      "rules": {
+        "read": "true",
+        "create": "true",
+        "update": "true",
+        "delete": "true"
+      },
+      "schema": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "userEmail": { "type": "string" },
+          "productId": { "type": "string" },
+          "productName": { "type": "string" },
+          "productImage": { "type": "string" },
+          "initialPrice": { "type": "number" },
+          "targetPrice": { "type": "number" },
+          "currencyCode": { "type": "string" },
+          "status": { "type": "string" },
+          "triggeredAt": { "type": "timestamp" },
+          "createdAt": { "type": "timestamp" },
+          "updatedAt": { "type": "timestamp" }
+        },
+        "required": [
+          "userId",
+          "productId",
+          "productName",
+          "initialPrice",
+          "targetPrice",
+          "status",
+          "createdAt"
+        ]
+      }
     }
   }
 }

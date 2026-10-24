@@ -56,6 +56,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /price_alerts/{alertId} {
+      allow read, write: if true;
+    }
+
     match /notification_preferences/{userId} {
       allow read, write: if true;
     }

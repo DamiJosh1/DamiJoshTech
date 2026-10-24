@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { Bell, Check, Trash2, Settings, Package, CreditCard, ShieldCheck, Tag, Info, AlertTriangle } from 'lucide-react';
+import { Bell, Check, Trash2, Settings, Package, CreditCard, ShieldCheck, Tag, Info, AlertTriangle, TrendingDown } from 'lucide-react';
 import { useStore } from '../../StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { AppNotification } from '../../types';
 
 export default function AccountNotifications() {
-  const { notifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } = useStore();
+  const { notifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, formatPrice } = useStore();
   const navigate = useNavigate();
   
   const getIcon = (type: string) => {
     if (type.includes('ORDER')) return <Package className="w-5 h-5 text-primary-blue" />;
     if (type.includes('PAYMENT')) return <CreditCard className="w-5 h-5 text-emerald-500" />;
     if (type.includes('SECURITY') || type.includes('PASSWORD') || type.includes('EMAIL')) return <ShieldCheck className="w-5 h-5 text-amber-500" />;
-    if (type.includes('PROMOTION') || type.includes('PRICE_ALERT')) return <Tag className="w-5 h-5 text-error" />;
+    if (type.includes('PRICE_ALERT')) return <TrendingDown className="w-5 h-5 text-emerald-600" />;
+    if (type.includes('PROMOTION')) return <Tag className="w-5 h-5 text-error" />;
     if (type.includes('REFUND') || type.includes('RETURN')) return <AlertTriangle className="w-5 h-5 text-orange-500" />;
     return <Info className="w-5 h-5 text-zinc-400" />;
   };
@@ -44,18 +45,27 @@ export default function AccountNotifications() {
   return (
     <div className="animate-fade-in-up max-w-3xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-black text-zinc-900 tracking-tight">NOTIFICATIONS</h1>
-        <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-zinc-900 tracking-tight">NOTIFICATIONS</h1>
+          <p className="text-xs text-zinc-500 font-medium mt-0.5">Alerts for orders, promotions, and product price drops.</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button 
+            onClick={() => navigate('/account/price-alerts')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200"
+          >
+            <TrendingDown className="w-4 h-4" /> Price Alerts
+          </button>
           <button 
             onClick={() => navigate('/account/notifications/preferences')}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 text-zinc-900 text-sm font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-zinc-100 text-zinc-900 text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors"
           >
             <Settings className="w-4 h-4" /> Preferences
           </button>
           {notifications.some(n => !n.read) && (
             <button 
               onClick={markAllNotificationsAsRead}
-              className="flex items-center gap-2 px-4 py-2 border border-zinc-200 text-zinc-700 text-sm font-bold rounded-xl hover:bg-zinc-50 transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-zinc-200 text-zinc-700 text-xs font-bold rounded-xl hover:bg-zinc-50 transition-colors"
             >
               <Check className="w-4 h-4" /> Mark all read
             </button>
@@ -79,18 +89,40 @@ export default function AccountNotifications() {
               className={`group flex items-start gap-4 p-5 border-b border-zinc-100 last:border-0 hover:bg-zinc-50 transition-colors cursor-pointer ${!notif.read ? 'bg-blue-50/30' : ''}`}
               onClick={() => handleNotificationClick(notif)}
             >
-              <div className="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center shrink-0 shadow-sm">
-                {getIcon(notif.type)}
-              </div>
+              {notif.productImage ? (
+                <img 
+                  src={notif.productImage} 
+                  alt="" 
+                  className="w-12 h-12 rounded-xl object-cover border border-zinc-200 bg-zinc-50 shrink-0" 
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center shrink-0 shadow-sm">
+                  {getIcon(notif.type)}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className={`text-sm font-bold truncate ${!notif.read ? 'text-zinc-900' : 'text-zinc-700'}`}>
-                      {notif.title}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className={`text-sm font-bold truncate ${!notif.read ? 'text-zinc-900' : 'text-zinc-700'}`}>
+                        {notif.title}
+                      </h3>
+                      {notif.type === 'PRICE_ALERT' && (
+                        <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 shrink-0">
+                          Price Drop
+                        </span>
+                      )}
+                    </div>
                     <p className={`text-sm mt-1 ${!notif.read ? 'text-zinc-700 font-medium' : 'text-zinc-500'}`}>
                       {notif.message}
                     </p>
+                    {notif.priceData && (
+                      <div className="mt-2 flex items-center gap-2 text-xs bg-zinc-50 px-2.5 py-1 rounded-lg border border-zinc-200 w-fit">
+                        <span className="text-zinc-400 line-through text-[11px]">{formatPrice(notif.priceData.oldPrice)}</span>
+                        <span className="font-black text-emerald-600 text-xs">{formatPrice(notif.priceData.newPrice)}</span>
+                        <span className="text-zinc-500 text-[10px]">(Target: {formatPrice(notif.priceData.targetPrice)})</span>
+                      </div>
+                    )}
                   </div>
                   <span className="text-xs font-medium text-zinc-400 whitespace-nowrap">
                     {formatTime(notif.createdAt)}

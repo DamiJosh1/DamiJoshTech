@@ -4,7 +4,8 @@ import { db } from '../../firebase';
 import { 
   Package, Search, Filter, Eye, Edit2, Trash2, Plus, Download, 
   RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon, FolderGit2,
-  Sparkles, CheckCircle2, Loader2, Wand2, X, Zap, Share2, DollarSign, Layers
+  Sparkles, CheckCircle2, Loader2, Wand2, X, Zap, Share2, DollarSign, Layers,
+  Users, CheckSquare, Square
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../StoreContext';
@@ -41,8 +42,9 @@ export default function AdminProducts() {
   const [aiSuccessResult, setAiSuccessResult] = useState<string | null>(null);
   const [isSeedingDefaults, setIsSeedingDefaults] = useState(false);
 
-  // TikTok & Instagram Viral Scout State
+  // TikTok, Instagram & Seller Account Viral Scout State
   const [showScoutModal, setShowScoutModal] = useState(false);
+  const [scoutMode, setScoutMode] = useState<'single' | 'account'>('single');
   const [scoutInput, setScoutInput] = useState('');
   const [scoutCondition, setScoutCondition] = useState<'new' | 'used'>('new');
   const [isScouting, setIsScouting] = useState(false);
@@ -51,11 +53,24 @@ export default function AdminProducts() {
   const [isPublishingScout, setIsPublishingScout] = useState(false);
   const [scoutPublishSuccess, setScoutPublishSuccess] = useState(false);
 
-  // Check URL query parameters for ?scout=true
+  // Vendor Account Harvester State
+  const [vendorAccountInput, setVendorAccountInput] = useState('');
+  const [vendorCount, setVendorCount] = useState(3);
+  const [vendorCondition, setVendorCondition] = useState<'new' | 'used' | 'both'>('both');
+  const [scoutedAccountProducts, setScoutedAccountProducts] = useState<any[]>([]);
+  const [selectedAccountIndices, setSelectedAccountIndices] = useState<number[]>([]);
+  const [isPublishingBatch, setIsPublishingBatch] = useState(false);
+  const [batchPublishSuccess, setBatchPublishSuccess] = useState<string | null>(null);
+
+  // Check URL query parameters for ?scout=true or ?scout=account
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('scout') === 'true') {
+    const scoutParam = params.get('scout');
+    if (scoutParam === 'true' || scoutParam === 'account') {
       setShowScoutModal(true);
+      if (scoutParam === 'account') {
+        setScoutMode('account');
+      }
     }
   }, []);
 
@@ -74,18 +89,21 @@ export default function AdminProducts() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          urlOrTrend: scoutInput.trim(),
           urlOrTopic: scoutInput.trim(),
-          condition: scoutCondition
+          condition: scoutCondition,
+          category: 'Latest Gadgets'
         })
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        throw new Error(`Server returned HTTP ${res.status}`);
+        throw new Error(data?.error || `Server returned HTTP ${res.status}`);
       }
 
-      const data = await res.json();
       if (!data.success || !data.product) {
-        throw new Error(data.error || 'Failed to scout viral product');
+        throw new Error(data?.error || 'Failed to scout viral product');
       }
 
       setScoutedProduct(data.product);
@@ -124,6 +142,82 @@ export default function AdminProducts() {
       setScoutError(err.message || 'Failed to publish product to store');
     } finally {
       setIsPublishingScout(false);
+    }
+  };
+
+  const handleScoutAccount = async () => {
+    if (!vendorAccountInput.trim()) {
+      setScoutError('Please enter a vendor handle, username, or account link (e.g. @gadgethub_lagos)');
+      return;
+    }
+    setIsScouting(true);
+    setScoutError(null);
+    setScoutedAccountProducts([]);
+    setSelectedAccountIndices([]);
+    setBatchPublishSuccess(null);
+
+    try {
+      const res = await fetch('/api/ai/scout-seller-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountHandle: vendorAccountInput.trim(),
+          count: vendorCount,
+          condition: vendorCondition
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `Server returned HTTP ${res.status}`);
+      }
+      if (!data.success || !Array.isArray(data.products) || data.products.length === 0) {
+        throw new Error(data?.error || 'Failed to scout products from seller account');
+      }
+
+      setScoutedAccountProducts(data.products);
+      setSelectedAccountIndices(data.products.map((_: any, idx: number) => idx));
+    } catch (err: any) {
+      console.error('Vendor Scout Error:', err);
+      setScoutError(err.message || 'Failed to scout seller account');
+    } finally {
+      setIsScouting(false);
+    }
+  };
+
+  const handlePublishSelectedProducts = async () => {
+    if (selectedAccountIndices.length === 0) return;
+    setIsPublishingBatch(true);
+    setScoutError(null);
+    try {
+      let publishedCount = 0;
+      for (const idx of selectedAccountIndices) {
+        const item = scoutedAccountProducts[idx];
+        if (!item) continue;
+        const prodId = item.id || `sajoda-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        await setDoc(doc(db, 'products', prodId), {
+          ...item,
+          id: prodId,
+          status: 'active',
+          inStock: true,
+          inventory: item.stockCount || 35,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        publishedCount++;
+      }
+      setBatchPublishSuccess(`Successfully published ${publishedCount} products to SAJODA store catalog!`);
+      setTimeout(() => {
+        setBatchPublishSuccess(null);
+        setScoutedAccountProducts([]);
+        setSelectedAccountIndices([]);
+        setShowScoutModal(false);
+      }, 2500);
+    } catch (err: any) {
+      console.error('Batch publish error:', err);
+      setScoutError('Failed to publish selected products to database.');
+    } finally {
+      setIsPublishingBatch(false);
     }
   };
 
@@ -305,7 +399,19 @@ export default function AdminProducts() {
         
         <div className="flex flex-wrap items-center gap-3">
           <button 
-            onClick={() => setShowScoutModal(true)}
+            onClick={() => {
+              setScoutMode('account');
+              setShowScoutModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/20 whitespace-nowrap cursor-pointer"
+          >
+            <Users className="w-4 h-4 text-white" /> Harvest Seller Accounts
+          </button>
+          <button 
+            onClick={() => {
+              setScoutMode('single');
+              setShowScoutModal(true);
+            }}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:opacity-95 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-rose-500/20 whitespace-nowrap cursor-pointer"
           >
             <TrendingUp className="w-4 h-4 text-white" /> TikTok & Insta Viral Scout
@@ -895,225 +1001,574 @@ export default function AdminProducts() {
             </button>
 
             <div className="flex items-center gap-2 mb-2">
-              <span className="p-2 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white shadow-sm">
-                <TrendingUp className="w-5 h-5" />
+              <span className="p-2 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-indigo-600 text-white shadow-sm">
+                <Sparkles className="w-5 h-5" />
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-pink-50 text-pink-700 border border-pink-200">
-                TikTok & Instagram Viral Scout
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                AI Social & Vendor Catalog Scout
               </span>
               <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-600">
                 DamiJosh Admin AI
               </span>
             </div>
 
-            <h2 className="text-2xl font-black text-zinc-900 tracking-tight mb-2">
-              Import Viral Products to SAJODA
-            </h2>
-            <p className="text-sm text-zinc-500 mb-6 leading-relaxed">
-              Found a hot gadget on TikTok or Instagram? Paste the link or topic. Your AI will locate domestic supply at Alaba or Computer Village, calculate realistic Naira pricing with your guaranteed <strong>₦10,000+ commission</strong>, generate 4 multi-angle photos (including carton box or tested hardware), and publish in 1 click!
-            </p>
-
-            {/* Sourcing Input Form */}
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
-                  TikTok / Instagram Link or Trending Product Name
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={scoutInput}
-                    onChange={(e) => setScoutInput(e.target.value)}
-                    placeholder="e.g. https://www.tiktok.com/@tech/video/... or 'Wireless 3-in-1 Foldable Charger'"
-                    className="w-full p-3.5 pr-10 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white transition-all"
-                  />
-                  {scoutInput && (
-                    <button
-                      onClick={() => setScoutInput('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Condition Selector */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
-                  Listing Condition Model
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setScoutCondition('new')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      scoutCondition === 'new'
-                        ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-600 text-emerald-900'
-                        : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex items-center gap-1.5">
-                      <span>📦 Brand New</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">Sealed retail carton & pack</p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setScoutCondition('used')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      scoutCondition === 'used'
-                        ? 'border-amber-600 bg-amber-50/80 ring-2 ring-amber-600 text-amber-900'
-                        : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex items-center gap-1.5">
-                      <span>🛡️ Certified Pre-Owned</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">100% tested working fine</p>
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Inspiration Tags */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-[11px] font-bold text-zinc-400">Viral Inspiration:</span>
-                {[
-                  'RGB Gaming Soundbar',
-                  'Portable Electric Blender',
-                  'MagSafe Wireless Power Bank',
-                  'Mini Pocket 4K Drone',
-                ].map((idea, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setScoutInput(idea)}
-                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors"
-                  >
-                    + {idea}
-                  </button>
-                ))}
-              </div>
-
-              {scoutError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
-                  {scoutError}
-                </div>
-              )}
+            {/* Mode Switcher Tabs */}
+            <div className="flex p-1 bg-zinc-100 rounded-2xl mb-6 mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setScoutMode('single');
+                  setScoutError(null);
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  scoutMode === 'single'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4 text-pink-600" />
+                Single Viral Product / Link
+              </button>
 
               <button
                 type="button"
-                disabled={isScouting}
-                onClick={handleScoutProduct}
-                className="w-full py-3.5 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:opacity-95 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                onClick={() => {
+                  setScoutMode('account');
+                  setScoutError(null);
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  scoutMode === 'account'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'text-zinc-600 hover:text-zinc-900'
+                }`}
               >
-                {isScouting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Scouting Viral Source & Multi-Angle Photos...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 text-amber-300" />
-                    Scout & Generate Viral Product
-                  </>
-                )}
+                <Users className="w-4 h-4 text-indigo-600" />
+                Harvest Seller Accounts
+                <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-black">
+                  Batch Multi-Item
+                </span>
               </button>
             </div>
 
-            {/* Scouted Product Preview */}
-            {scoutedProduct && (
-              <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-4 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Product Ready for Publish
-                  </span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-zinc-200 text-zinc-800">
-                    {scoutedProduct.condition === 'used' ? 'Pre-Owned Card' : 'Brand New Card'}
-                  </span>
-                </div>
+            {/* ===================== MODE 1: SINGLE PRODUCT / LINK SCOUT ===================== */}
+            {scoutMode === 'single' && (
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight mb-2">
+                  Import Viral Products to SAJODA
+                </h2>
+                <p className="text-sm text-zinc-500 mb-6 leading-relaxed">
+                  Found a hot gadget on TikTok or Instagram? Paste the link or topic. Your AI will locate domestic supply at Alaba or Computer Village, calculate realistic Naira pricing with your guaranteed <strong>₦10,000+ commission</strong>, generate 4 multi-angle photos (including carton box or tested hardware), and publish in 1 click!
+                </p>
 
-                {/* 4 Multi-Angle Side Photos Preview */}
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
-                    4-Angle Side Photo Gallery ({scoutedProduct.images?.length || 4} Angles Generated)
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {(scoutedProduct.images || [scoutedProduct.image]).map((img: string, idx: number) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-white border border-zinc-200 shadow-2xs">
-                        <img src={img} alt="" className="w-full h-full object-cover" />
-                        <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] font-bold text-white text-center py-0.5 truncate px-1">
-                          {idx === 0 ? 'Front' : idx === 1 ? 'Side' : idx === 2 ? 'Details' : scoutedProduct.condition === 'used' ? 'Hardware' : 'Carton'}
-                        </span>
-                      </div>
+                {/* Sourcing Input Form */}
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                      TikTok / Instagram Link or Trending Product Name
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={scoutInput}
+                        onChange={(e) => setScoutInput(e.target.value)}
+                        placeholder="e.g. https://www.tiktok.com/@tech/video/... or 'Wireless 3-in-1 Foldable Charger'"
+                        className="w-full p-3.5 pr-10 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white transition-all"
+                      />
+                      {scoutInput && (
+                        <button
+                          onClick={() => setScoutInput('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Condition Selector */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                      Listing Condition Model
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setScoutCondition('new')}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          scoutCondition === 'new'
+                            ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-600 text-emerald-900'
+                            : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
+                        }`}
+                      >
+                        <div className="font-bold text-xs flex items-center gap-1.5">
+                          <span>📦 Brand New</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mt-0.5">Sealed retail carton & pack</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setScoutCondition('used')}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          scoutCondition === 'used'
+                            ? 'border-amber-600 bg-amber-50/80 ring-2 ring-amber-600 text-amber-900'
+                            : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
+                        }`}
+                      >
+                        <div className="font-bold text-xs flex items-center gap-1.5">
+                          <span>🛡️ Certified Pre-Owned</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mt-0.5">100% tested working fine</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick Inspiration Tags */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="text-[11px] font-bold text-zinc-400">Viral Inspiration:</span>
+                    {[
+                      'RGB Gaming Soundbar',
+                      'Portable Electric Blender',
+                      'MagSafe Wireless Power Bank',
+                      'Mini Pocket 4K Drone',
+                    ].map((idea, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setScoutInput(idea)}
+                        className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors"
+                      >
+                        + {idea}
+                      </button>
                     ))}
                   </div>
-                </div>
 
-                {/* Title & Hook */}
-                <div>
-                  <h3 className="font-black text-base text-zinc-900">{scoutedProduct.name}</h3>
-                  {scoutedProduct.viralHook && (
-                    <p className="text-xs font-bold text-pink-600 mt-0.5">🔥 Viral Hook: "{scoutedProduct.viralHook}"</p>
+                  {scoutError && scoutMode === 'single' && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                      {scoutError}
+                    </div>
                   )}
-                  <p className="text-xs text-zinc-600 mt-1 line-clamp-2">{scoutedProduct.description}</p>
-                </div>
 
-                {/* 🔒 DamiJosh Private Owner Profit & Sourcing Breakdown */}
-                <div className="p-4 rounded-xl bg-zinc-900 text-white space-y-2 border border-zinc-800">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-zinc-400 font-bold">🔒 Sourcing Hub:</span>
-                    <span className="font-semibold text-zinc-200">{scoutedProduct.sourcingSupplier || 'Alaba International Wholesale'}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-zinc-400 font-bold">Base Wholesale Cost:</span>
-                    <span className="font-semibold text-zinc-300">₦{Number(scoutedProduct.costPrice || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-emerald-400 font-bold">DamiJosh Profit Commission:</span>
-                    <span className="font-extrabold text-emerald-400">+₦{Number((scoutedProduct.price || 0) - (scoutedProduct.costPrice || 0)).toLocaleString()}</span>
-                  </div>
-                  <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-sm">
-                    <span className="font-bold text-white">Store Retail Price:</span>
-                    <span className="font-black text-white text-base">₦{Number(scoutedProduct.price || 0).toLocaleString()}</span>
-                  </div>
-                  <p className="text-[10px] text-zinc-400 italic">
-                    * Wholesale costs and commission are 100% hidden from customers. Customers only see SAJODA.
-                  </p>
-                </div>
-
-                {/* Packaging & Guarantee */}
-                <div className="text-xs text-zinc-600 space-y-1">
-                  <div><strong>Packaging:</strong> {scoutedProduct.packaging}</div>
-                  <div><strong>Warranty:</strong> {scoutedProduct.warrantyInfo}</div>
-                </div>
-
-                {/* Publish Action */}
-                {scoutPublishSuccess ? (
-                  <div className="p-3.5 rounded-xl bg-emerald-600 text-white text-center font-bold text-sm flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-5 h-5" />
-                    Published to SAJODA Store Inventory Successfully!
-                  </div>
-                ) : (
                   <button
                     type="button"
-                    disabled={isPublishingScout}
-                    onClick={handlePublishScoutedProduct}
-                    className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                    disabled={isScouting}
+                    onClick={handleScoutProduct}
+                    className="w-full py-3.5 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:opacity-95 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
-                    {isPublishingScout ? (
+                    {isScouting ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Publishing to Store Catalog...
+                        Scouting Viral Source & Multi-Angle Photos...
                       </>
                     ) : (
                       <>
-                        <Plus className="w-5 h-5" />
-                        🚀 1-Click Publish to SAJODA Store
+                        <Sparkles className="w-5 h-5 text-amber-300" />
+                        Scout & Generate Viral Product
                       </>
                     )}
                   </button>
+                </div>
+
+                {/* Scouted Product Preview */}
+                {scoutedProduct && (
+                  <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-4 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Product Ready for Publish
+                      </span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-zinc-200 text-zinc-800">
+                        {scoutedProduct.condition === 'used' ? 'Pre-Owned Card' : 'Brand New Card'}
+                      </span>
+                    </div>
+
+                    {/* 4 Multi-Angle Side Photos Preview */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                        4-Angle Side Photo Gallery ({scoutedProduct.images?.length || 4} Angles Generated)
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {(scoutedProduct.images || [scoutedProduct.image]).map((img: string, idx: number) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-white border border-zinc-200 shadow-2xs">
+                            <img src={img} alt="" className="w-full h-full object-cover" />
+                            <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] font-bold text-white text-center py-0.5 truncate px-1">
+                              {idx === 0 ? 'Front' : idx === 1 ? 'Side' : idx === 2 ? 'Details' : scoutedProduct.condition === 'used' ? 'Hardware' : 'Carton'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Title & Hook */}
+                    <div>
+                      <h3 className="font-black text-base text-zinc-900">{scoutedProduct.name}</h3>
+                      {scoutedProduct.viralHook && (
+                        <p className="text-xs font-bold text-pink-600 mt-0.5">🔥 Viral Hook: "{scoutedProduct.viralHook}"</p>
+                      )}
+                      <p className="text-xs text-zinc-600 mt-1 line-clamp-2">{scoutedProduct.description}</p>
+                    </div>
+
+                    {/* 🔒 DamiJosh Private Owner Profit & Sourcing Breakdown */}
+                    <div className="p-4 rounded-xl bg-zinc-900 text-white space-y-2 border border-zinc-800">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-zinc-400 font-bold">🔒 Sourcing Hub:</span>
+                        <span className="font-semibold text-zinc-200">{scoutedProduct.sourcingSupplier || 'Alaba International Wholesale'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-zinc-400 font-bold">Base Wholesale Cost:</span>
+                        <span className="font-semibold text-zinc-300">₦{Number(scoutedProduct.costPrice || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-emerald-400 font-bold">DamiJosh Profit Commission:</span>
+                        <span className="font-extrabold text-emerald-400">+₦{Number((scoutedProduct.price || 0) - (scoutedProduct.costPrice || 0)).toLocaleString()}</span>
+                      </div>
+                      <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-sm">
+                        <span className="font-bold text-white">Store Retail Price:</span>
+                        <span className="font-black text-white text-base">₦{Number(scoutedProduct.price || 0).toLocaleString()}</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-400 italic">
+                        * Wholesale costs and commission are 100% hidden from customers. Customers only see SAJODA.
+                      </p>
+                    </div>
+
+                    {/* Packaging & Guarantee */}
+                    <div className="text-xs text-zinc-600 space-y-1">
+                      <div><strong>Packaging:</strong> {scoutedProduct.packaging}</div>
+                      <div><strong>Warranty:</strong> {scoutedProduct.warrantyInfo}</div>
+                    </div>
+
+                    {/* Publish Action */}
+                    {scoutPublishSuccess ? (
+                      <div className="p-3.5 rounded-xl bg-emerald-600 text-white text-center font-bold text-sm flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-5 h-5" />
+                        Published to SAJODA Store Inventory Successfully!
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isPublishingScout}
+                        onClick={handlePublishScoutedProduct}
+                        className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isPublishingScout ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Publishing to Store Catalog...
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-5 h-5" />
+                            🚀 1-Click Publish to SAJODA Store
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ===================== MODE 2: VENDOR & COMPETITOR ACCOUNT HARVESTER ===================== */}
+            {scoutMode === 'account' && (
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight mb-2">
+                  Harvest Winning Products from Seller Accounts
+                </h2>
+                <p className="text-sm text-zinc-500 mb-6 leading-relaxed">
+                  Input any vendor's Instagram handle, TikTok seller profile, Jumia/Konga merchant, or Computer Village dealer handle. AI scans their public catalog, selects the highest-demand electronics for SAJODA, pairs them with domestic wholesale hubs, adds your <strong>₦10,000+ owner profit commission</strong>, generates 4-angle photo sets, and lets you batch-publish in 1 click!
+                </p>
+
+                {/* Account Sourcing Form */}
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                      Vendor Account Handle or Profile Link
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={vendorAccountInput}
+                        onChange={(e) => setVendorAccountInput(e.target.value)}
+                        placeholder="e.g. @gadgethub_lagos, @alaba_direct_deals, or profile URL"
+                        className="w-full p-3.5 pr-10 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-600 focus:bg-white transition-all"
+                      />
+                      {vendorAccountInput && (
+                        <button
+                          onClick={() => setVendorAccountInput('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preset Vendor Accounts */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="text-[11px] font-bold text-zinc-400">Popular Sourcing Accounts:</span>
+                    {[
+                      { handle: '@gadgethub_lagos', label: 'GadgetHub (Audio & Tech)' },
+                      { handle: '@alaba_direct_deals', label: 'Alaba Deals (Appliances)' },
+                      { handle: '@ikeja_phones_gadgets', label: 'Ikeja Gadgets (Smartphones)' },
+                      { handle: '@computer_village_refurb', label: 'CV Refurb (Certified Pre-Owned)' },
+                    ].map((acc, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setVendorAccountInput(acc.handle)}
+                        className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                          vendorAccountInput === acc.handle
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                        }`}
+                      >
+                        {acc.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Configuration Row: Quantity & Condition Filter */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                        Products to Curate
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[3, 5, 8].map((cnt) => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            onClick={() => setVendorCount(cnt)}
+                            className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                              vendorCount === cnt
+                                ? 'bg-indigo-50 border-indigo-600 text-indigo-700 ring-1 ring-indigo-600'
+                                : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300'
+                            }`}
+                          >
+                            {cnt} Items
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                        Inventory Condition Filter
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { val: 'both', label: 'Both' },
+                          { val: 'new', label: 'New Only' },
+                          { val: 'used', label: 'Pre-Owned' },
+                        ].map((c) => (
+                          <button
+                            key={c.val}
+                            type="button"
+                            onClick={() => setVendorCondition(c.val as any)}
+                            className={`py-2 px-2 text-center rounded-xl border text-xs font-bold transition-all truncate ${
+                              vendorCondition === c.val
+                                ? 'bg-indigo-50 border-indigo-600 text-indigo-700 ring-1 ring-indigo-600'
+                                : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300'
+                            }`}
+                          >
+                            {c.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {scoutError && scoutMode === 'account' && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                      {scoutError}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={isScouting}
+                    onClick={handleScoutAccount}
+                    className="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isScouting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Scanning Account & Matching Wholesale Sourcing...
+                      </>
+                    ) : (
+                      <>
+                        <Users className="w-5 h-5 text-indigo-200" />
+                        Scout Winning Products from {vendorAccountInput ? vendorAccountInput : 'Account'}
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Batch Harvested Results */}
+                {scoutedAccountProducts.length > 0 && (
+                  <div className="space-y-4 animate-fade-in pt-2 border-t border-zinc-200">
+                    {/* Header bar with Select All & Profit calculation */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-zinc-900 text-white">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          <span className="font-black text-sm">
+                            {scoutedAccountProducts.length} Curated Products Ready
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          {selectedAccountIndices.length} of {scoutedAccountProducts.length} selected for publishing
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (selectedAccountIndices.length === scoutedAccountProducts.length) {
+                              setSelectedAccountIndices([]);
+                            } else {
+                              setSelectedAccountIndices(scoutedAccountProducts.map((_, i) => i));
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          {selectedAccountIndices.length === scoutedAccountProducts.length ? 'Deselect All' : 'Select All'}
+                        </button>
+
+                        <div className="text-right">
+                          <span className="text-[10px] uppercase font-bold text-zinc-400 block">Total Est. Profit</span>
+                          <span className="text-base font-black text-emerald-400">
+                            +₦{selectedAccountIndices.reduce((sum, idx) => {
+                              const p = scoutedAccountProducts[idx];
+                              return sum + Math.max(10000, (p?.price || 0) - (p?.costPrice || 0));
+                            }, 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Product List */}
+                    <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                      {scoutedAccountProducts.map((item, idx) => {
+                        const isSelected = selectedAccountIndices.includes(idx);
+                        const commission = Math.max(10000, (item.price || 0) - (item.costPrice || 0));
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedAccountIndices(selectedAccountIndices.filter(i => i !== idx));
+                              } else {
+                                setSelectedAccountIndices([...selectedAccountIndices, idx]);
+                              }
+                            }}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center gap-4 ${
+                              isSelected
+                                ? 'bg-indigo-50/40 border-indigo-400 ring-1 ring-indigo-400'
+                                : 'bg-white border-zinc-200 opacity-60 hover:opacity-90'
+                            }`}
+                          >
+                            {/* Checkbox */}
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                className="text-indigo-600 focus:outline-none"
+                              >
+                                {isSelected ? (
+                                  <CheckSquare className="w-5 h-5" />
+                                ) : (
+                                  <Square className="w-5 h-5 text-zinc-400" />
+                                )}
+                              </button>
+
+                              {/* Photo thumbnail */}
+                              <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-zinc-100 shrink-0 border border-zinc-200">
+                                <img
+                                  src={item.image || (item.images && item.images[0])}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                                <span className="absolute bottom-0 inset-x-0 bg-black/75 text-[8px] font-bold text-white text-center py-0.5">
+                                  4 Angles
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Details */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                  item.condition === 'used'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-emerald-100 text-emerald-800'
+                                }`}>
+                                  {item.condition === 'used' ? '🛡️ Pre-Owned' : '📦 Brand New'}
+                                </span>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-600">
+                                  {item.category}
+                                </span>
+                                <span className="text-[10px] font-semibold text-zinc-500">
+                                  🔒 {item.sourcingSupplier || 'Alaba International'}
+                                </span>
+                              </div>
+
+                              <h4 className="font-black text-sm text-zinc-900 truncate">{item.name}</h4>
+                              <p className="text-xs text-zinc-500 line-clamp-1 mt-0.5">
+                                {item.sellerInsight || item.description}
+                              </p>
+                            </div>
+
+                            {/* Financial breakdown */}
+                            <div className="sm:text-right shrink-0 bg-white p-2.5 rounded-xl border border-zinc-200">
+                              <div className="text-[11px] text-zinc-400 font-semibold">
+                                Base: ₦{Number(item.costPrice || 0).toLocaleString()}
+                              </div>
+                              <div className="text-xs font-bold text-emerald-600">
+                                +₦{commission.toLocaleString()} profit
+                              </div>
+                              <div className="text-sm font-black text-zinc-900 mt-0.5">
+                                ₦{Number(item.price || 0).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Batch Publish CTA */}
+                    <div className="pt-2">
+                      {batchPublishSuccess ? (
+                        <div className="p-4 rounded-xl bg-emerald-600 text-white text-center font-bold text-sm flex items-center justify-center gap-2 animate-fade-in">
+                          <CheckCircle2 className="w-5 h-5" />
+                          {batchPublishSuccess}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isPublishingBatch || selectedAccountIndices.length === 0}
+                          onClick={handlePublishSelectedProducts}
+                          className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-black text-sm transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                        >
+                          {isPublishingBatch ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              Publishing {selectedAccountIndices.length} Products to Firestore Catalog...
+                            </>
+                          ) : (
+                            <>
+                              <Users className="w-5 h-5 text-indigo-300" />
+                              🚀 Publish Selected ({selectedAccountIndices.length} Products) to SAJODA Store
+                            </>
+                          )}
+                        </button>
+                      )}
+                      <p className="text-[10px] text-zinc-400 text-center mt-2 italic">
+                        * All wholesale costs & commission markups remain private to DamiJosh. Customers only see SAJODA retail prices.
+                      </p>
+                    </div>
+
+                  </div>
                 )}
 
               </div>

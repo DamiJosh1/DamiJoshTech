@@ -7,12 +7,12 @@ import Logo from './Logo';
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
-import { ShoppingBag, Zap, Bell, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye, LayoutDashboard } from 'lucide-react';
+import { ShoppingBag, Zap, Bell, X, Plus, Minus, Search, Menu, ArrowRight, ShieldCheck, Truck, HeadphonesIcon, CreditCard, ArrowLeft, Moon, Sun, User, Bot, Home as HomeIcon, Package, Heart, Star, Eye, LayoutDashboard, TrendingDown } from 'lucide-react';
 import { usePaystackPayment } from 'react-paystack';
 import { collection, addDoc, serverTimestamp, onSnapshot, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { db, auth } from './firebase';
-import { Product, CartItem, Promotion, AppNotification, StoreCountry, StoreCurrency, ShippingMethod, TaxRule } from './types';
+import { Product, CartItem, Promotion, AppNotification, StoreCountry, StoreCurrency, ShippingMethod, TaxRule, PriceAlert } from './types';
 import { StoreContext } from './StoreContext';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -42,6 +42,9 @@ import AccountAddresses from './pages/AccountAddresses';
 import AccountSecurity from './pages/account/AccountSecurity';
 import AccountNotifications from './pages/account/AccountNotifications';
 import AccountNotificationPreferences from './pages/account/AccountNotificationPreferences';
+import AccountPriceAlerts from './pages/account/AccountPriceAlerts';
+import { PriceAlertModal } from './components/PriceAlertModal';
+import { NotificationBell } from './components/NotificationBell';
 
 import AdminAiLayout from './pages/admin/ai/AdminAiLayout';
 import AdminAiDashboard from './pages/admin/ai/AdminAiDashboard';
@@ -548,8 +551,230 @@ export default function Store() {
   };
   const clearCart = () => setCartItems([]);
 
+  // Price Alerts State & Firestore Sync
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>(() => {
+    try {
+      const saved = localStorage.getItem("sajoda_guest_price_alerts");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [priceAlertModalProduct, setPriceAlertModalProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      try {
+        const saved = localStorage.getItem("sajoda_guest_price_alerts");
+        if (saved) setPriceAlerts(JSON.parse(saved));
+      } catch (e) {
+        console.warn("Guest price alerts error:", e);
+      }
+      return;
+    }
+
+    const q = query(collection(db, "price_alerts"), where("userId", "==", user.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const alerts: PriceAlert[] = [];
+      snapshot.forEach(docSnap => {
+        alerts.push({ id: docSnap.id, ...docSnap.data() } as PriceAlert);
+      });
+
+      // Migrate any guest alerts if present
+      try {
+        const guestSaved = localStorage.getItem("sajoda_guest_price_alerts");
+        if (guestSaved) {
+          const guestAlerts: PriceAlert[] = JSON.parse(guestSaved);
+          if (guestAlerts.length > 0) {
+            guestAlerts.forEach(async (ga) => {
+              if (!alerts.some(a => a.productId === ga.productId)) {
+                await addDoc(collection(db, "price_alerts"), {
+                  ...ga,
+                  userId: user.uid,
+                  userEmail: ga.userEmail || user.email || '',
+                  updatedAt: serverTimestamp()
+                });
+              }
+            });
+            localStorage.removeItem("sajoda_guest_price_alerts");
+          }
+        }
+      } catch (err) {
+        console.warn("Guest alert migration failed:", err);
+      }
+
+      setPriceAlerts(alerts);
+    }, (err) => {
+      console.warn("price_alerts listener error:", err.message);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      localStorage.setItem("sajoda_guest_price_alerts", JSON.stringify(priceAlerts));
+    }
+  }, [priceAlerts, user]);
+
+  // Automated Price Drop Detector
+  useEffect(() => {
+    if (!products.length || !priceAlerts.length) return;
+
+    priceAlerts.forEach(async (alert) => {
+      if (alert.status !== 'active') return;
+
+      const product = products.find(p => p.id === alert.productId);
+      if (!product) return;
+
+      if (product.price <= alert.targetPrice) {
+        // Trigger price drop!
+        if (user && alert.id && !alert.id.startsWith('local_')) {
+          try {
+            await updateDoc(doc(db, "price_alerts", alert.id), {
+              status: 'triggered',
+              triggeredAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+          } catch (e) {
+            console.error("Error updating price alert doc:", e);
+          }
+        } else {
+          setPriceAlerts(prev => prev.map(a => 
+            (a.id === alert.id || a.productId === alert.productId) 
+              ? { ...a, status: 'triggered', triggeredAt: new Date().toISOString() } 
+              : a
+          ));
+        }
+
+        const notifPayload: AppNotification = {
+          userId: user ? user.uid : 'guest',
+          type: 'PRICE_ALERT',
+          title: `Price Drop Alert: ${product.name}`,
+          message: `Great news! The price of ${product.name} just dropped to ${formatPrice(product.price)} (below your target of ${formatPrice(alert.targetPrice)})!`,
+          read: false,
+          link: `/product/${product.id}`,
+          productImage: alert.productImage || product.image,
+          priceData: {
+            oldPrice: alert.initialPrice,
+            newPrice: product.price,
+            targetPrice: alert.targetPrice
+          },
+          createdAt: serverTimestamp()
+        };
+
+        try {
+          if (user) {
+            await addDoc(collection(db, "notifications"), notifPayload);
+          } else {
+            setNotifications(prev => [
+              {
+                ...notifPayload,
+                id: 'notif_' + Date.now(),
+                createdAt: new Date().toISOString()
+              },
+              ...prev
+            ]);
+          }
+        } catch (e) {
+          console.error("Failed to add notification doc:", e);
+        }
+
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification(`Price Drop: ${product.name}`, {
+              body: `Dropped to ${formatPrice(product.price)}! Tap to view details.`,
+              icon: product.image || '/icon-192.png'
+            });
+          } catch (err) {
+            console.warn("Notification error:", err);
+          }
+        }
+      }
+    });
+  }, [products, priceAlerts, user]);
+
+  const createPriceAlert = async (product: Product, targetPrice: number, email?: string) => {
+    const existing = priceAlerts.find(a => a.productId === product.id && a.status === 'active');
+    const newAlert: PriceAlert = {
+      userId: user ? user.uid : 'guest',
+      userEmail: email || user?.email || '',
+      productId: product.id,
+      productName: product.name,
+      productImage: product.image,
+      initialPrice: product.price,
+      targetPrice,
+      currencyCode: activeCurrency?.code || 'NGN',
+      status: 'active',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    if (user) {
+      if (existing?.id) {
+        await updateDoc(doc(db, "price_alerts", existing.id), {
+          targetPrice,
+          userEmail: email || user.email || '',
+          updatedAt: serverTimestamp()
+        });
+        return { success: true, message: `Price alert threshold updated to ${formatPrice(targetPrice)}!` };
+      } else {
+        const ref = await addDoc(collection(db, "price_alerts"), newAlert);
+        return { success: true, message: `Price alert set! We'll notify you when price drops to ${formatPrice(targetPrice)}.`, alert: { ...newAlert, id: ref.id } };
+      }
+    } else {
+      if (existing) {
+        setPriceAlerts(prev => prev.map(a => a.productId === product.id ? { ...a, targetPrice, userEmail: email } : a));
+        return { success: true, message: `Price alert threshold updated to ${formatPrice(targetPrice)}!` };
+      } else {
+        const localAlert: PriceAlert = { ...newAlert, id: 'local_' + Date.now(), createdAt: new Date().toISOString() };
+        setPriceAlerts(prev => [localAlert, ...prev]);
+        return { success: true, message: `Price alert set! We'll notify you when price drops to ${formatPrice(targetPrice)}.`, alert: localAlert };
+      }
+    }
+  };
+
+  const removePriceAlert = async (alertId: string) => {
+    if (user && !alertId.startsWith('local_')) {
+      try {
+        await deleteDoc(doc(db, "price_alerts", alertId));
+      } catch (e) {
+        console.error("Failed to delete price alert:", e);
+      }
+    }
+    setPriceAlerts(prev => prev.filter(a => a.id !== alertId));
+  };
+
+  const simulatePriceDrop = async (productId: string, testPrice?: number) => {
+    const prod = products.find(p => p.id === productId);
+    if (!prod) return;
+
+    const alert = priceAlerts.find(a => a.productId === productId);
+    const dropPrice = testPrice !== undefined ? testPrice : (alert ? Math.round(alert.targetPrice * 0.95) : Math.round(prod.price * 0.8));
+
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, price: dropPrice } : p));
+
+    try {
+      await updateDoc(doc(db, "products", productId), {
+        price: dropPrice,
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn("Could not write price drop to Firestore:", e);
+    }
+  };
+
+  const getActiveAlertForProduct = (productId: string) => {
+    return priceAlerts.find(a => a.productId === productId && a.status === 'active');
+  };
+
   const storeState = {
     products,
+    productsLoading,
+    promotions,
+    activeCoupon,
+    setActiveCoupon,
+    cartDiscount: 0,
     isDarkMode,
     user,
     wishlistIds,
@@ -572,6 +797,13 @@ export default function Store() {
     markNotificationAsRead,
     markAllNotificationsAsRead,
     deleteNotification,
+    priceAlerts,
+    priceAlertModalProduct,
+    setPriceAlertModalProduct,
+    createPriceAlert,
+    removePriceAlert,
+    simulatePriceDrop,
+    getActiveAlertForProduct,
     countries,
     currencies,
     shippingMethods,
@@ -609,9 +841,10 @@ export default function Store() {
 
           <div className="flex items-center gap-3 z-10">
              <InstallAppButton variant="nav" className="hidden sm:flex" />
-             <button onClick={() => navigate('/account/wishlist')} className="hidden md:flex items-center justify-center p-2 rounded-full hover:bg-zinc-100 transition-colors relative group">
+             <button onClick={() => navigate('/account/wishlist')} className="hidden md:flex items-center justify-center p-2 rounded-full hover:bg-zinc-100 transition-colors relative group" title="Wishlist">
                 <Heart className="w-5 h-5" />
              </button>
+             <NotificationBell />
              <button onClick={() => setIsCartOpen(true)} className="p-2 relative transition-colors hover:text-primary-blue text-charcoal">
                 <ShoppingBag className="w-5 h-5" />
                 {cartCount > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-primary-blue text-white text-[10px] font-bold flex items-center justify-center rounded-full">{cartCount}</span>}
@@ -622,13 +855,17 @@ export default function Store() {
                    {user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover"/> : (user.displayName ? user.displayName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'U')}
                  </button>
                  {isProfileMenuOpen && (
-                   <div className="absolute right-0 mt-3 w-56 rounded-xl shadow-xl py-2 bg-white border border-zinc-100 animate-fade-in-up origin-top-right">
+                   <div className="absolute right-0 mt-3 w-56 rounded-xl shadow-xl py-2 bg-white border border-zinc-100 animate-fade-in-up origin-top-right z-50">
                       <div className="px-5 py-3 border-b border-zinc-100 mb-1">
                         <p className="text-sm font-bold text-zinc-900 truncate">{user.displayName || 'Customer'}</p>
                         <p className="text-xs text-zinc-500 truncate">{user.email}</p>
                       </div>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">My Account</button>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/orders'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">My Orders</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/price-alerts'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-emerald-700 font-medium flex items-center justify-between">
+                        <span>Price Alerts</span>
+                        {priceAlerts.length > 0 && <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">{priceAlerts.length}</span>}
+                      </button>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/wishlist'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Wishlist</button>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/addresses'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Addresses</button>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/security'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Settings</button>
@@ -673,6 +910,7 @@ export default function Store() {
           </div>
           <div className="flex items-center gap-1.5 z-10">
             <InstallAppButton variant="nav" className="text-[11px] py-1 px-2.5" />
+            <NotificationBell />
             <button onClick={() => navigate('/search')} className="p-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Search">
               <Search className="w-5 h-5" />
             </button>
@@ -702,6 +940,10 @@ export default function Store() {
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?category=Latest+Gadgets'); }} className="text-left hover:text-primary-blue font-semibold">Latest Gadgets</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop?category=Electronics'); }} className="text-left hover:text-primary-blue font-semibold">Electronics</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/deals'); }} className="text-left text-error hover:text-primary-blue flex items-center gap-2"><Zap className="w-4 h-4" /> Deals</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); navigate('/account/price-alerts'); }} className="text-left text-emerald-700 hover:text-emerald-900 font-semibold flex items-center gap-2">
+                    <TrendingDown className="w-4 h-4" /> Price Drop Alerts
+                    {priceAlerts.length > 0 && <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">{priceAlerts.length}</span>}
+                  </button>
                   
                   <div className="h-px bg-zinc-100 my-2" />
                   
@@ -764,6 +1006,7 @@ export default function Store() {
             <Route path="security" element={<AccountSecurity />} />
             <Route path="notifications" element={<AccountNotifications />} />
             <Route path="notifications/preferences" element={<AccountNotificationPreferences />} />
+            <Route path="price-alerts" element={<AccountPriceAlerts />} />
           
             <Route path="security" element={<AdminSecurityLayout />}>
               <Route index element={<AdminSecurityDashboard />} />
@@ -1178,6 +1421,10 @@ export default function Store() {
     </div>
       <MobileBottomNav />
       <PWAPrompt />
+      <PriceAlertModal 
+        product={priceAlertModalProduct} 
+        onClose={() => setPriceAlertModalProduct(null)} 
+      />
     </StoreContext.Provider>
   );
 }
