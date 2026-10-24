@@ -44,13 +44,12 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           
           <div className="absolute top-3 left-3 md:top-5 md:left-5 flex flex-col gap-1.5 z-10">
             {product.condition === 'used' ? (
-              <span className="bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                PRE-OWNED
+              <span className="bg-white/95 backdrop-blur-xs text-zinc-900 border border-zinc-200 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                <span>🛡️</span> PRE-OWNED • TESTED WORKING
               </span>
             ) : (
-              <span className="bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-                BRAND NEW
+              <span className="bg-zinc-900 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                <span>📦</span> BRAND NEW • SEALED CARTON
               </span>
             )}
             {product.badge && (
@@ -59,11 +58,18 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
               </span>
             )}
             {product.originalPrice && product.originalPrice > product.price && (
-              <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+              <span className="bg-zinc-900/90 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
                 -{Math.round((1 - product.price / product.originalPrice) * 100)}%
               </span>
             )}
           </div>
+
+          {/* Multi-Angle Side Views Indicator */}
+          {product.images && product.images.length > 1 && (
+            <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded-full bg-zinc-900/80 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1 pointer-events-none z-10">
+              <span>📷</span> {product.images.length} Side Angles
+            </div>
+          )}
 
           <button 
             onClick={(e) => handleWishlistToggle(product, e)}
@@ -73,10 +79,10 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           </button>
 
           {/* Quick View Button (Desktop) */}
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 translate-y-10 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hidden md:block">
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 translate-y-10 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hidden md:block z-20">
             <button 
               onClick={handleQuickView}
-              className="px-6 py-2.5 bg-white/90 backdrop-blur-md text-zinc-900 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm hover:bg-white hover:scale-105 active:scale-95 transition-all"
+              className="px-6 py-2.5 bg-white/90 backdrop-blur-md text-zinc-900 text-xs font-bold uppercase tracking-wider rounded-full shadow-sm hover:bg-white hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               Quick View
             </button>
@@ -99,31 +105,25 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                 <span className="text-[11px] font-bold text-zinc-900">{product.rating || "4.9"}</span>
                 <span className="text-[11px] text-zinc-400">({product.reviewCount || Math.floor(Math.random() * 100 + 50)})</span>
               </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                product.condition === 'used' 
-                  ? 'bg-amber-50 text-amber-800 border border-amber-200' 
-                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              }`}>
-                {product.condition === 'used' ? (product.conditionGrade || 'Certified Pre-Owned') : (product.conditionGrade || 'Brand New')}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-800 border border-zinc-200">
+                {product.condition === 'used' ? 'Pre-Owned (100% Tested)' : 'Sealed Carton Box'}
               </span>
             </div>
             
-            <h3 className="font-bold text-zinc-900 text-sm md:text-base leading-snug line-clamp-2 mb-2 group-hover:text-primary-blue transition-colors">
+            <h3 className="font-bold text-zinc-900 text-sm md:text-base leading-snug line-clamp-2 mb-2 group-hover:text-zinc-600 transition-colors">
               {product.name}
             </h3>
             
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-bold text-zinc-900 md:text-lg">{formatPrice(product.price)}</span>
+              <span className="font-black text-zinc-900 md:text-lg">{formatPrice(product.price)}</span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <span className="text-sm font-medium text-zinc-400 line-through">
                   {formatPrice(product.originalPrice)}
                 </span>
               )}
-              {product.usedPrice && product.newPrice && (
-                <span className="text-[10px] font-semibold text-zinc-500 ml-auto bg-zinc-100 px-2 py-0.5 rounded">
-                  New & Used
-                </span>
-              )}
+              <span className="text-[10px] font-bold text-zinc-600 ml-auto bg-zinc-50 border border-zinc-200 px-2 py-0.5 rounded">
+                {product.condition === 'used' ? '90-Day Guarantee' : '1-Year Warranty'}
+              </span>
             </div>
           </div>
           

@@ -43,8 +43,16 @@ export default function AdminAiDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white">
+              Admin: DamiJosh
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-pink-800">
+              TikTok & Insta Viral Scout Active
+            </span>
+          </div>
           <h1 className="text-2xl font-bold text-zinc-900">SAJODA AI COMMAND CENTER</h1>
-          <p className="text-zinc-500">Your intelligent operations layer for products, orders, marketing and growth.</p>
+          <p className="text-zinc-500">Welcome DamiJosh. Your smart operations layer for catalog sourcing, separate condition cards, domestic logistics, and viral growth.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-zinc-200 rounded-lg">
@@ -174,14 +182,14 @@ export default function AdminAiDashboard() {
                   <Truck className="w-4 h-4 text-indigo-500" />
                   <span className="font-semibold text-sm text-zinc-900">ORDERS & SHIPPING</span>
                 </div>
-                <p className="text-sm text-zinc-600">Processed 42 orders automatically today. 38 successfully synced to CJ Dropshipping. 4 flagged for manual review due to missing address data. 15 tracking numbers updated.</p>
+                <p className="text-sm text-zinc-600">Processed 42 orders automatically today. 38 dispatched via direct domestic courier (Lagos, Abuja & nationwide). 4 flagged for customer phone verification. 15 tracking IDs updated.</p>
               </div>
               <div className="pb-4 border-b border-zinc-100 last:border-0 last:pb-0">
                 <div className="flex items-center gap-2 mb-1">
                   <Search className="w-4 h-4 text-emerald-500" />
-                  <span className="font-semibold text-sm text-zinc-900">PRODUCTS</span>
+                  <span className="font-semibold text-sm text-zinc-900">PRODUCTS & VIRAL SCOUT</span>
                 </div>
-                <p className="text-sm text-zinc-600">Product Discovery scanned 1,200 supplier items. Found 12 matching your minimum margin rule (&gt;20%). 8 drafts prepared and waiting in the Approval Queue.</p>
+                <p className="text-sm text-zinc-600">Product Discovery scanned Alaba & Computer Village distributors. TikTok & Insta scout ready for 1-click publishing with guaranteed ₦10,000+ profit margin and 4 multi-angle photos.</p>
               </div>
               <div className="pb-4 border-b border-zinc-100 last:border-0 last:pb-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -207,7 +215,7 @@ export default function AdminAiDashboard() {
                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded">ONLINE</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-600">CJ Integration</span>
+                <span className="text-sm font-medium text-zinc-600">Domestic Wholesale Hub</span>
                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded">CONNECTED</span>
               </div>
               <div className="flex items-center justify-between">
@@ -215,8 +223,8 @@ export default function AdminAiDashboard() {
                 <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded">CONNECTED</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-600">Marketing APIs</span>
-                <span className="px-2 py-0.5 bg-zinc-100 text-zinc-500 text-xs font-bold rounded">NOT CONFIGURED</span>
+                <span className="text-sm font-medium text-zinc-600">TikTok & Insta Scout</span>
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded">ONLINE</span>
               </div>
             </div>
             <button className="w-full mt-4 py-2 border border-zinc-200 rounded-lg text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">

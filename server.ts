@@ -67,70 +67,9 @@ async function sendReceipt(email: string, name: string, amount: number, items: s
   }
 }
 
-// Helper to send order to CJ Dropshipping
-async function sendToCJDropshipping(reference: string, customer: any, metadata: any) {
-  const cjToken = process.env.CJ_ACCESS_TOKEN;
-  if (!cjToken) {
-    console.log('[CJ Dropshipping] Skipping fulfillment. CJ_ACCESS_TOKEN is not set.');
-    return;
-  }
-
-  // Extract raw items and shipping address from Paystack metadata
-  let items = [];
-  let shippingAddress = '';
-  if (metadata && metadata.custom_fields) {
-    const rawItemsField = metadata.custom_fields.find((f: any) => f.variable_name === 'cart_items_raw');
-    if (rawItemsField) {
-      try { items = JSON.parse(rawItemsField.value); } catch (e) { console.error('Failed to parse items', e); }
-    }
-    const addressField = metadata.custom_fields.find((f: any) => f.variable_name === 'shipping_address');
-    if (addressField) shippingAddress = addressField.value;
-  }
-
-  if (items.length === 0) {
-    console.log('[CJ Dropshipping] No items found to fulfill for order:', reference);
-    return;
-  }
-
-  // Format products for CJ API
-  const cjProducts = items.map((item: any) => ({
-    vid: item.sku, // Product variant ID/SKU in CJ
-    quantity: item.quantity
-  }));
-
-  // Build CJ API Payload (Based on standard CJ API specifications)
-  const cjPayload = {
-    orderNumber: reference,
-    shippingAddress: shippingAddress,
-    customerName: customer.first_name || 'Customer',
-    customerPhone: customer.phone || '0000000000',
-    // In a real app, you would split the address into city/province/zip/country on the frontend
-    shippingCountry: 'US', // Defaulting for example
-    shippingProvince: '',
-    shippingCity: '',
-    shippingZip: '',
-    products: cjProducts
-  };
-
-  try {
-    const response = await fetch('https://developers.cjdropshipping.com/api2.0/v1/shopping/order/createOrder', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'CJ-Access-Token': cjToken
-      },
-      body: JSON.stringify(cjPayload)
-    });
-
-    const data = await response.json();
-    if (data.code === 200) {
-      console.log(`[CJ Dropshipping] Order ${reference} successfully submitted to CJ!`);
-    } else {
-      console.error(`[CJ Dropshipping] Failed to submit order ${reference}:`, data.message);
-    }
-  } catch (error) {
-    console.error(`[CJ Dropshipping] API Error for order ${reference}:`, error);
-  }
+// Domestic fulfillment logging
+function logDomesticFulfillment(reference: string, customer: any, metadata: any) {
+  console.log(`[SAJODA Domestic Fulfillment] Order ${reference} recorded for domestic dispatch from Alaba/Computer Village Hub.`);
 }
 
 // Paystack Webhook
@@ -168,8 +107,8 @@ app.post('/api/webhooks/paystack', async (req, res) => {
       'Paystack'
     );
 
-    // 2. Automate Fulfillment to CJ Dropshipping
-    await sendToCJDropshipping(reference, customer, metadata);
+    // 2. Dispatch to SAJODA Domestic Hub Fulfillment
+    logDomesticFulfillment(reference, customer, metadata);
   }
 
   res.sendStatus(200);
@@ -226,15 +165,23 @@ app.post('/api/chat', async (req, res) => {
     if (!message) return res.status(400).json({ error: 'Message is required' });
 
     const systemInstruction = isAdmin 
-      ? `You are an AI assistant for VoraTech dropshipping store. Help the admin, ${userName || 'Dami'}, with product descriptions, SEO, analyzing metrics, setting pricing strategies based on CJ Dropshipping, and overall e-commerce advice. Be concise, professional, and knowledgeable about dropshipping. You also have access to Google Search for the latest trends.`
-      : `You are a helpful AI shopping assistant for VoraTech. Help the customer, ${userName || 'there'}, find tech products, compare features, and learn about the latest gadgets. Be friendly, concise, and helpful. Do not mention internal store operations. Use Google Search if asked about recent tech news or reviews.`;
+      ? `You are an elite AI Chief Merchandiser and Business Strategist for SAJODA ELECTRONICS in Nigeria, serving store owner and admin DamiJosh (${userName || 'DamiJosh'}).
+You specialize in Home Appliances, Latest Gadgets, and Electronics.
+You know domestic Nigerian wholesale sourcing hubs:
+1. Alaba International Market Electronics Distribution Hub (Lagos) - Appliances & TVs.
+2. Computer Village Ikeja Tech Hub (Lagos) - Gadgets, Phones, Accessories.
+3. Certified OEM Refurbisher Hub (Nigeria) - Pre-Owned 100% Tested Working Fine units.
+All prices must be in reasonable Nigerian Naira (₦). Every item must include DamiJosh's owner commission markup of MINIMUM ₦10,000 UPWARD (e.g., +₦10k to +₦75k depending on value).
+Brand New goods come in sealed retail cartons and packs.
+Pre-Owned goods are separate cards with 100% verified working fine status.
+You can help DamiJosh scout viral products from TikTok (#TikTokMadeMeBuyIt) and Instagram reels, suggest high-converting copy, calculate profit markups, and craft multi-angle photo product listings. Be sharp, encouraging, respectful, and direct.`
+      : `You are a helpful and knowledgeable shopping assistant for SAJODA ELECTRONICS in Nigeria. Help the customer find top home appliances, latest gadgets, and electronics with authentic Nigerian market prices (₦), 1-year warranties on brand new items in sealed cartons, and 90-day guarantees on certified pre-owned items. Be friendly, concise, and helpful. Never reveal wholesale base costs or internal sourcing markups.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.8-flash",
       contents: message,
       config: {
         systemInstruction,
-         
       }
     });
 
@@ -325,99 +272,181 @@ Return ONLY valid JSON matching this exact structure:
   }
 });
 
-// Image pools for fallback/high-resolution verified product photos
-const CURATED_IMAGES = {
-  'Home Appliances': [
-    'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1570222094114-d054a817e56b?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=800'
-  ],
-  'Latest Gadgets': [
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1622445262464-84b1456045b6?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1609592424368-e4b2d1d0537d?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800'
-  ],
-  'Electronics': [
-    'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=800'
-  ]
+// Multi-Angle Image Collections (Front, Side, Back/Detail, and Retail Carton/Tested Condition)
+const MULTI_ANGLE_PRODUCT_IMAGES: Record<string, { new: string[][]; used: string[][] }> = {
+  'Home Appliances': {
+    new: [
+      [
+        'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&q=80&w=800', // Front view
+        'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=800', // Side angle
+        'https://images.unsplash.com/photo-1570222094114-d054a817e56b?auto=format&fit=crop&q=80&w=800', // Detail/basket
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'  // Sealed retail carton & box
+      ],
+      [
+        'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?auto=format&fit=crop&q=80&w=800', // Front
+        'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&q=80&w=800', // Side profile
+        'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=800', // Charging dock & sensors
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'  // Sealed carton packaging
+      ],
+      [
+        'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'
+      ]
+    ],
+    used: [
+      [
+        'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&q=80&w=800', // Front hardware
+        'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800', // Side profile
+        'https://images.unsplash.com/photo-1570222094114-d054a817e56b?auto=format&fit=crop&q=80&w=800', // Tested component
+        'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&q=80&w=800'  // Tested & verified working
+      ],
+      [
+        'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&q=80&w=800'
+      ]
+    ]
+  },
+  'Latest Gadgets': {
+    new: [
+      [
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800', // Front watch/gadget
+        'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800', // Side angle & crown
+        'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800', // Back sensors / strap
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'  // Sealed retail carton & box
+      ],
+      [
+        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800', // Earbuds front
+        'https://images.unsplash.com/photo-1622445262464-84b1456045b6?auto=format&fit=crop&q=80&w=800', // Case open / side profile
+        'https://images.unsplash.com/photo-1609592424368-e4b2d1d0537d?auto=format&fit=crop&q=80&w=800', // Charging ports / acoustic vents
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'  // Factory retail pack
+      ],
+      [
+        'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'
+      ]
+    ],
+    used: [
+      [
+        'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800', // Tested unit front
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800', // Side bezel inspection
+        'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&q=80&w=800', // Battery & screen diagnostic pass
+        'https://images.unsplash.com/photo-1622445262464-84b1456045b6?auto=format&fit=crop&q=80&w=800'  // Clean accessories
+      ],
+      [
+        'https://images.unsplash.com/photo-1609592424368-e4b2d1d0537d?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1622445262464-84b1456045b6?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800'
+      ]
+    ]
+  },
+  'Electronics': {
+    new: [
+      [
+        'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&q=80&w=800', // Front display/projector
+        'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=800', // Side profile / slim edge
+        'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&q=80&w=800', // Back ports / HDMI / audio
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'  // Sealed factory carton
+      ],
+      [
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800', // Studio headphones front
+        'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&q=80&w=800', // Side earcups
+        'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&q=80&w=800', // Headband & hinges
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800'  // Retail box & accessories pack
+      ]
+    ],
+    used: [
+      [
+        'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800'
+      ],
+      [
+        'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&q=80&w=800',
+        'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=800'
+      ]
+    ]
+  }
 };
 
-// AI Generate Batch Catalog of Home Appliances, Latest Gadgets, and Electronics (Brand New & Used)
+function getMultiAngleImages(category: string, condition: 'new' | 'used', seedIndex: number = 0): string[] {
+  const cat = (MULTI_ANGLE_PRODUCT_IMAGES[category] ? category : 'Latest Gadgets') as keyof typeof MULTI_ANGLE_PRODUCT_IMAGES;
+  const cond = condition === 'used' ? 'used' : 'new';
+  const sets = MULTI_ANGLE_PRODUCT_IMAGES[cat][cond];
+  const chosenSet = sets[seedIndex % sets.length];
+  return chosenSet || sets[0];
+}
+
+// AI Generate Batch Catalog of Home Appliances, Latest Gadgets, and Electronics
+// Brand New products come in sealed packs and cartons with multi-angle photos.
+// Pre-Owned products are strictly SEPARATE cards verified 100% working fine!
 app.post('/api/ai/generate-catalog-products', async (req, res) => {
   try {
     const { category = 'All', count = 5, customPrompt = '', condition = 'both' } = req.body;
     const targetCount = Math.min(Math.max(Number(count) || 5, 1), 12);
 
     const conditionGuideline = condition === 'used' 
-      ? 'All items should be Certified Pre-Owned / Refurbished / Open-Box with condition grades like "Grade A Refurbished" or "Open Box - Like New".'
+      ? 'All products must be separate cards for Certified Pre-Owned goods that are 100% tested and working fine.'
       : condition === 'new'
-      ? 'All items should be Brand New with "Brand New - Factory Sealed" grade.'
-      : 'Generate an exciting mix of both Brand New and Certified Pre-Owned / Used products, with dual pricing (both newPrice and usedPrice) on every item so users can toggle between buying new or used.';
+      ? 'All products must be separate cards for Brand New items sealed in retail packs and carton boxes.'
+      : 'Generate an exciting mix of separate cards: some Brand New in sealed cartons/packs, and some Certified Pre-Owned that are 100% tested and working fine. DO NOT mix new and used on the same card!';
 
-    const promptText = `You are a chief e-commerce merchandiser and tech product curator for 'Sajoda', a premier store specializing in Home Appliances, Latest Gadgets, and Electronics.
-The store owner wants you to effortlessly generate and catalog ${targetCount} top-selling, realistic, highly desirable products.
+    const promptText = `You are a chief e-commerce merchandiser for 'SAJODA ELECTRONICS' in Nigeria, reporting to store owner DamiJosh.
+Generate ${targetCount} unique, cutting-edge products for our catalog.
+
+CRITICAL RULES:
+1. SEPARATE CARDS ONLY:
+   - Brand New items: Come in factory sealed retail pack & carton box. Condition: "new". Grade: "Brand New - Sealed Carton Box". Warranty: "1-Year Official Manufacturer Warranty".
+   - Pre-Owned items: Standalone cards for certified used devices that are tested 100% working fine. Condition: "used". Grade: "Certified Pre-Owned - 100% Tested Working Fine". Warranty: "90-Day Sajoda Certified Guarantee".
+   - DO NOT put new and used on one product card! Each item is its OWN card with its own single price.
+
+2. VERIFIED DOMESTIC SOURCING HUBS IN NIGERIA:
+   - Home Appliances: "Alaba International Market Electronics Distribution Hub (Lagos)"
+   - Latest Gadgets: "Computer Village Ikeja Tech Hub (Lagos)"
+   - Certified Pre-Owned / Used: "Certified OEM Refurbisher Hub (Nigeria)" or "Computer Village Ikeja Tech Hub (Lagos)"
+
+3. PRICING & OWNER COMMISSION (NIGERIAN NAIRA ₦):
+   - Realistic domestic wholesale base cost in ₦ (minimum ₦25,000).
+   - MANDATORY DamiJosh store owner commission of MINIMUM ₦10,000 UPWARD (e.g., ₦12,000 to ₦75,000 based on value).
+   - price = baseCost + ownerCommission (e.g., ₦120,000 + ₦25,000 = ₦145,000).
+   - originalPrice = 15-25% higher (crossed-out MSRP).
 
 Category requested: ${category}
 Condition preference: ${conditionGuideline}
 ${customPrompt ? `User instructions / focus: "${customPrompt}"` : ''}
 
-Categories allowed: "Home Appliances", "Latest Gadgets", "Electronics", or "Smart Living".
+Allowed categories: "Home Appliances", "Latest Gadgets", "Electronics".
 
-Generate an array of exactly ${targetCount} unique, cutting-edge products. Each item must have:
-- name: catchy, modern commercial brand & product name (under 60 characters)
-- price: realistic retail price in USD (between 29.99 and 599.99)
-- newPrice: retail price for Brand New condition (e.g. 149.99)
-- usedPrice: discounted price for Certified Pre-Owned / Used condition (approx 25-35% lower than newPrice, e.g. 99.99)
-- condition: 'new' or 'used' (alternate or provide a balanced mix)
-- conditionGrade: e.g. "Brand New - Factory Sealed" (if new) or "Certified Refurbished - Grade A" / "Open Box - Like New" (if used)
-- warrantyInfo: e.g. "1-Year Official Warranty" (if new) or "90-Day Sajoda Certified Guarantee" (if used)
-- originalPrice: crossed-out MSRP price (15-30% higher than price)
-- category: one of "Home Appliances", "Latest Gadgets", "Electronics"
-- badge: one of "BESTSELLER", "HOT", "NEW", "ECO", "REFURBISHED", "TRENDING", or "PREMIUM"
-- brand: "Sajoda Home" or "Sajoda Tech" or "Sajoda Audio"
-- shortDescription: punchy one-sentence customer benefit (under 100 characters)
-- description: engaging 2-3 sentence overview highlighting real-world benefits and high-end build quality
-- inStock: true
-- stockCount: random integer between 15 and 65
-- rating: floating point between 4.7 and 5.0
-- reviewCount: integer between 35 and 250
-- features: 4 specific, technical bullet points (e.g., motor power, battery life, connectivity, safety)
-- specifications: array of 3 objects with name and value (e.g., Power, Dimensions, Connectivity, Material)
-- tags: array of 3-4 searchable keywords
-
-Return ONLY a valid JSON array of objects matching this exact structure:
+Return ONLY a valid JSON array of ${targetCount} products matching this schema:
 [
   {
-    "name": "...",
-    "price": 99.99,
-    "newPrice": 129.99,
-    "usedPrice": 89.99,
-    "condition": "new",
-    "conditionGrade": "Brand New - Factory Sealed",
-    "warrantyInfo": "1-Year Official Warranty",
-    "originalPrice": 159.99,
+    "name": "Punchy commercial product name in Nigeria",
+    "baseCost": 120000,
+    "ownerCommission": 25000,
+    "price": 145000,
+    "originalPrice": 175000,
+    "sourcingHub": "Alaba International Market Electronics Distribution Hub (Lagos)",
+    "commissionNote": "₦25,000 commission added over wholesale cost",
+    "condition": "new", // or "used"
+    "conditionGrade": "Brand New - Sealed Carton Box", // or "Certified Pre-Owned - 100% Tested Working Fine"
+    "packaging": "Factory Sealed Retail Carton & Pack", // or "Tested Unit with Padded Protective Box"
+    "warrantyInfo": "1-Year Official Manufacturer Warranty",
     "category": "Home Appliances",
     "badge": "BESTSELLER",
     "brand": "Sajoda Home",
-    "shortDescription": "...",
-    "description": "...",
-    "inStock": true,
-    "stockCount": 40,
-    "rating": 4.9,
-    "reviewCount": 118,
+    "shortDescription": "One-line punchy selling point",
+    "description": "Engaging overview detailing build quality, features, and unboxing/testing assurance.",
     "features": ["Feature 1", "Feature 2", "Feature 3", "Feature 4"],
-    "specifications": [{"name": "Capacity", "value": "5.5 Liters"}, {"name": "Power", "value": "1700W"}],
+    "specifications": [{"name": "Power", "value": "1800W"}, {"name": "Capacity", "value": "6L"}],
     "tags": ["appliances", "kitchen", "smart"]
   }
 ]`;
@@ -432,27 +461,53 @@ Return ONLY a valid JSON array of objects matching this exact structure:
 
     const parsedProducts = JSON.parse(response.text || '[]');
     
-    // Assign curated high-res images to each generated product based on category
+    // Assign multi-angle images (front, side, angle, carton/pack or tested hardware)
     const productsWithImages = parsedProducts.map((p: any, index: number) => {
-      const cat = p.category as keyof typeof CURATED_IMAGES;
-      const pool = CURATED_IMAGES[cat] || CURATED_IMAGES['Latest Gadgets'];
-      const img = pool[index % pool.length];
-      const secondImg = pool[(index + 1) % pool.length];
-      const isUsed = p.condition === 'used' || (index % 2 === 1 && !p.condition);
-      const calculatedNewPrice = p.newPrice || p.price || 99.99;
-      const calculatedUsedPrice = p.usedPrice || Math.round(calculatedNewPrice * 0.72 * 100) / 100;
+      const isUsed = p.condition === 'used' || (condition === 'used') || (!p.condition && index % 2 === 1);
+      const cat = p.category || (category !== 'All' ? category : 'Latest Gadgets');
+      const gallery = getMultiAngleImages(cat, isUsed ? 'used' : 'new', index);
+
+      const parsedBaseCost = Math.max(Number(p.baseCost) || 35000, 20000);
+      const parsedCommission = Math.max(Number(p.ownerCommission) || 15000, 10000); // ₦10,000 minimum
+      const finalPrice = parsedBaseCost + parsedCommission;
+
+      let sourcingHub = p.sourcingHub;
+      if (!sourcingHub) {
+        if (p.category === 'Home Appliances') {
+          sourcingHub = 'Alaba International Market Electronics Distribution Hub (Lagos)';
+        } else if (isUsed) {
+          sourcingHub = 'Certified OEM Refurbisher Hub (Nigeria)';
+        } else {
+          sourcingHub = 'Computer Village Ikeja Tech Hub (Lagos)';
+        }
+      }
+
+      const cleanTitle = p.name || 'Sajoda Premium Product';
+      const prefix = isUsed ? '[Pre-Owned - 100% Tested Working] ' : '[Brand New - Sealed Box] ';
+      const finalName = cleanTitle.includes('Brand New') || cleanTitle.includes('Pre-Owned') || cleanTitle.includes('Refurbished')
+        ? cleanTitle 
+        : `${cleanTitle} (${isUsed ? 'Pre-Owned • Tested Working Fine' : 'Brand New • Sealed Carton'})`;
 
       return {
         ...p,
-        id: 'sajoda-' + (p.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) + '-' + (isUsed ? 'used-' : '') + Math.random().toString(36).slice(2, 6),
+        id: 'sajoda-' + (p.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 28) + '-' + (isUsed ? 'used-' : 'new-') + Math.random().toString(36).slice(2, 6),
+        name: finalName,
         condition: isUsed ? 'used' : 'new',
-        conditionGrade: p.conditionGrade || (isUsed ? 'Certified Refurbished - Grade A' : 'Brand New - Factory Sealed'),
-        warrantyInfo: p.warrantyInfo || (isUsed ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty'),
-        newPrice: calculatedNewPrice,
-        usedPrice: calculatedUsedPrice,
-        price: isUsed ? calculatedUsedPrice : calculatedNewPrice,
-        image: img,
-        images: [img, secondImg],
+        conditionGrade: isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Sealed Carton Box',
+        packaging: isUsed ? 'Tested Unit with Protective Padded Packaging' : 'Factory Sealed Retail Pack & Carton Box',
+        warrantyInfo: isUsed ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty',
+        baseCost: parsedBaseCost,
+        ownerCommission: parsedCommission,
+        commissionNote: `₦${parsedCommission.toLocaleString()} commission added over domestic wholesale base cost`,
+        sourcingHub: sourcingHub,
+        price: finalPrice,
+        originalPrice: p.originalPrice || Math.round((finalPrice * 1.22) / 500) * 500,
+        image: gallery[0],
+        images: gallery,
+        inStock: true,
+        stockCount: isUsed ? 14 : 35,
+        rating: 4.9,
+        reviewCount: Math.floor(Math.random() * 50) + 75,
         createdAt: new Date().toISOString()
       };
     });
@@ -464,7 +519,7 @@ Return ONLY a valid JSON array of objects matching this exact structure:
   }
 });
 
-// AI Generate Single Product from Prompt
+// AI Generate Single Product from Prompt (Dedicated Single Condition Card with Multi-Angle Photos)
 app.post('/api/ai/generate-single-product', async (req, res) => {
   try {
     const { prompt, category, condition = 'new' } = req.body;
@@ -472,31 +527,42 @@ app.post('/api/ai/generate-single-product', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const promptText = `Generate a complete, ready-to-sell e-commerce product based on this request: "${prompt}".
-Store specializes in: Home Appliances, Latest Gadgets, and Electronics.
-Category suggestion: ${category || 'infer best matching category'}.
-Condition preference: ${condition === 'used' ? 'Pre-Owned / Refurbished' : 'Brand New'}.
+    const isUsed = condition === 'used';
+    const promptText = `Generate a complete, ready-to-sell standalone product for 'SAJODA ELECTRONICS' in Nigeria based on: "${prompt}".
+Store owner: DamiJosh.
+Specialties: Home Appliances, Latest Gadgets, and Electronics.
+Condition: "${isUsed ? 'Certified Pre-Owned (100% Tested Working Fine)' : 'Brand New (Factory Sealed Retail Carton & Pack)'}".
+No dual price! This is a dedicated single card.
 
-Return ONLY valid JSON matching this schema:
+PRICING & SOURCING RULES (NIGERIAN NAIRA ₦):
+- Use reasonable, realistic Nigerian market prices in Naira (₦).
+- baseCost: Realistic wholesale acquisition cost in ₦ (minimum ₦25,000).
+- ownerCommission: MANDATORY DamiJosh profit markup of MINIMUM ₦10,000 UPWARD (e.g. ₦10,000 to ₦75,000 depending on value).
+- price: Final customer listing price = baseCost + ownerCommission.
+- sourcingHub: Select verified domestic sourcing hub (Alaba Market Hub for appliances, Computer Village for gadgets, OEM Refurbisher for used).
+
+Return ONLY valid JSON:
 {
-  "name": "Catchy commercial product title (under 60 chars)",
-  "price": 149.99,
-  "newPrice": 149.99,
-  "usedPrice": 109.99,
-  "condition": "${condition === 'used' ? 'used' : 'new'}",
-  "conditionGrade": "${condition === 'used' ? 'Certified Refurbished - Grade A' : 'Brand New - Factory Sealed'}",
-  "warrantyInfo": "${condition === 'used' ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty'}",
-  "originalPrice": 189.99,
-  "category": "Home Appliances" or "Latest Gadgets" or "Electronics",
-  "badge": "NEW" or "BESTSELLER" or "FEATURED",
-  "brand": "Sajoda Home" or "Sajoda Tech",
+  "name": "Commercial product title in Nigeria (under 60 chars)",
+  "baseCost": 120000,
+  "ownerCommission": 25000,
+  "price": 145000,
+  "originalPrice": 175000,
+  "sourcingHub": "Alaba International Market Electronics Distribution Hub (Lagos)",
+  "commissionNote": "₦25,000 commission added over wholesale base cost",
+  "condition": "${isUsed ? 'used' : 'new'}",
+  "conditionGrade": "${isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Sealed Carton Box'}",
+  "packaging": "${isUsed ? 'Tested Unit with Padded Protective Box' : 'Factory Sealed Retail Pack & Carton'}",
+  "warrantyInfo": "${isUsed ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty'}",
+  "category": "Home Appliances",
+  "badge": "NEW ARRIVAL",
+  "brand": "Sajoda",
   "shortDescription": "One sentence summary",
-  "description": "2-3 paragraphs detailing features, benefits, specifications, and what makes it extraordinary",
+  "description": "2-3 paragraphs detailing features, build quality, multi-angle inspections, and benefits.",
   "features": ["Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4"],
   "specifications": [
     {"name": "Power/Battery", "value": "..."},
-    {"name": "Material", "value": "..."},
-    {"name": "Dimensions/Weight", "value": "..."}
+    {"name": "Box Packaging", "value": "${isUsed ? 'Tested unit with accessories' : 'Original sealed carton'}"}
   ],
   "tags": ["tag1", "tag2", "tag3"]
 }`;
@@ -510,18 +576,43 @@ Return ONLY valid JSON matching this schema:
     });
 
     const parsed = JSON.parse(response.text || '{}');
-    const cat = (parsed.category as keyof typeof CURATED_IMAGES) || 'Latest Gadgets';
-    const pool = CURATED_IMAGES[cat] || CURATED_IMAGES['Latest Gadgets'];
-    const chosenImg = pool[Math.floor(Math.random() * pool.length)];
+    const cat = parsed.category || category || 'Latest Gadgets';
+    const gallery = getMultiAngleImages(cat, isUsed ? 'used' : 'new');
+
+    const baseCost = Math.max(Number(parsed.baseCost) || 50000, 20000);
+    const ownerCommission = Math.max(Number(parsed.ownerCommission) || 15000, 10000); // ₦10,000 minimum
+    const finalPrice = baseCost + ownerCommission;
+
+    let sourcingHub = parsed.sourcingHub;
+    if (!sourcingHub) {
+      if (parsed.category === 'Home Appliances') {
+        sourcingHub = 'Alaba International Market Electronics Distribution Hub (Lagos)';
+      } else if (isUsed) {
+        sourcingHub = 'Certified OEM Refurbisher Hub (Nigeria)';
+      } else {
+        sourcingHub = 'Computer Village Ikeja Tech Hub (Lagos)';
+      }
+    }
 
     res.json({ 
       success: true, 
       product: {
         ...parsed,
-        image: chosenImg,
-        images: [chosenImg],
+        id: 'sajoda-' + (parsed.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 28) + '-' + (isUsed ? 'used-' : 'new-') + Math.random().toString(36).slice(2, 6),
+        baseCost,
+        ownerCommission,
+        commissionNote: parsed.commissionNote || `₦${ownerCommission.toLocaleString()} commission added over wholesale base cost`,
+        sourcingHub,
+        price: finalPrice,
+        originalPrice: parsed.originalPrice || Math.round((finalPrice * 1.25) / 500) * 500,
+        image: gallery[0],
+        images: gallery,
+        condition: isUsed ? 'used' : 'new',
+        conditionGrade: isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Sealed Carton Box',
+        packaging: isUsed ? 'Tested Unit with Padded Protective Box' : 'Factory Sealed Retail Pack & Carton',
+        warrantyInfo: isUsed ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty',
         inStock: true,
-        stockCount: 35
+        stockCount: isUsed ? 12 : 35
       }
     });
   } catch (error: any) {
@@ -530,127 +621,104 @@ Return ONLY valid JSON matching this schema:
   }
 });
 
-
-// Product Review Summarization Webhook
-
-// CJ Dropshipping API Proxy
-// CJ Dropshipping Categories API Proxy
-
-// CJ Dropshipping Connection Status
-app.get('/api/dropshipping/status', async (req, res) => {
+// TikTok & Instagram Viral Product Scout (for DamiJosh)
+app.post('/api/ai/scout-social-product', async (req, res) => {
   try {
-    const cjToken = process.env.CJ_ACCESS_TOKEN;
-    if (!cjToken) {
-      return res.json({ status: 'DISCONNECTED', message: 'CJ_ACCESS_TOKEN environment secret is not configured.' });
+    const { urlOrTrend, platform = 'auto', condition = 'new', category = 'Latest Gadgets' } = req.body;
+    if (!urlOrTrend) {
+      return res.status(400).json({ error: 'Please provide a TikTok or Instagram link, topic, or viral product name' });
     }
-    // Ping categories as a health check
-    const response = await fetch('https://developers.cjdropshipping.com/api2.0/v1/product/getCategory', {
-      method: 'GET',
-      headers: {
-        'CJ-Access-Token': cjToken,
-        'Content-Type': 'application/json'
+
+    const isUsed = condition === 'used';
+    const promptText = `You are an elite viral product scout and merchandiser for SAJODA ELECTRONICS in Nigeria, serving store owner DamiJosh.
+DamiJosh spotted a viral product trend on ${platform === 'auto' ? 'TikTok (#TikTokMadeMeBuyIt) or Instagram' : platform}: "${urlOrTrend}".
+
+Task:
+1. Identify the exact viral product concept (e.g. viral portable blender, star galaxy projector, mini thermal pocket printer, LED sunset projection lamp, 3-in-1 foldable magnetic wireless charger, portable turbo jet fan, smart electric cooker, etc.).
+2. Categorize it into: "Home Appliances", "Latest Gadgets", or "Electronics".
+3. Formulate realistic domestic Nigerian wholesale acquisition and pricing in Naira (₦):
+   - Verified wholesale hub:
+     * Appliances: "Alaba International Market Electronics Distribution Hub (Lagos)"
+     * Gadgets & Tech: "Computer Village Ikeja Tech Hub (Lagos)"
+     * Pre-Owned: "Certified OEM Refurbisher Hub (Nigeria)"
+   - baseCost: realistic wholesale import/acquisition cost in ₦ (minimum ₦20,000).
+   - ownerCommission: MANDATORY DamiJosh profit commission of MINIMUM ₦10,000 UPWARD (e.g. ₦12,000 to ₦45,000+ depending on value).
+   - price = baseCost + ownerCommission.
+   - originalPrice = 15-25% higher (crossed-out MSRP).
+4. Condition: "${isUsed ? 'Pre-Owned (100% Tested Working Fine)' : 'Brand New (Factory Sealed Retail Carton & Pack)'}".
+5. Write compelling, high-converting copy borrowing viral social hooks ("Viral sensation with over 3M views", "Must-have unboxing", "Trending home upgrade").
+
+Return ONLY valid JSON matching this schema:
+{
+  "name": "Punchy commercial product title (under 60 chars)",
+  "viralHook": "🔥 VIRAL ON TIKTOK",
+  "category": "Latest Gadgets",
+  "condition": "${isUsed ? 'used' : 'new'}",
+  "conditionGrade": "${isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Sealed Carton Box'}",
+  "packaging": "${isUsed ? 'Tested Unit with Protective Padded Wrap' : 'Factory Sealed Retail Pack & Carton'}",
+  "warrantyInfo": "${isUsed ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty'}",
+  "baseCost": 35000,
+  "ownerCommission": 15000,
+  "price": 50000,
+  "originalPrice": 65000,
+  "sourcingHub": "Computer Village Ikeja Tech Hub (Lagos)",
+  "commissionNote": "₦15,000 profit commission added over domestic wholesale base cost",
+  "brand": "Sajoda Viral",
+  "badge": "TIKTOK TREND",
+  "shortDescription": "One-line viral hook highlighting why everyone wants it",
+  "description": "Engaging 2-3 paragraph overview detailing social media excitement, practical benefits, and unboxing assurance.",
+  "features": ["Viral Feature 1", "Viral Feature 2", "Viral Feature 3", "Viral Feature 4"],
+  "specifications": [
+    {"name": "Power / Battery", "value": "..."},
+    {"name": "Packaging", "value": "${isUsed ? 'Tested & verified working fine' : 'Sealed retail carton'}"}
+  ],
+  "tags": ["tiktok", "viral", "trending", "gadget"]
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: promptText,
+      config: {
+        responseMimeType: "application/json",
       },
     });
-    const data = await response.json().catch(() => null);
-    if (response.ok && data?.code === 200) {
-      return res.json({ status: 'CONNECTED', lastCheck: new Date().toISOString() });
-    } else {
-      const errMsg = data?.message || (response.status === 401 ? 'Invalid or expired CJ Access Token. Please refresh token from CJ Dropshipping developer center.' : `HTTP ${response.status}`);
-      return res.json({ status: 'CONNECTION ERROR', message: errMsg });
-    }
+
+    const parsed = JSON.parse(response.text || '{}');
+    const cat = parsed.category || category || 'Latest Gadgets';
+    const gallery = getMultiAngleImages(cat, isUsed ? 'used' : 'new');
+
+    const baseCost = Math.max(Number(parsed.baseCost) || 35000, 20000);
+    const ownerCommission = Math.max(Number(parsed.ownerCommission) || 15000, 10000); // ₦10,000 minimum
+    const finalPrice = baseCost + ownerCommission;
+
+    const scoutedProduct = {
+      ...parsed,
+      id: 'sajoda-viral-' + (parsed.name || 'trend').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 28) + '-' + (isUsed ? 'used-' : 'new-') + Math.random().toString(36).slice(2, 6),
+      condition: isUsed ? 'used' : 'new',
+      conditionGrade: isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Sealed Carton Box',
+      packaging: isUsed ? 'Tested Unit with Protective Padded Wrap' : 'Factory Sealed Retail Pack & Carton',
+      warrantyInfo: isUsed ? '90-Day Sajoda Certified Guarantee' : '1-Year Official Manufacturer Warranty',
+      baseCost,
+      ownerCommission,
+      commissionNote: `₦${ownerCommission.toLocaleString()} commission added over domestic wholesale base cost`,
+      sourcingHub: parsed.sourcingHub || (cat === 'Home Appliances' ? 'Alaba International Market Electronics Distribution Hub (Lagos)' : 'Computer Village Ikeja Tech Hub (Lagos)'),
+      price: finalPrice,
+      originalPrice: parsed.originalPrice || Math.round((finalPrice * 1.25) / 500) * 500,
+      image: gallery[0],
+      images: gallery,
+      inStock: true,
+      stockCount: isUsed ? 15 : 40,
+      rating: 4.9,
+      reviewCount: Math.floor(Math.random() * 80) + 120,
+      source: 'social_viral',
+      viralSourceUrl: urlOrTrend,
+      createdAt: new Date().toISOString()
+    };
+
+    res.json({ success: true, product: scoutedProduct });
   } catch (error: any) {
-    console.error('CJ Dropshipping Status Error:', error);
-    res.json({ status: 'CONNECTION ERROR', message: error.message || 'Failed to connect' });
-  }
-});
-
-app.get('/api/dropshipping/categories', async (req, res) => {
-  try {
-    const cjToken = process.env.CJ_ACCESS_TOKEN;
-    if (!cjToken) {
-      return res.status(500).json({ error: 'CJ Dropshipping access token not configured.' });
-    }
-
-    const response = await fetch(`https://developers.cjdropshipping.com/api2.0/v1/product/getCategory`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'CJ-Access-Token': cjToken
-      }
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error('[CJ Dropshipping] Category Fetch Error:', error);
-    res.status(500).json({ error: 'Failed to fetch dropshipping categories' });
-  }
-});
-
-app.get('/api/dropshipping/products', async (req, res) => {
-  try {
-    const cjToken = process.env.CJ_ACCESS_TOKEN;
-    if (!cjToken) {
-      return res.status(500).json({ error: 'CJ Dropshipping access token not configured. Please add CJ_ACCESS_TOKEN in Settings > Secrets.' });
-    }
-
-    const { page = 1, size = 20, keyWord = '', keyword = '', categoryId = '' } = req.query;
-    const searchTerm = String(keyWord || keyword || '');
-    const queryParams = new URLSearchParams({
-      pageNum: String(page),
-      pageSize: String(size),
-    });
-    if (searchTerm) {
-      queryParams.append('keyWord', searchTerm);
-    }
-    if (categoryId) {
-      queryParams.append('categoryId', String(categoryId));
-    }
-
-    const response = await fetch(`https://developers.cjdropshipping.com/api2.0/v1/product/list?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'CJ-Access-Token': cjToken
-      }
-    });
-
-    const data = await response.json();
-    if (data?.code !== 200 && !data?.result) {
-      return res.status(response.status === 200 ? 400 : response.status).json({
-        error: data?.message || 'CJ Dropshipping API returned an error',
-        raw: data
-      });
-    }
-    res.json(data);
-  } catch (error: any) {
-    console.error('[CJ Dropshipping] Fetch Error:', error);
-    res.status(500).json({ error: error?.message || 'Failed to fetch dropshipping products' });
-  }
-});
-
-// Single CJ Product Details
-app.get('/api/dropshipping/product/:pid', async (req, res) => {
-  try {
-    const cjToken = process.env.CJ_ACCESS_TOKEN;
-    if (!cjToken) {
-      return res.status(500).json({ error: 'CJ Dropshipping access token not configured.' });
-    }
-
-    const { pid } = req.params;
-    const response = await fetch(`https://developers.cjdropshipping.com/api2.0/v1/product/query?pid=${encodeURIComponent(pid)}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'CJ-Access-Token': cjToken
-      }
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error: any) {
-    console.error('[CJ Dropshipping] Product Detail Error:', error);
-    res.status(500).json({ error: error?.message || 'Failed to fetch CJ product details' });
+    console.error('Viral Social Scout Error:', error);
+    res.status(500).json({ error: error?.message || 'Failed to scout viral social product' });
   }
 });
 
@@ -660,11 +728,8 @@ app.post('/api/product-reviews', async (req, res) => {
     if (!productName) return res.status(400).json({ error: 'Product name is required' });
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.8-flash",
       contents: `Search for the latest real-world reviews and news for: "${productName}". Summarize the general consensus, pros, and cons in a short 2-3 paragraph tech review style. Keep it professional and engaging.`,
-      config: {
-         
-      }
     });
 
     res.json({ summary: response.text });

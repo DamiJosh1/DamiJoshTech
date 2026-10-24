@@ -77,10 +77,10 @@ export default function AdminAiWorkerDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 border border-zinc-200 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-zinc-900">Search CJ Dropshipping</span>
+                  <span className="font-medium text-zinc-900">Scout Domestic & Viral Hubs</span>
                   <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded">PREPARE</span>
                 </div>
-                <p className="text-xs text-zinc-500">Find products and add them to the import queue.</p>
+                <p className="text-xs text-zinc-500">Find products from Alaba, Computer Village, or TikTok & Insta viral scouts with multi-angle photos.</p>
               </div>
               <div className="p-4 border border-zinc-200 rounded-lg">
                 <div className="flex items-center justify-between mb-2">

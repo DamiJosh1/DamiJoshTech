@@ -7,7 +7,7 @@ export default function AdminAiFulfillment() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900">AI Fulfillment Center</h2>
-          <p className="text-sm text-zinc-500">Monitor CJ Dropshipping fulfillment status and resolve issues.</p>
+          <p className="text-sm text-zinc-500">Monitor domestic express fulfillment (Lagos, Abuja, nationwide) and inventory status.</p>
         </div>
       </div>
       

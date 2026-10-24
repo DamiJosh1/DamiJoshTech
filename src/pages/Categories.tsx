@@ -37,50 +37,27 @@ export default function Categories() {
               onChange={(e) => setSearchQuery(e.target.value)} 
               onKeyDown={handleSearch} 
               className="bg-transparent border-none outline-none w-full ml-3 text-base text-dark-text placeholder:text-zinc-500" 
-              autoFocus
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Recent Searches */}
-            <div>
-              <h3 className="text-xs font-bold tracking-wider uppercase mb-4 text-zinc-400">Recent</h3>
-              <div className="flex flex-wrap gap-2">
-                {recentSearches.map(term => (
-                  <button 
-                    key={term}
-                    onClick={() => executeSearch(term)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200 text-sm font-medium text-zinc-700 hover:border-primary-blue transition-colors"
-                  >
-                    <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Trending */}
-            <div>
-              <h3 className="text-xs font-bold tracking-wider uppercase mb-4 text-zinc-400">Trending</h3>
-              <div className="flex flex-col gap-3">
-                {trendingSearches.map(term => (
-                  <button 
-                    key={term}
-                    onClick={() => executeSearch(term)}
-                    className="flex items-center gap-3 text-left group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                      <TrendingUp className="w-4 h-4 text-zinc-400 group-hover:text-primary-blue transition-colors" />
-                    </div>
-                    <span className="text-sm font-medium text-zinc-700 group-hover:text-primary-blue transition-colors">{term}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* Quick Popular & Trending Searches - Short and compact so products stay visible */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+              <TrendingUp className="w-3.5 h-3.5 text-primary-blue" /> Popular:
+            </span>
+            {trendingSearches.map(term => (
+              <button 
+                key={term}
+                onClick={() => executeSearch(term)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-50 hover:bg-zinc-900 hover:text-white border border-zinc-200 text-xs font-semibold text-zinc-700 transition-all cursor-pointer shadow-2xs"
+              >
+                {term}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="h-px w-full bg-zinc-100 mb-10" />
+        <div className="h-px w-full bg-zinc-100 mb-8" />
 
         <div className="mb-8">
           <span className="text-xs font-bold tracking-wider uppercase mb-3 block text-primary-blue">
@@ -133,9 +110,8 @@ export default function Categories() {
                         e.stopPropagation();
                         navigate(`/shop?category=${encodeURIComponent(cat)}&condition=new`);
                       }}
-                      className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-emerald-600 backdrop-blur-md text-white text-xs font-bold transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/35 backdrop-blur-md text-white text-xs font-semibold transition-colors flex items-center gap-1.5 border border-white/20"
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       Brand New
                     </button>
                     <button
@@ -143,9 +119,8 @@ export default function Categories() {
                         e.stopPropagation();
                         navigate(`/shop?category=${encodeURIComponent(cat)}&condition=used`);
                       }}
-                      className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-amber-600 backdrop-blur-md text-white text-xs font-bold transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/35 backdrop-blur-md text-white text-xs font-semibold transition-colors flex items-center gap-1.5 border border-white/20"
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                       Pre-Owned
                     </button>
                   </div>

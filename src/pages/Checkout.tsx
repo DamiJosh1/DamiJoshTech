@@ -344,10 +344,10 @@ export default function Checkout() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
                         (item.condition === 'used' || item.productSnapshot?.condition === 'used')
-                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                          : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                          ? 'bg-zinc-200 text-zinc-800'
+                          : 'bg-zinc-900 text-white'
                       }`}>
                         {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Pre-Owned' : 'Brand New'}
                       </span>

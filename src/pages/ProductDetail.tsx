@@ -25,14 +25,10 @@ export default function ProductDetail() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   const product = products.find(p => p.id === id);
-  const [selectedCondition, setSelectedCondition] = useState<'new' | 'used'>('new');
   const [copiedToast, setCopiedToast] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (product) {
-      setSelectedCondition(product.condition || 'new');
-    }
   }, [id, product]);
 
   if (!product) {
@@ -56,21 +52,20 @@ export default function ProductDetail() {
     );
   }
 
-  // Calculate pricing for both Brand New and Used conditions
-  const brandNewPrice = product.newPrice ?? (product.condition === 'new' ? product.price : Math.round(product.price * 1.35 * 100) / 100);
-  const usedPrice = product.usedPrice ?? (product.condition === 'used' ? product.price : Math.round(product.price * 0.72 * 100) / 100);
-  
-  const basePriceForCondition = selectedCondition === 'used' ? usedPrice : brandNewPrice;
-  const currentPrice = selectedVariant ? (selectedVariant.price ? selectedVariant.price * (selectedCondition === 'used' ? 0.75 : 1) : basePriceForCondition) : basePriceForCondition;
-  const originalPrice = selectedCondition === 'used' ? brandNewPrice : product.originalPrice;
+  // Dedicated single-condition pricing and authentication
+  const isUsed = product.condition === 'used';
+  const currentPrice = selectedVariant && selectedVariant.price ? selectedVariant.price : product.price;
+  const originalPrice = product.originalPrice;
 
-  const currentConditionGrade = selectedCondition === 'used'
-    ? (product.condition === 'used' && product.conditionGrade ? product.conditionGrade : 'Certified Pre-Owned - Grade A (Pristine)')
-    : (product.condition === 'new' && product.conditionGrade ? product.conditionGrade : 'Brand New - Factory Sealed');
+  const currentConditionGrade = product.conditionGrade || (isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Factory Sealed Box');
+  const currentWarranty = product.warrantyInfo || (isUsed ? '90-Day Sajoda Certified Replacement Guarantee' : '1-Year Official Manufacturer Warranty');
+  const packagingDesc = product.packaging || (isUsed ? 'Certified Tested Unit with Padded Protective Packaging & Accessories' : 'Factory Sealed Retail Pack & Carton with Serial Seal');
 
-  const currentWarranty = selectedCondition === 'used'
-    ? '90-Day Sajoda Certified Replacement Guarantee'
-    : (product.warrantyInfo || '1-Year Official Manufacturer Warranty');
+  // Find counterpart product in alternate condition if available in store
+  const alternateConditionProduct = products.find(p => 
+    (product.relatedConditionId && p.id === product.relatedConditionId) ||
+    (p.id !== product.id && p.category === product.category && p.condition !== product.condition && p.name.toLowerCase().includes(product.name.toLowerCase().split(' ')[0]))
+  );
 
   // Generate some dummy variants and specs if they don't exist
   const variants = product.variants || [
@@ -94,6 +89,14 @@ export default function ProductDetail() {
   ];
 
   const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+
+  const getAngleLabel = (idx: number, usedProduct: boolean) => {
+    if (idx === 0) return 'Front View';
+    if (idx === 1) return 'Side Profile';
+    if (idx === 2) return 'Side / Ports Detail';
+    if (idx === 3) return usedProduct ? 'Tested Hardware' : 'Factory Sealed Carton Box';
+    return `Angle ${idx + 1}`;
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -203,7 +206,7 @@ export default function ProductDetail() {
           </button>
         </div>
 
-        {/* LEFT COLUMN: IMAGES */}
+        {/* LEFT COLUMN: IMAGES (MULTI-ANGLE & PACKAGING VIEWS) */}
         <div className="w-full lg:w-[55%] flex flex-col gap-4">
           {/* Mobile Swipe Gallery */}
           <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 gap-4" style={{ overscrollBehaviorX: 'contain' }}>
@@ -221,13 +224,17 @@ export default function ProductDetail() {
                   alt={product.name} 
                   className="w-full h-full object-cover object-center" 
                 />
+                <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>{getAngleLabel(idx, isUsed)}</span>
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Desktop Single Image View */}
+          {/* Desktop Single Image View with Multi-Angle Indicator */}
           <div 
-            className="hidden md:block relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-100 cursor-zoom-in group"
+            className="hidden md:block relative w-full aspect-square rounded-2xl overflow-hidden bg-zinc-100 cursor-zoom-in group border border-zinc-200"
             onClick={() => setIsLightboxOpen(true)}
           >
             <img 
@@ -235,6 +242,15 @@ export default function ProductDetail() {
               alt={product.name} 
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" 
             />
+            {/* Multi-angle active perspective badge */}
+            <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-xl bg-black/65 backdrop-blur-md text-white text-xs font-bold tracking-wide flex items-center gap-2 shadow-sm pointer-events-none">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>{getAngleLabel(activeImageIndex, isUsed)}</span>
+              <span className="text-zinc-400 text-[11px] font-normal border-l border-zinc-600 pl-2">
+                Angle {activeImageIndex + 1} of {galleryImages.length}
+              </span>
+            </div>
+
             {/* Desktop Quick Actions overlay */}
             <div className="hidden md:flex absolute top-4 right-4 gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button onClick={(e) => { e.stopPropagation(); handleShare(); }} className="p-3 rounded-full bg-white/90 backdrop-blur-md text-zinc-900 hover:text-primary-blue shadow-sm">
@@ -250,15 +266,22 @@ export default function ProductDetail() {
             </div>
           </div>
           
-          {/* Thumbnails - Hidden on mobile, horizontal scroll on tablet, grid on desktop */}
-          <div className="hidden md:grid grid-cols-4 lg:grid-cols-5 gap-3">
+          {/* Thumbnails - Labeled with exact angle/side/packaging view */}
+          <div className="hidden md:grid grid-cols-4 lg:grid-cols-4 gap-3">
             {galleryImages.map((img, idx) => (
               <button 
                 key={idx}
                 onClick={() => setActiveImageIndex(idx)}
-                className={`relative aspect-square rounded-xl overflow-hidden bg-zinc-100 border-2 transition-all ${activeImageIndex === idx ? 'border-primary-blue' : 'border-transparent hover:border-zinc-300'}`}
+                className={`relative aspect-square rounded-xl overflow-hidden bg-zinc-100 border-2 transition-all flex flex-col group ${
+                  activeImageIndex === idx 
+                    ? 'border-primary-blue ring-2 ring-primary-blue/30 shadow-sm' 
+                    : 'border-zinc-200 hover:border-zinc-400 opacity-80 hover:opacity-100'
+                }`}
               >
                 <img src={img} alt="" className="w-full h-full object-cover" />
+                <span className="absolute bottom-0 inset-x-0 bg-black/75 backdrop-blur-xs text-[10px] font-bold text-white text-center py-1 truncate px-1">
+                  {getAngleLabel(idx, isUsed)}
+                </span>
               </button>
             ))}
           </div>
@@ -271,12 +294,12 @@ export default function ProductDetail() {
               <span className="text-xs font-bold tracking-widest uppercase text-primary-blue">
                 {product.brand || 'SAJODA'} • {product.category}
               </span>
-              <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
-                selectedCondition === 'used'
+              <span className={`text-[10px] font-extrabold uppercase px-3 py-1 rounded-full ${
+                isUsed
                   ? 'bg-amber-100 text-amber-900 border border-amber-300'
                   : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
               }`}>
-                {selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                {isUsed ? '🛡️ Pre-Owned • 100% Tested Working' : '📦 Brand New • Sealed Carton'}
               </span>
             </div>
 
@@ -323,72 +346,55 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* CHOOSE CONDITION SELECTOR (BRAND NEW VS CERTIFIED PRE-OWNED) */}
-          <div className="mb-8 p-4 bg-zinc-50 rounded-2xl border border-zinc-200">
+          {/* DEDICATED AUTHENTICATION & PACKAGING CARD */}
+          <div className={`mb-8 p-5 rounded-2xl border ${
+            isUsed 
+              ? 'bg-amber-50/60 border-amber-200' 
+              : 'bg-emerald-50/60 border-emerald-200'
+          }`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-black text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-primary-blue" /> Choose Item Condition
-              </h3>
-              <span className="text-[11px] font-bold text-zinc-500">Dual Condition Options</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Option 1: Brand New */}
-              <button
-                type="button"
-                onClick={() => setSelectedCondition('new')}
-                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
-                  selectedCondition === 'new'
-                    ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500 shadow-xs'
-                    : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-black text-sm text-zinc-900 flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full ${selectedCondition === 'new' ? 'bg-emerald-600' : 'bg-zinc-300'}`} />
-                    Brand New
-                  </span>
-                  <span className="font-extrabold text-sm text-zinc-900">{formatPrice(brandNewPrice)}</span>
-                </div>
-                <p className="text-[11px] text-zinc-500 mb-2">Factory sealed original box</p>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded w-fit">
-                  1-Year Official Warranty
-                </span>
-              </button>
-
-              {/* Option 2: Pre-Owned / Used */}
-              <button
-                type="button"
-                onClick={() => setSelectedCondition('used')}
-                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
-                  selectedCondition === 'used'
-                    ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-500 shadow-xs'
-                    : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-black text-sm text-zinc-900 flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full ${selectedCondition === 'used' ? 'bg-amber-600' : 'bg-zinc-300'}`} />
-                    Pre-Owned / Used
-                  </span>
-                  <span className="font-extrabold text-sm text-zinc-900">{formatPrice(usedPrice)}</span>
-                </div>
-                <p className="text-[11px] text-zinc-500 mb-2">35-point tested & sanitized</p>
-                <span className="text-[10px] font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded w-fit">
-                  Save {Math.round((1 - usedPrice / brandNewPrice) * 100)}% • 90-Day Guarantee
-                </span>
-              </button>
-            </div>
-
-            {/* Quality inspection details box */}
-            <div className="mt-3 pt-3 border-t border-zinc-200/80 flex items-center justify-between text-[11px] text-zinc-600">
-              <span className="font-medium">
-                {selectedCondition === 'used' 
-                  ? '🛡️ Certified: 100% Functional, All Accessories & 90-Day Guarantee'
-                  : '✨ 100% Brand New, Unopened Factory Packaging with 1-Year Warranty'}
+              <span className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1.5 ${
+                isUsed 
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+              }`}>
+                {isUsed ? '🛡️ Certified Pre-Owned • 100% Tested Working Fine' : '📦 Brand New • Factory Sealed Retail Carton & Pack'}
               </span>
-              <span className="text-primary-blue font-bold hidden sm:inline">{currentWarranty}</span>
+              <span className="text-[11px] font-bold text-zinc-500">
+                {isUsed ? 'Pre-Owned Card' : 'Factory Sealed Card'}
+              </span>
             </div>
+
+            <div className="space-y-2.5 text-xs text-zinc-700">
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-zinc-900 shrink-0">Packaging:</span>
+                <span>{packagingDesc}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-zinc-900 shrink-0">Condition Check:</span>
+                <span>{currentConditionGrade}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-zinc-900 shrink-0">Warranty / Guarantee:</span>
+                <span className="font-semibold text-primary-blue">{currentWarranty}</span>
+              </div>
+            </div>
+
+            {/* If there is an alternate condition product in store, give clean standalone navigation link */}
+            {alternateConditionProduct && (
+              <div className="mt-4 pt-3 border-t border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs text-zinc-600">
+                  Looking for the {alternateConditionProduct.condition === 'used' ? 'Pre-Owned (Tested Working)' : 'Brand New (Sealed Carton)'} edition?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/product/${alternateConditionProduct.id}`)}
+                  className="text-xs font-bold text-primary-blue hover:text-blue-800 underline underline-offset-2 shrink-0 flex items-center gap-1"
+                >
+                  View Separate {alternateConditionProduct.condition === 'used' ? 'Pre-Owned' : 'Brand New'} Card ({formatPrice(alternateConditionProduct.price)}) →
+                </button>
+              </div>
+            )}
           </div>
 
           <p className="text-base text-zinc-600 mb-8 leading-relaxed">
@@ -449,7 +455,7 @@ export default function ProductDetail() {
                   const productToAdd: Product = {
                     ...product,
                     price: currentPrice,
-                    condition: selectedCondition,
+                    condition: product.condition || 'new',
                     conditionGrade: currentConditionGrade,
                     warrantyInfo: currentWarranty
                   };
@@ -465,7 +471,7 @@ export default function ProductDetail() {
                 }`}
               >
                 <ShoppingBag className="w-5 h-5" />
-                {addingToCartId === product.id ? 'Adding...' : `Add to Cart (${selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'})`}
+                {addingToCartId === product.id ? 'Adding...' : `Add to Cart (${isUsed ? 'Pre-Owned' : 'Brand New'})`}
               </button>
             </div>
 
@@ -475,7 +481,7 @@ export default function ProductDetail() {
                 const productToAdd: Product = {
                   ...product,
                   price: currentPrice,
-                  condition: selectedCondition,
+                  condition: product.condition || 'new',
                   conditionGrade: currentConditionGrade,
                   warrantyInfo: currentWarranty
                 };
@@ -489,7 +495,7 @@ export default function ProductDetail() {
                   : 'border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white active:scale-[0.98]'
               }`}
             >
-              Buy it Now • {selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'}
+              Buy it Now • {isUsed ? 'Pre-Owned' : 'Brand New'}
             </button>
           </div>
 
@@ -591,7 +597,7 @@ export default function ProductDetail() {
       <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom))] inset-x-0 bg-white/90 backdrop-blur-md border-t border-zinc-200 p-4 z-40 flex items-center gap-4 animate-slide-up">
         <div className="flex flex-col flex-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary-blue">
-            {selectedCondition === 'used' ? 'Pre-Owned' : 'Brand New'}
+            {isUsed ? 'Pre-Owned • Tested' : 'Brand New • Sealed'}
           </span>
           <span className="text-sm font-bold text-zinc-900 line-clamp-1">{product.name}</span>
           <span className="text-sm font-semibold text-primary-blue">{formatPrice(currentPrice)}</span>
@@ -601,7 +607,7 @@ export default function ProductDetail() {
             const productToAdd = {
               ...product,
               price: currentPrice,
-              condition: selectedCondition,
+              condition: product.condition || 'new',
               conditionGrade: currentConditionGrade,
               warrantyInfo: currentWarranty
             };

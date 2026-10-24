@@ -18,7 +18,7 @@ export default function AdminSystemHealth() {
 
   const systems = [
     { name: 'Payment Gateway', status: 'operational', icon: <CreditCard className="w-5 h-5" /> },
-    { name: 'CJ Dropshipping Sync', status: 'operational', icon: <Package className="w-5 h-5" /> },
+    { name: 'Domestic Wholesale & Courier Sync', status: 'operational', icon: <Package className="w-5 h-5" /> },
     { name: 'Database / Firebase', status: 'operational', icon: <Database className="w-5 h-5" /> },
     { name: 'Email / Notifications', status: 'operational', icon: <Mail className="w-5 h-5" /> },
     { name: 'Shipping Calculator', status: 'operational', icon: <Globe className="w-5 h-5" /> },
@@ -105,7 +105,7 @@ export default function AdminSystemHealth() {
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" defaultChecked className="mt-1 accent-success" />
-                <span className="text-zinc-300">CJ Dropshipping credentials secure & active</span>
+                <span className="text-zinc-300">Domestic wholesale & viral scout channels secure & active</span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" defaultChecked className="mt-1 accent-success" />

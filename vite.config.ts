@@ -11,26 +11,35 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicondami.ico', 'images/favicondami.ico', 'images/damilogo.jpg'],
+        includeAssets: ['favicondami.ico', 'images/favicondami.ico', 'images/damilogo.jpg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
+          id: '/',
           name: 'SAJODA ELECTRONICS',
           short_name: 'SAJODA',
-          description: 'Premium gadgets and home appliances.',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
+          description: 'Premium gadgets, consumer electronics, and smart home appliances.',
+          theme_color: '#0F172A',
+          background_color: '#0F172A',
           display: 'standalone',
           start_url: '/',
+          scope: '/',
           icons: [
             {
-              src: '/images/favicondami.ico',
-              sizes: '244x244',
-              type: 'image/x-icon'
+              src: '/pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any'
             },
             {
-              src: '/images/favicondami.ico',
-              sizes: '244x244',
-              type: 'image/x-icon',
-              purpose: 'any maskable'
+              src: '/pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: '/pwa-maskable-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
             }
           ]
         },
@@ -38,6 +47,10 @@ export default defineConfig(() => {
           globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
           navigateFallbackDenylist: [/^\/api/],
           maximumFileSizeToCacheInBytes: 5000000
+        },
+        devOptions: {
+          enabled: true,
+          type: 'module'
         }
       })
     ],

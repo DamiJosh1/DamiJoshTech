@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Package, ShoppingCart, Users, DollarSign, TrendingUp, AlertCircle, CheckCircle2, 
-  ArrowRight, Search, Plus, Filter, Activity, Clock, Bot, Bell, Shield, Zap
+  ArrowRight, Search, Plus, Filter, Activity, Clock, Bot, Bell, Shield, Zap, Sparkles
 } from 'lucide-react';
 import { collection, query, getDocs, limit, orderBy, where } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -92,8 +92,8 @@ export default function AdminDashboard() {
         <Link to="/admin/products/new" className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-medium hover:bg-zinc-800 whitespace-nowrap transition-colors">
           <Plus className="w-4 h-4" /> Add Product
         </Link>
-        <Link to="/admin/cjdropshipping" className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 whitespace-nowrap transition-colors">
-          <Activity className="w-4 h-4" /> Import from CJ
+        <Link to="/admin/products?scout=true" className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 text-zinc-900 rounded-lg text-sm font-bold hover:bg-zinc-50 whitespace-nowrap transition-colors">
+          <Sparkles className="w-4 h-4 text-amber-500" /> TikTok & Insta Scout
         </Link>
         <Link to="/admin/orders" className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 whitespace-nowrap transition-colors">
           <ShoppingCart className="w-4 h-4" /> View Orders

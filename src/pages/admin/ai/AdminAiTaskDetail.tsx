@@ -45,9 +45,9 @@ export default function AdminAiTaskDetail() {
             </h3>
             <div className="bg-zinc-900 rounded-lg p-4 font-mono text-xs text-zinc-300 overflow-x-auto">
               <div>[10:14:02] Task started by Product Builder worker.</div>
-              <div>[10:14:02] Loading CJ Dropshipping API credentials.</div>
-              <div>[10:14:03] Fetching product data for CJ_12948120.</div>
-              <div>[10:14:05] Product data received. Images: 5, Variants: 2.</div>
+              <div>[10:14:02] Loading Domestic Wholesale & Social Scout API credentials.</div>
+              <div>[10:14:03] Sourcing product data and 4 multi-angle photos.</div>
+              <div>[10:14:05] Multi-angle image set received (Front, Side, Ports, Carton/Tested).</div>
               <div>[10:14:05] Calling Gemini API for content generation...</div>
               <div>[10:14:12] Content generated successfully.</div>
               <div>[10:14:12] Applying business rule: "Minimum 20% Margin".</div>

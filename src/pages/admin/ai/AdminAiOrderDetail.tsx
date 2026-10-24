@@ -72,7 +72,7 @@ export default function AdminAiOrderDetail() {
                 </div>
                 <div className="pt-1 pb-4">
                   <h4 className="font-medium text-zinc-900">Fulfillment Requested</h4>
-                  <p className="text-sm text-zinc-500">Sent to CJ Dropshipping</p>
+                  <p className="text-sm text-zinc-500">Dispatched to Domestic Express Courier</p>
                 </div>
               </div>
               <div className="flex gap-4">

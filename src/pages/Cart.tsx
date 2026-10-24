@@ -62,10 +62,10 @@ export default function Cart() {
                         <span className="text-[10px] md:text-xs font-bold tracking-widest text-zinc-400 uppercase">
                           {item.productSnapshot?.brand || 'SAJODA'}
                         </span>
-                        <span className={`text-[9px] md:text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                        <span className={`text-[9px] md:text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                           (item.condition === 'used' || item.productSnapshot?.condition === 'used')
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                            : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            ? 'bg-zinc-100 text-zinc-800 border border-zinc-200'
+                            : 'bg-zinc-900 text-white'
                         }`}>
                           {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Pre-Owned' : 'Brand New'}
                         </span>

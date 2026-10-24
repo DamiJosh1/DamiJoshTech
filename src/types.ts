@@ -29,12 +29,12 @@ export interface Product {
   price: number;
   originalPrice?: number;
   condition?: 'new' | 'used';
-  conditionGrade?: string; // e.g. "Brand New - Factory Sealed", "Certified Pre-Owned - Grade A", "Open Box - Like New"
-  usedPrice?: number; // Optional alternate price if item is also available pre-owned
-  newPrice?: number;  // Optional alternate price if item is also available brand new
+  conditionGrade?: string; // e.g. "Brand New - Factory Sealed Box", "Certified Pre-Owned - 100% Tested Working Fine"
+  packaging?: string; // e.g. "Factory Sealed Retail Carton & Pack" or "Tested Unit in Padded Protective Packaging"
+  relatedConditionId?: string; // ID of counterpart product in alternate condition
   warrantyInfo?: string; // e.g. "1-Year Official Manufacturer Warranty" or "90-Day Certified Guarantee"
   image: string;
-  images?: string[];
+  images?: string[]; // Multi-angle gallery: Front, Side angles, Ports/Details, and Retail Carton / Tested Unit
   video?: string;
   description?: string;
   shortDescription?: string;
@@ -51,6 +51,11 @@ export interface Product {
   reviews?: ProductReview[];
   rating?: number;
   reviewCount?: number;
+  // Private Admin & Sourcing Intelligence (Strictly for store owner admin view; never displayed to customers)
+  sourcingHub?: string; // e.g. "Alaba International Market Electronics Distribution Hub" | "Computer Village Ikeja Tech Hub" | "Certified OEM Refurbisher Hub"
+  baseCost?: number; // Wholesale acquisition / sourcing cost in NGN
+  ownerCommission?: number; // Store owner commission/profit margin added (₦10,000 upward)
+  commissionNote?: string; // Private admin note on markup & sourcing
 }
 
 export interface CartItem {

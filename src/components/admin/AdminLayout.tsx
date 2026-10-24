@@ -7,7 +7,7 @@ import { useStore } from '../../StoreContext';
 import { 
   LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut, 
   Menu, X, Bell, Search, BarChart3, Globe, Shield, Bot, Activity, 
-  MessageSquare, Tag, Truck, FolderGit2
+  MessageSquare, Tag, Truck, FolderGit2, Sparkles
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -70,7 +70,7 @@ export default function AdminLayout() {
     { name: 'Customers', path: '/admin/customers', icon: <Users className="w-5 h-5" /> },
     { name: 'Support', path: '/admin/support', icon: <MessageSquare className="w-5 h-5" /> },
     { name: 'Finance', path: '/admin/finance', icon: <Activity className="w-5 h-5" /> },
-    { name: 'CJdropshipping', path: '/admin/cjdropshipping', icon: <Globe className="w-5 h-5" /> },
+    { name: 'TikTok & Insta Scout', path: '/admin/products?scout=true', icon: <Sparkles className="w-5 h-5 text-amber-400" /> },
     { name: 'AI Worker', path: '/admin/ai', icon: <Bot className="w-5 h-5" /> },
     { name: 'Marketing', path: '/admin/marketing', icon: <Activity className="w-5 h-5" /> },
     { name: 'Analytics', path: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },

@@ -276,11 +276,10 @@ export default function SearchPage() {
                       name="condition" 
                       checked={conditionParam === 'new'}
                       onChange={() => applyFilters({ condition: 'new' })}
-                      className="w-4 h-4 text-emerald-600 focus:ring-emerald-600 border-zinc-300"
+                      className="w-4 h-4 text-zinc-900 focus:ring-zinc-900 border-zinc-300"
                     />
-                    <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      Brand New (Sealed)
+                    <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors">
+                      📦 Brand New (Sealed Pack & Carton)
                     </span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer group">
@@ -289,11 +288,10 @@ export default function SearchPage() {
                       name="condition" 
                       checked={conditionParam === 'used'}
                       onChange={() => applyFilters({ condition: 'used' })}
-                      className="w-4 h-4 text-amber-500 focus:ring-amber-500 border-zinc-300"
+                      className="w-4 h-4 text-zinc-900 focus:ring-zinc-900 border-zinc-300"
                     />
-                    <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-500" />
-                      Pre-Owned / Refurbished
+                    <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors">
+                      🛡️ Certified Pre-Owned (Tested Working)
                     </span>
                   </label>
                 </div>
@@ -357,23 +355,21 @@ export default function SearchPage() {
                 onClick={() => applyFilters({ condition: 'new' })}
                 className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                   conditionParam === 'new'
-                    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 ring-2 ring-emerald-500'
-                    : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-emerald-50/50 hover:border-emerald-300'
+                    ? 'bg-zinc-900 text-white shadow-sm'
+                    : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 Brand New
               </button>
               <button
                 onClick={() => applyFilters({ condition: 'used' })}
                 className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                   conditionParam === 'used'
-                    ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/20 ring-2 ring-amber-500'
-                    : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-amber-50/50 hover:border-amber-300'
+                    ? 'bg-zinc-900 text-white shadow-sm'
+                    : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                Certified Pre-Owned & Used
+                Pre-Owned & Used
               </button>
             </div>
 
@@ -541,15 +537,15 @@ export default function SearchPage() {
                   </button>
                   <button 
                     onClick={() => setDraftCondition('new')} 
-                    className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'new' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
+                    className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'new' ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
                   >
-                    Brand New
+                    📦 Brand New
                   </button>
                   <button 
                     onClick={() => setDraftCondition('used')} 
-                    className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'used' ? 'bg-amber-600 text-white border-amber-600 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
+                    className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'used' ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
                   >
-                    Pre-Owned
+                    🛡️ Pre-Owned
                   </button>
                 </div>
               </div>

@@ -43,13 +43,6 @@ import AccountSecurity from './pages/account/AccountSecurity';
 import AccountNotifications from './pages/account/AccountNotifications';
 import AccountNotificationPreferences from './pages/account/AccountNotificationPreferences';
 
-import AdminCJDropshippingLayout from './pages/admin/cjdropshipping/AdminCJDropshippingLayout';
-import AdminCJDropshippingDashboard from './pages/admin/cjdropshipping/AdminCJDropshippingDashboard';
-import AdminCJProducts from './pages/admin/cjdropshipping/AdminCJProducts';
-import AdminCJOrders from './pages/admin/cjdropshipping/AdminCJOrders';
-import AdminCJSync from './pages/admin/cjdropshipping/AdminCJSync';
-import AdminCJLogs from './pages/admin/cjdropshipping/AdminCJLogs';
-
 import AdminAiLayout from './pages/admin/ai/AdminAiLayout';
 import AdminAiDashboard from './pages/admin/ai/AdminAiDashboard';
 import AdminAiTasks from './pages/admin/ai/AdminAiTasks';
@@ -150,6 +143,7 @@ import AdminLayout from './components/admin/AdminLayout';
 import SearchInput from './components/SearchInput';
 import MobileBottomNav from './components/MobileBottomNav';
 import PWAPrompt from './components/PWAPrompt';
+import { InstallAppButton } from './components/InstallAppButton';
 import { INITIAL_PRODUCTS } from './data/initialProducts';
 
 export default function Store() {
@@ -168,7 +162,15 @@ export default function Store() {
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [taxRules, setTaxRules] = useState<TaxRule[]>([]);
   const [activeCountry, setActiveCountry] = useState<StoreCountry | null>(null);
-  const [activeCurrency, setActiveCurrency] = useState<StoreCurrency | null>(null);
+  const [activeCurrency, setActiveCurrency] = useState<StoreCurrency | null>({
+    id: 'ngn',
+    code: 'NGN',
+    name: 'Nigerian Naira',
+    symbol: '₦',
+    exchangeRate: 1,
+    decimalPrecision: 0,
+    autoUpdate: false,
+  });
 
   // Load international data
   useEffect(() => {
@@ -183,8 +185,11 @@ export default function Store() {
     const unsubCurrencies = onSnapshot(collection(db, 'currencies'), (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as StoreCurrency));
       setCurrencies(docs);
-      if (docs.length > 0 && !activeCurrency) {
-        setActiveCurrency(docs.find(c => c.code === 'USD') || docs[0]);
+      if (docs.length > 0) {
+        const ngn = docs.find(c => c.code === 'NGN');
+        if (ngn) {
+          setActiveCurrency(ngn);
+        }
       }
     }, (err) => console.warn('Currencies listener error:', err.message));
 
@@ -529,11 +534,13 @@ export default function Store() {
   const handleAddToCart = addToCart;
 
   const formatPrice = (amount: number) => {
-    if (!activeCurrency) {
-      return "$" + amount.toFixed(2);
+    if (typeof amount !== 'number' || isNaN(amount)) return '₦0';
+    if (!activeCurrency || activeCurrency.code === 'NGN' || activeCurrency.symbol === '₦') {
+      return `₦${Math.round(amount).toLocaleString('en-NG')}`;
     }
-    const converted = amount * activeCurrency.exchangeRate;
-    return activeCurrency.symbol + converted.toFixed(activeCurrency.decimalPrecision);
+    const converted = amount * (activeCurrency.exchangeRate || 1);
+    const precision = activeCurrency.decimalPrecision !== undefined ? activeCurrency.decimalPrecision : 2;
+    return `${activeCurrency.symbol}${converted.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision })}`;
   };
 
   const removeFromCart = (id: string) => {
@@ -600,7 +607,8 @@ export default function Store() {
 
           <SearchInput />
 
-          <div className="flex items-center gap-4 z-10">
+          <div className="flex items-center gap-3 z-10">
+             <InstallAppButton variant="nav" className="hidden sm:flex" />
              <button onClick={() => navigate('/account/wishlist')} className="hidden md:flex items-center justify-center p-2 rounded-full hover:bg-zinc-100 transition-colors relative group">
                 <Heart className="w-5 h-5" />
              </button>
@@ -663,7 +671,8 @@ export default function Store() {
               <Logo className="h-6" variant="full" />
             </button>
           </div>
-          <div className="flex items-center gap-1 z-10">
+          <div className="flex items-center gap-1.5 z-10">
+            <InstallAppButton variant="nav" className="text-[11px] py-1 px-2.5" />
             <button onClick={() => navigate('/search')} className="p-2 text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors" aria-label="Search">
               <Search className="w-5 h-5" />
             </button>
@@ -685,6 +694,7 @@ export default function Store() {
                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 -mr-2 text-charcoal hover:bg-light-bg rounded-full"><X className="w-6 h-6"/></button>
              </div>
              <div className="p-6 flex-1 overflow-y-auto flex flex-col gap-6">
+                <InstallAppButton variant="menu" />
                 <nav className="flex flex-col gap-6 text-[15px] font-medium text-dark-text">
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} className="text-left hover:text-primary-blue">Home</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); navigate('/shop'); }} className="text-left hover:text-primary-blue">All Products</button>
@@ -798,14 +808,6 @@ export default function Store() {
             <Route path="categories" element={<AdminComingSoon />} />
             <Route path="inventory" element={<AdminComingSoon />} />
             
-            <Route path="cjdropshipping" element={<AdminCJDropshippingLayout />}>
-              <Route index element={<AdminCJDropshippingDashboard />} />
-              <Route path="products" element={<AdminCJProducts />} />
-              <Route path="orders" element={<AdminCJOrders />} />
-              <Route path="sync" element={<AdminCJSync />} />
-              <Route path="logs" element={<AdminCJLogs />} />
-            </Route>
-
             <Route path="automations" element={<AdminAutomations />} />
             <Route path="ai" element={<AdminAiLayout />}>
 

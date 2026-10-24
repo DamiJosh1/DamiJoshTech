@@ -6,7 +6,7 @@ import { useStore } from '../../StoreContext';
 import { 
   ArrowLeft, Save, Image as ImageIcon, X, Plus, 
   Trash2, GripVertical, CheckCircle2, AlertTriangle, ExternalLink, 
-  Sparkles, RefreshCw, Box, Tag, Globe, Settings, Eye, Copy, Archive
+  Sparkles, RefreshCw, Box, Tag, Globe, Settings, Eye, Copy, Archive, ShieldCheck
 } from 'lucide-react';
 
 export default function AdminProductForm() {
@@ -57,6 +57,12 @@ export default function AdminProductForm() {
     newPrice: '',
     usedPrice: '',
     warrantyInfo: '1-Year Sajoda Official Warranty',
+
+    // Private Admin Sourcing Intelligence
+    sourcingHub: 'Alaba International Market Electronics Distribution Hub (Lagos)',
+    baseCost: '',
+    ownerCommission: '15000',
+    commissionNote: '',
     
     status: 'draft',
     
@@ -85,6 +91,10 @@ export default function AdminProductForm() {
               condition: data.condition || 'new',
               conditionGrade: data.conditionGrade || (data.condition === 'used' ? 'Certified Pre-Owned - Grade A' : 'Brand New - Factory Sealed'),
               warrantyInfo: data.warrantyInfo || (data.condition === 'used' ? '90-Day Sajoda Certified Guarantee' : '1-Year Sajoda Official Warranty'),
+              sourcingHub: data.sourcingHub || (data.category === 'Home Appliances' ? 'Alaba International Market Electronics Distribution Hub (Lagos)' : 'Computer Village Ikeja Tech Hub (Lagos)'),
+              baseCost: data.baseCost?.toString() || data.costPrice?.toString() || '',
+              ownerCommission: data.ownerCommission?.toString() || '15000',
+              commissionNote: data.commissionNote || '',
               inventory: data.inventory?.toString() || '',
               lowStockThreshold: data.lowStockThreshold?.toString() || '5',
               weight: data.weight?.toString() || '',
@@ -274,6 +284,11 @@ export default function AdminProductForm() {
         price: parseFloat(formData.price) || 0,
         originalPrice: parseFloat(formData.originalPrice) || null,
         costPrice: parseFloat(formData.costPrice) || null,
+        // Private Admin Sourcing & Commission Data
+        sourcingHub: formData.sourcingHub || 'Alaba International Market Electronics Distribution Hub (Lagos)',
+        baseCost: parseFloat(formData.baseCost) || parseFloat(formData.costPrice) || null,
+        ownerCommission: parseFloat(formData.ownerCommission) || 15000,
+        commissionNote: formData.commissionNote || '',
         condition: formData.condition || 'new',
         conditionGrade: formData.conditionGrade || (formData.condition === 'used' ? 'Certified Pre-Owned - Grade A' : 'Brand New - Factory Sealed'),
         newPrice: parseFloat(formData.newPrice) || (formData.condition === 'new' ? parseFloat(formData.price) : null),
@@ -499,76 +514,167 @@ export default function AdminProductForm() {
             </div>
           </div>
 
+          {/* Private Wholesale Sourcing & Commission Card */}
+          <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-zinc-900" />
+                <h2 className="text-lg font-black text-zinc-900 tracking-tight">PRIVATE WHOLESALE SOURCING & PROFIT COMMISSION</h2>
+              </div>
+              <span className="text-[11px] font-bold text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                Store Owner Only
+              </span>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-6">
+              <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200 text-xs text-zinc-600 flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-zinc-900 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Strictly Hidden From Customers:</strong> Wholesale channels, base costs, and profit commissions are only visible here in Admin. Customers on the public website only see the final retail price and believe SAJODA ELECTRONICS directly owns and stocks the product.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-zinc-700">Verified Wholesale Sourcing Hub</label>
+                  <select
+                    name="sourcingHub"
+                    value={formData.sourcingHub || 'Alaba International Market Electronics Distribution Hub (Lagos)'}
+                    onChange={handleChange}
+                    className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-semibold outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all cursor-pointer"
+                  >
+                    <option value="Alaba International Market Electronics Distribution Hub (Lagos)">
+                      Alaba International Market Hub (Lagos) - Appliances & TVs
+                    </option>
+                    <option value="Computer Village Ikeja Tech Hub (Lagos)">
+                      Computer Village Ikeja Tech Hub (Lagos) - Gadgets & Tech
+                    </option>
+                    <option value="Certified OEM Refurbisher Hub (Nigeria)">
+                      Certified OEM Refurbisher Hub (Nigeria) - Pre-Owned & Tested
+                    </option>
+                    <option value="Authorized Regional Tier-1 Distributor (Nigeria)">
+                      Authorized Regional Tier-1 Distributor (Nigeria)
+                    </option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-zinc-700">Wholesale Acquisition Base Cost (₦)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">₦</span>
+                    <input 
+                      type="number" 
+                      name="baseCost"
+                      value={formData.baseCost || ''}
+                      onChange={(e) => {
+                        const newBase = parseFloat(e.target.value) || 0;
+                        const comm = parseFloat(formData.ownerCommission) || 15000;
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          baseCost: e.target.value,
+                          price: newBase > 0 ? (newBase + comm).toString() : prev.price
+                        }));
+                      }}
+                      placeholder="e.g. 120000"
+                      min="0"
+                      className="w-full pl-9 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Owner Commission */}
+              <div className="flex flex-col gap-3 p-4 bg-zinc-50/70 rounded-2xl border border-zinc-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-sm font-bold text-zinc-900">Your Store Commission Markup (₦)</label>
+                    <p className="text-xs text-zinc-500">Minimum ₦10,000 upward profit added per unit sold.</p>
+                  </div>
+                  <div className="relative w-full sm:w-48">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-900 font-bold text-sm">₦</span>
+                    <input 
+                      type="number" 
+                      name="ownerCommission"
+                      value={formData.ownerCommission || ''}
+                      onChange={(e) => {
+                        const newComm = Math.max(parseFloat(e.target.value) || 0, 0);
+                        const base = parseFloat(formData.baseCost) || 0;
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          ownerCommission: e.target.value,
+                          price: base > 0 ? (base + newComm).toString() : prev.price
+                        }));
+                      }}
+                      min="10000"
+                      className="w-full pl-8 pr-3 py-2.5 bg-white border border-zinc-300 rounded-xl text-sm font-bold text-zinc-900 outline-none focus:border-zinc-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200/60">
+                  <span className="text-xs font-semibold text-zinc-500">Quick Commission Presets:</span>
+                  {[10000, 20000, 35000, 50000, 100000].map((amt) => (
+                    <button
+                      type="button"
+                      key={amt}
+                      onClick={() => {
+                        const base = parseFloat(formData.baseCost) || 0;
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          ownerCommission: amt.toString(),
+                          price: base > 0 ? (base + amt).toString() : prev.price
+                        }));
+                      }}
+                      className="px-2.5 py-1 text-xs font-bold rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-800 transition-colors shadow-2xs"
+                    >
+                      +₦{amt.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Pricing */}
           <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-              <h2 className="text-lg font-black text-zinc-900 tracking-tight">PRICING</h2>
+              <h2 className="text-lg font-black text-zinc-900 tracking-tight">CUSTOMER LISTING PRICING (NIGERIA ₦)</h2>
+              <span className="text-xs font-bold text-zinc-500">Visible on Storefront</span>
             </div>
             <div className="p-6 flex flex-col gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-zinc-700">Price <span className="text-rose-500">*</span></label>
+                  <label className="text-sm font-bold text-zinc-700">Selling Price (₦) <span className="text-rose-500">*</span></label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">₦</span>
                     <input 
                       type="number" 
                       name="price"
                       value={formData.price}
                       onChange={handleChange}
-                      placeholder="0.00"
-                      min="0" step="0.01"
-                      className="w-full pl-8 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
+                      placeholder="e.g. 145000"
+                      min="0"
+                      className="w-full pl-9 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-bold text-zinc-900 outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                     />
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-zinc-700">Compare-at price</label>
+                  <label className="text-sm font-bold text-zinc-700">Compare-at Price (Crossed Out ₦)</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">₦</span>
                     <input 
                       type="number" 
                       name="originalPrice"
                       value={formData.originalPrice}
                       onChange={handleChange}
-                      placeholder="0.00"
-                      min="0" step="0.01"
-                      className="w-full pl-8 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-zinc-700">Cost per item (Private)</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">$</span>
-                    <input 
-                      type="number" 
-                      name="costPrice"
-                      value={formData.costPrice}
-                      onChange={handleChange}
-                      placeholder="0.00"
-                      min="0" step="0.01"
-                      className="w-full pl-8 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
+                      placeholder="e.g. 175000"
+                      min="0"
+                      className="w-full pl-9 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                     />
                   </div>
                 </div>
               </div>
-              
-              {costPrice > 0 && sellPrice > 0 && (
-                <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Estimated Profit</span>
-                    <span className={`text-lg font-black ${profit > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {formatPrice ? formatPrice(profit) : `$${profit.toFixed(2)}`}
-                    </span>
-                  </div>
-                  <div className="flex flex-col text-right">
-                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Margin</span>
-                    <span className={`text-lg font-black ${margin > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {margin.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -607,27 +713,27 @@ export default function AdminProductForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-zinc-100">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-zinc-700">Brand New Price ($)</label>
+                  <label className="text-sm font-bold text-zinc-700">Brand New Price (₦)</label>
                   <input 
                     type="number" 
                     name="newPrice"
                     value={formData.newPrice || ''}
                     onChange={handleChange}
-                    placeholder="Price for Brand New"
-                    min="0" step="0.01"
+                    placeholder="e.g. 145000"
+                    min="0"
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
                   <span className="text-[11px] text-zinc-500">Allows shoppers to buy brand new</span>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-zinc-700">Pre-Owned / Used Price ($)</label>
+                  <label className="text-sm font-bold text-zinc-700">Pre-Owned / Used Price (₦)</label>
                   <input 
                     type="number" 
                     name="usedPrice"
                     value={formData.usedPrice || ''}
                     onChange={handleChange}
-                    placeholder="Price for Pre-Owned"
-                    min="0" step="0.01"
+                    placeholder="e.g. 105000"
+                    min="0"
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
                   <span className="text-[11px] text-zinc-500">Discounted price for certified pre-owned</span>
@@ -899,52 +1005,26 @@ export default function AdminProductForm() {
             </div>
           </div>
 
-          {/* Supplier Info */}
+          {/* Inventory Origin */}
           <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-              <h2 className="text-base font-black text-zinc-900 tracking-tight">SUPPLIER (PRIVATE)</h2>
+              <h2 className="text-base font-black text-zinc-900 tracking-tight">INVENTORY ORIGIN</h2>
+              <span className="text-xs font-bold text-zinc-400">Domestic</span>
             </div>
-            <div className="p-5 flex flex-col gap-5">
+            <div className="p-5 flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-zinc-700">Source</label>
+                <label className="text-sm font-bold text-zinc-700">Inventory Sourcing Channel</label>
                 <select 
                   name="source"
-                  value={formData.source}
+                  value={formData.source || 'domestic_hub'}
                   onChange={handleChange}
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-bold text-zinc-700 outline-none focus:border-zinc-400 cursor-pointer"
                 >
-                  <option value="manual">Manual Entry</option>
-                  <option value="cjdropshipping">CJ Dropshipping</option>
+                  <option value="domestic_hub">Domestic Nigerian Wholesale Hub (Alaba / Computer Village)</option>
+                  <option value="direct_oem">Direct OEM Authorized Stock</option>
+                  <option value="social_viral">TikTok / Instagram Viral Product Scout</option>
                 </select>
               </div>
-              
-              {formData.source === 'cjdropshipping' && (
-                <>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-bold text-zinc-700">CJ Product ID</label>
-                    <input 
-                      type="text" 
-                      name="cjProductId"
-                      value={formData.cjProductId}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 transition-all font-mono"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-bold text-zinc-700">CJ SKU</label>
-                    <input 
-                      type="text" 
-                      name="cjSku"
-                      value={formData.cjSku}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 transition-all font-mono"
-                    />
-                  </div>
-                  <button className="w-full py-2.5 bg-zinc-100 text-zinc-700 text-sm font-bold rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 mt-2">
-                    <RefreshCw className="w-4 h-4" /> Sync Inventory & Price
-                  </button>
-                </>
-              )}
             </div>
           </div>
 

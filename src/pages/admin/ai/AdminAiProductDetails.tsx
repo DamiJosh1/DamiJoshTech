@@ -124,7 +124,7 @@ export default function AdminAiProductDetails() {
             </div>
             <h4 className="font-medium text-zinc-900 mb-2">Mini Portable Projector 1080p</h4>
             <div className="text-sm text-zinc-500 space-y-2">
-              <p>Supplier: CJ Dropshipping</p>
+              <p>Supplier: Domestic Wholesale Hub / Social Scout</p>
               <p>Category: Electronics</p>
               <p>Inventory: 430 units</p>
             </div>

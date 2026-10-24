@@ -4,7 +4,7 @@ import { db } from '../../firebase';
 import { 
   Package, Search, Filter, Eye, Edit2, Trash2, Plus, Download, 
   RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon, FolderGit2,
-  Sparkles, CheckCircle2, Loader2, Wand2, X, Zap
+  Sparkles, CheckCircle2, Loader2, Wand2, X, Zap, Share2, DollarSign, Layers
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../StoreContext';
@@ -40,6 +40,92 @@ export default function AdminProducts() {
   const [aiStatusMsg, setAiStatusMsg] = useState('');
   const [aiSuccessResult, setAiSuccessResult] = useState<string | null>(null);
   const [isSeedingDefaults, setIsSeedingDefaults] = useState(false);
+
+  // TikTok & Instagram Viral Scout State
+  const [showScoutModal, setShowScoutModal] = useState(false);
+  const [scoutInput, setScoutInput] = useState('');
+  const [scoutCondition, setScoutCondition] = useState<'new' | 'used'>('new');
+  const [isScouting, setIsScouting] = useState(false);
+  const [scoutError, setScoutError] = useState<string | null>(null);
+  const [scoutedProduct, setScoutedProduct] = useState<any | null>(null);
+  const [isPublishingScout, setIsPublishingScout] = useState(false);
+  const [scoutPublishSuccess, setScoutPublishSuccess] = useState(false);
+
+  // Check URL query parameters for ?scout=true
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('scout') === 'true') {
+      setShowScoutModal(true);
+    }
+  }, []);
+
+  const handleScoutProduct = async () => {
+    if (!scoutInput.trim()) {
+      setScoutError('Please enter a TikTok / Instagram link or product keyword');
+      return;
+    }
+    setIsScouting(true);
+    setScoutError(null);
+    setScoutedProduct(null);
+    setScoutPublishSuccess(false);
+
+    try {
+      const res = await fetch('/api/ai/scout-social-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urlOrTopic: scoutInput.trim(),
+          condition: scoutCondition
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success || !data.product) {
+        throw new Error(data.error || 'Failed to scout viral product');
+      }
+
+      setScoutedProduct(data.product);
+    } catch (err: any) {
+      console.error('Social Scout Error:', err);
+      setScoutError(err.message || 'Failed to scout product');
+    } finally {
+      setIsScouting(false);
+    }
+  };
+
+  const handlePublishScoutedProduct = async () => {
+    if (!scoutedProduct) return;
+    setIsPublishingScout(true);
+    try {
+      const prodId = scoutedProduct.id || `sajoda-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      await setDoc(doc(db, 'products', prodId), {
+        ...scoutedProduct,
+        id: prodId,
+        status: 'active',
+        inStock: true,
+        inventory: scoutedProduct.stockCount || 40,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      setScoutPublishSuccess(true);
+      setTimeout(() => {
+        setShowScoutModal(false);
+        setScoutedProduct(null);
+        setScoutInput('');
+        setScoutPublishSuccess(false);
+      }, 1800);
+    } catch (err: any) {
+      console.error('Publish scouted product error:', err);
+      setScoutError(err.message || 'Failed to publish product to store');
+    } finally {
+      setIsPublishingScout(false);
+    }
+  };
 
   const handleAiAutoUpload = async (customCat?: string, customCnt?: number, customP?: string, customCond?: 'both' | 'new' | 'used') => {
     setIsAiGenerating(true);
@@ -219,6 +305,12 @@ export default function AdminProducts() {
         
         <div className="flex flex-wrap items-center gap-3">
           <button 
+            onClick={() => setShowScoutModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:opacity-95 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-rose-500/20 whitespace-nowrap cursor-pointer"
+          >
+            <TrendingUp className="w-4 h-4 text-white" /> TikTok & Insta Viral Scout
+          </button>
+          <button 
             onClick={() => setShowAiModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-purple-500/20 whitespace-nowrap cursor-pointer"
           >
@@ -249,7 +341,7 @@ export default function AdminProducts() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         {[
           { label: 'TOTAL PRODUCTS', value: stats.total, icon: <Package className="w-4 h-4" />, color: 'text-zinc-900', bg: 'bg-zinc-100' },
           { label: 'ACTIVE', value: stats.active, icon: <TrendingUp className="w-4 h-4" />, color: 'text-emerald-700', bg: 'bg-emerald-100' },
@@ -265,6 +357,43 @@ export default function AdminProducts() {
             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{stat.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Private Wholesale & Profit Intelligence Banner for Owner */}
+      <div className="mb-6 p-5 rounded-2xl bg-zinc-900 text-white border border-zinc-800 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-zinc-800 border border-zinc-700 text-zinc-300">
+                🔒 Private Store Owner Intelligence
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-400">
+                Stealth Sourcing Guarantee (100% Hidden from Customers)
+              </span>
+            </div>
+            <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+              Where Your AI Sources Goods & Calculates Profit (₦)
+            </h2>
+            <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
+              Your AI merchandiser automates sourcing from verified Nigerian distribution channels:
+              <strong className="text-zinc-200"> Alaba International Market</strong> (Appliances & Electronics), 
+              <strong className="text-zinc-200"> Computer Village Ikeja</strong> (Gadgets & Phones), and 
+              <strong className="text-zinc-200"> Certified OEM Refurbishers</strong>. Every product is priced with realistic Nigerian market pricing (₦) and has your guaranteed 
+              <strong className="text-white"> ₦10,000+ Owner Profit Commission</strong> added to wholesale cost. Customers only see final prices with SAJODA as the direct owner.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <div className="px-4 py-2.5 rounded-xl bg-zinc-800/90 border border-zinc-700 text-left">
+              <div className="text-[10px] uppercase font-bold text-zinc-400">Commission Rule</div>
+              <div className="text-sm font-black text-white">₦10,000+ Minimum</div>
+            </div>
+            <div className="px-4 py-2.5 rounded-xl bg-zinc-800/90 border border-zinc-700 text-left">
+              <div className="text-[10px] uppercase font-bold text-zinc-400">Market Currency</div>
+              <div className="text-sm font-black text-white">Nigerian Naira (₦)</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters & Search */}
@@ -321,129 +450,177 @@ export default function AdminProducts() {
                     <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Product</th>
                     <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">SKU</th>
                     <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Retail Price (₦)</th>
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Sourcing & Profit (Private)</th>
                     <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Inventory</th>
                     <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
-                  {paginatedProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-zinc-50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center">
-                            {product.image ? (
-                              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                            ) : product.images && product.images.length > 0 ? (
-                              <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <ImageIcon className="w-4 h-4 text-zinc-300" />
-                            )}
-                          </div>
-                          <div className="flex flex-col max-w-[220px]">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                                product.condition === 'used'
-                                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                              }`}>
-                                {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
-                              </span>
-                              {product.usedPrice && product.newPrice && (
-                                <span className="text-[9px] font-bold text-zinc-400 bg-zinc-100 px-1 rounded">Dual Price</span>
+                  {paginatedProducts.map((product) => {
+                    const hubName = product.sourcingHub 
+                      ? product.sourcingHub.replace(' (Lagos)', '').replace(' Distribution Hub', '').replace(' Tech Hub', '') 
+                      : (product.category === 'Home Appliances' ? 'Alaba Mkt Hub' : 'Computer Village');
+                    const baseCostNum = product.baseCost ? Number(product.baseCost) : Math.round((product.price || 0) * 0.82);
+                    const commissionNum = product.ownerCommission ? Number(product.ownerCommission) : Math.max(10000, Math.round((product.price || 0) - baseCostNum));
+
+                    return (
+                      <tr key={product.id} className="hover:bg-zinc-50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center">
+                              {product.image ? (
+                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                              ) : product.images && product.images.length > 0 ? (
+                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <ImageIcon className="w-4 h-4 text-zinc-300" />
                               )}
                             </div>
-                            <Link to={`/admin/products/${product.id}`} className="text-sm font-bold text-zinc-900 hover:text-primary-blue truncate transition-colors">
-                              {product.name}
+                            <div className="flex flex-col max-w-[220px]">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                  product.condition === 'used'
+                                    ? 'bg-zinc-100 text-zinc-800 border border-zinc-200'
+                                    : 'bg-zinc-900 text-white'
+                                }`}>
+                                  {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                                </span>
+                                {product.usedPrice && product.newPrice && (
+                                  <span className="text-[9px] font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">Dual Price</span>
+                                )}
+                              </div>
+                              <Link to={`/admin/products/${product.id}`} className="text-sm font-bold text-zinc-900 hover:text-zinc-600 truncate transition-colors">
+                                {product.name}
+                              </Link>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-mono font-medium text-zinc-600">
+                            {product.variants && product.variants.length > 0 ? 'Multiple SKUs' : (product.sku || product.cjSku || 'N/A')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-zinc-600">{product.category || 'Uncategorized'}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-zinc-900">{formatPrice ? formatPrice(product.price || 0) : `₦${Math.round(product.price || 0).toLocaleString('en-NG')}`}</span>
+                            {product.originalPrice && product.originalPrice > product.price && (
+                              <span className="text-xs text-zinc-400 line-through">{formatPrice ? formatPrice(product.originalPrice) : `₦${Math.round(product.originalPrice).toLocaleString('en-NG')}`}</span>
+                            )}
+                          </div>
+                        </td>
+                        {/* Private Wholesale & Markup Details */}
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-800">
+                              <span className="w-1.5 h-1.5 rounded-full bg-zinc-900 shrink-0"></span>
+                              <span className="truncate max-w-[170px]" title={product.sourcingHub || hubName}>
+                                {hubName}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+                              <span>Cost: ₦{baseCostNum.toLocaleString('en-NG')}</span>
+                              <span className="font-bold text-zinc-900 bg-zinc-100 px-1 py-0.2 rounded">
+                                Profit: +₦{commissionNum.toLocaleString('en-NG')}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-sm ${getInventoryStatus(product.inventory).style}`}>
+                            {getInventoryStatus(product.inventory).text}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wider rounded-lg border ${getStatusStyle(product.status, product.inventory)}`}>
+                            {getStatusText(product.status, product.inventory)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link to={`/admin/products/${product.id}`} className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors">
+                              <Edit2 className="w-4 h-4" />
                             </Link>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-mono font-medium text-zinc-600">
-                          {product.variants && product.variants.length > 0 ? 'Multiple SKUs' : (product.sku || product.cjSku || 'N/A')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-medium text-zinc-600">{product.category || 'Uncategorized'}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-zinc-900">{formatPrice ? formatPrice(product.price || 0) : `$${(product.price || 0).toFixed(2)}`}</span>
-                          {product.originalPrice && product.originalPrice > product.price && (
-                            <span className="text-xs text-zinc-400 line-through">{formatPrice ? formatPrice(product.originalPrice) : `$${product.originalPrice.toFixed(2)}`}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-sm ${getInventoryStatus(product.inventory).style}`}>
-                          {getInventoryStatus(product.inventory).text}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wider rounded-lg border ${getStatusStyle(product.status, product.inventory)}`}>
-                          {getStatusText(product.status, product.inventory)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link to={`/admin/products/${product.id}`} className="p-2 text-zinc-400 hover:text-primary-blue hover:bg-blue-50 rounded-lg transition-colors">
-                            <Edit2 className="w-4 h-4" />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
               {/* Mobile Cards */}
               <div className="md:hidden divide-y divide-zinc-100">
-                {paginatedProducts.map((product) => (
-                  <div key={product.id} className="p-4 hover:bg-zinc-50 active:bg-zinc-100 transition-colors flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-xl bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center">
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                        ) : product.images && product.images.length > 0 ? (
-                          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <ImageIcon className="w-6 h-6 text-zinc-300" />
-                        )}
-                      </div>
-                      <div className="flex-1 flex flex-col">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
-                            product.condition === 'used'
-                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                              : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                          }`}>
-                            {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                {paginatedProducts.map((product) => {
+                  const hubName = product.sourcingHub 
+                    ? product.sourcingHub.replace(' (Lagos)', '').replace(' Distribution Hub', '').replace(' Tech Hub', '') 
+                    : (product.category === 'Home Appliances' ? 'Alaba Mkt Hub' : 'Computer Village');
+                  const baseCostNum = product.baseCost ? Number(product.baseCost) : Math.round((product.price || 0) * 0.82);
+                  const commissionNum = product.ownerCommission ? Number(product.ownerCommission) : Math.max(10000, Math.round((product.price || 0) - baseCostNum));
+
+                  return (
+                    <div key={product.id} className="p-4 hover:bg-zinc-50 active:bg-zinc-100 transition-colors flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center">
+                          {product.image ? (
+                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                          ) : product.images && product.images.length > 0 ? (
+                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <ImageIcon className="w-6 h-6 text-zinc-300" />
+                          )}
+                        </div>
+                        <div className="flex-1 flex flex-col">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                              product.condition === 'used'
+                                ? 'bg-zinc-100 text-zinc-800 border border-zinc-200'
+                                : 'bg-zinc-900 text-white'
+                            }`}>
+                              {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                            </span>
+                            <span className="text-[9px] font-semibold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                              {hubName}
+                            </span>
+                          </div>
+                          <Link to={`/admin/products/${product.id}`} className="text-sm font-bold text-zinc-900 hover:text-zinc-600 line-clamp-1 transition-colors">
+                            {product.name}
+                          </Link>
+                          <span className="text-xs font-mono text-zinc-500 mt-0.5">{product.variants && product.variants.length > 0 ? 'Multiple SKUs' : (product.sku || product.cjSku || 'No SKU')}</span>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm font-black text-zinc-900">{formatPrice ? formatPrice(product.price || 0) : `₦${Math.round(product.price || 0).toLocaleString('en-NG')}`}</span>
+                          <span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider rounded border ${getStatusStyle(product.status, product.inventory)}`}>
+                            {getStatusText(product.status, product.inventory)}
                           </span>
                         </div>
-                        <Link to={`/admin/products/${product.id}`} className="text-sm font-bold text-zinc-900 hover:text-primary-blue line-clamp-1 transition-colors">
-                          {product.name}
-                        </Link>
-                        <span className="text-xs font-mono text-zinc-500 mt-0.5">{product.variants && product.variants.length > 0 ? 'Multiple SKUs' : (product.sku || product.cjSku || 'No SKU')}</span>
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-sm font-black text-zinc-900">{formatPrice ? formatPrice(product.price || 0) : `$${(product.price || 0).toFixed(2)}`}</span>
-                        <span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider rounded border ${getStatusStyle(product.status, product.inventory)}`}>
-                          {getStatusText(product.status, product.inventory)}
+
+                      {/* Private Wholesale & Profit Details (Admin Only) */}
+                      <div className="flex items-center justify-between text-xs bg-zinc-50 p-2.5 rounded-xl border border-zinc-200">
+                        <span className="text-[11px] font-medium text-zinc-500">
+                          🔒 Hub Cost: ₦{baseCostNum.toLocaleString('en-NG')}
+                        </span>
+                        <span className="text-[11px] font-bold text-zinc-900 bg-white border border-zinc-200 px-2 py-0.5 rounded-md">
+                          Profit: +₦{commissionNum.toLocaleString('en-NG')}
                         </span>
                       </div>
+
+                      <div className="flex items-center justify-between mt-0.5">
+                         <span className={`text-xs ${getInventoryStatus(product.inventory).style}`}>
+                            {getInventoryStatus(product.inventory).text}
+                          </span>
+                          <Link to={`/admin/products/${product.id}`} className="text-xs font-bold text-zinc-900 flex items-center gap-1 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-colors">
+                            Edit <Edit2 className="w-3 h-3" />
+                          </Link>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between mt-1">
-                       <span className={`text-xs ${getInventoryStatus(product.inventory).style}`}>
-                          {getInventoryStatus(product.inventory).text}
-                        </span>
-                        <Link to={`/admin/products/${product.id}`} className="text-xs font-bold text-primary-blue flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg">
-                          Edit <Edit2 className="w-3 h-3" />
-                        </Link>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           ) : (
@@ -455,7 +632,7 @@ export default function AdminProducts() {
               <p className="text-zinc-500 max-w-sm mb-6 text-sm">
                 {searchQuery || activeTab !== 'All' 
                   ? "Try adjusting your filters or search query to find what you're looking for."
-                  : "Add your first product or import products from CJdropshipping."}
+                  : "Add your first product or scout trending items from TikTok & Instagram."}
               </p>
               {(searchQuery || activeTab !== 'All') ? (
                 <button 
@@ -469,9 +646,12 @@ export default function AdminProducts() {
                   <Link to="/admin/products/new" className="px-6 py-3 bg-zinc-900 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-zinc-800 transition-colors">
                     Add Product
                   </Link>
-                  <Link to="/admin/cjdropshipping" className="px-6 py-3 bg-white text-zinc-900 border border-zinc-200 rounded-xl text-sm font-bold shadow-sm hover:bg-zinc-50 transition-colors">
-                    Import from CJ
-                  </Link>
+                  <button 
+                    onClick={() => setShowAiModal(true)} 
+                    className="px-6 py-3 bg-white text-zinc-900 border border-zinc-200 rounded-xl text-sm font-bold shadow-sm hover:bg-zinc-50 transition-colors cursor-pointer"
+                  >
+                    AI Auto-Generate
+                  </button>
                 </div>
               )}
             </div>
@@ -511,19 +691,19 @@ export default function AdminProducts() {
           <div className="bg-white rounded-3xl shadow-2xl border border-zinc-100 w-full max-w-2xl overflow-hidden animate-scale-up">
             
             {/* Modal Header */}
-            <div className="p-6 bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 text-white flex items-center justify-between">
+            <div className="p-6 bg-zinc-900 border-b border-zinc-800 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-md">
+                <div className="p-2.5 rounded-2xl bg-zinc-800 border border-zinc-700">
                   <Sparkles className="w-6 h-6 text-amber-300" />
                 </div>
                 <div>
                   <h3 className="text-xl font-black tracking-tight">AI Product Auto-Generator</h3>
-                  <p className="text-xs text-purple-200">Generate & upload trending home appliances and gadgets without stress</p>
+                  <p className="text-xs text-zinc-400">Curates domestic inventory with guaranteed ₦10k+ owner commission</p>
                 </div>
               </div>
               <button 
                 onClick={() => { setShowAiModal(false); setAiSuccessResult(null); }}
-                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-full transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -532,21 +712,32 @@ export default function AdminProducts() {
             {/* Modal Body */}
             <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
               
+              {/* Private Sourcing & Commission Notice */}
+              <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-2xl flex items-start gap-3 text-xs text-zinc-600">
+                <span className="text-sm shrink-0">🔒</span>
+                <div>
+                  <p className="font-bold text-zinc-900 mb-0.5">Automated Wholesale Sourcing & Profit Rules</p>
+                  <p className="leading-relaxed">
+                    Products will be assigned to <strong>Alaba Market</strong>, <strong>Computer Village</strong>, or <strong>OEM Refurbishers</strong>. Every item calculates realistic Nigerian Naira prices (₦) with your mandatory <strong>₦10,000+ Owner Profit Commission</strong> added to wholesale costs. Customers see SAJODA as the direct owner.
+                  </p>
+                </div>
+              </div>
+
               {/* Success Banner */}
               {aiSuccessResult && (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-bold">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div className="p-4 bg-zinc-100 border border-zinc-300 rounded-2xl flex items-center gap-3 text-zinc-900 text-sm font-bold">
+                  <CheckCircle2 className="w-5 h-5 text-zinc-900 shrink-0" />
                   <span>{aiSuccessResult}</span>
                 </div>
               )}
 
               {/* Status or Progress */}
               {isAiGenerating && (
-                <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl flex items-center gap-4 text-purple-900">
-                  <Loader2 className="w-6 h-6 text-purple-600 animate-spin shrink-0" />
+                <div className="p-5 bg-zinc-100 border border-zinc-200 rounded-2xl flex items-center gap-4 text-zinc-900">
+                  <Loader2 className="w-6 h-6 text-zinc-900 animate-spin shrink-0" />
                   <div>
                     <p className="text-sm font-bold">AI Merchandiser is Working...</p>
-                    <p className="text-xs text-purple-700">{aiStatusMsg || 'Generating listings, pricing, and images...'}</p>
+                    <p className="text-xs text-zinc-600">{aiStatusMsg || 'Generating listings, pricing, and images...'}</p>
                   </div>
                 </div>
               )}
@@ -561,40 +752,40 @@ export default function AdminProducts() {
                     type="button"
                     disabled={isAiGenerating}
                     onClick={() => handleAiAutoUpload('Home Appliances', 5, 'Curate trending smart home appliances like robot vacuums, air fryers, purifiers, and espresso machines.')}
-                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-purple-500 hover:bg-purple-50/50 text-left transition-all group disabled:opacity-50"
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 text-left transition-all group disabled:opacity-50 cursor-pointer"
                   >
                     <span className="text-base block mb-0.5">🏠 <strong>5 Home Appliances</strong></span>
-                    <span className="text-xs text-zinc-500 group-hover:text-purple-700">Air fryers, robot vacuums, purifiers</span>
+                    <span className="text-xs text-zinc-500 group-hover:text-zinc-800">Alaba Wholesale Hub • +₦10k-₦35k commission</span>
                   </button>
 
                   <button
                     type="button"
                     disabled={isAiGenerating}
                     onClick={() => handleAiAutoUpload('Latest Gadgets', 5, 'Curate cutting-edge personal gadgets like smartwatches, foldable drones, wireless chargers, and smart lamps.')}
-                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-left transition-all group disabled:opacity-50"
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 text-left transition-all group disabled:opacity-50 cursor-pointer"
                   >
                     <span className="text-base block mb-0.5">⚡ <strong>5 Latest Gadgets</strong></span>
-                    <span className="text-xs text-zinc-500 group-hover:text-indigo-700">AMOLED watches, drones, charging hubs</span>
+                    <span className="text-xs text-zinc-500 group-hover:text-zinc-800">Computer Village Hub • +₦12k-₦40k commission</span>
                   </button>
 
                   <button
                     type="button"
                     disabled={isAiGenerating}
                     onClick={() => handleAiAutoUpload('Electronics', 5, 'Curate high-performance electronics like 4K portable projectors, ANC earbuds, soundbars, and displays.')}
-                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-blue-500 hover:bg-blue-50/50 text-left transition-all group disabled:opacity-50"
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 text-left transition-all group disabled:opacity-50 cursor-pointer"
                   >
                     <span className="text-base block mb-0.5">📺 <strong>5 Electronics</strong></span>
-                    <span className="text-xs text-zinc-500 group-hover:text-blue-700">Cinema projectors, studio audio, soundbars</span>
+                    <span className="text-xs text-zinc-500 group-hover:text-zinc-800">OEM / Alaba Hub • +₦15k-₦50k commission</span>
                   </button>
 
                   <button
                     type="button"
                     disabled={isAiGenerating}
                     onClick={() => handleAiAutoUpload('All', 8, 'A mixed catalog of best-selling home appliances, gadgets, and electronics.')}
-                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-purple-600 hover:bg-purple-50/50 text-left transition-all group disabled:opacity-50"
+                    className="p-3.5 rounded-xl border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 text-left transition-all group disabled:opacity-50 cursor-pointer"
                   >
                     <span className="text-base block mb-0.5">🌟 <strong>8 Mixed Best-Sellers</strong></span>
-                    <span className="text-xs text-zinc-500 group-hover:text-purple-700">Complete balanced assortment</span>
+                    <span className="text-xs text-zinc-500 group-hover:text-zinc-800">Balanced catalog with dual conditions</span>
                   </button>
                 </div>
               </div>
@@ -611,7 +802,7 @@ export default function AdminProducts() {
                     <select
                       value={aiCategory}
                       onChange={(e: any) => setAiCategory(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500"
+                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900"
                     >
                       <option value="All">All Categories</option>
                       <option value="Home Appliances">Home Appliances</option>
@@ -625,7 +816,7 @@ export default function AdminProducts() {
                     <select
                       value={aiCondition}
                       onChange={(e: any) => setAiCondition(e.target.value)}
-                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500"
+                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900"
                     >
                       <option value="both">Both New & Pre-Owned</option>
                       <option value="new">Brand New Only</option>
@@ -638,7 +829,7 @@ export default function AdminProducts() {
                     <select
                       value={aiCount}
                       onChange={(e) => setAiCount(Number(e.target.value))}
-                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500"
+                      className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900"
                     >
                       <option value={3}>3 Products</option>
                       <option value={5}>5 Products (Recommended)</option>
@@ -657,7 +848,7 @@ export default function AdminProducts() {
                     value={aiCustomPrompt}
                     onChange={(e) => setAiCustomPrompt(e.target.value)}
                     placeholder="e.g. Smart induction cookers, robot window cleaners, MagSafe stands..."
-                    className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-purple-500 focus:bg-white transition-all"
+                    className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white transition-all"
                   />
                 </div>
 
@@ -665,7 +856,7 @@ export default function AdminProducts() {
                   type="button"
                   disabled={isAiGenerating}
                   onClick={() => handleAiAutoUpload()}
-                  className="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-90 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isAiGenerating ? (
                     <>
@@ -682,6 +873,251 @@ export default function AdminProducts() {
               </div>
 
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* TIKTOK & INSTAGRAM VIRAL SCOUT MODAL FOR DAMIJOSH */}
+      {showScoutModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative border border-zinc-100 max-h-[92vh] overflow-y-auto my-auto animate-fade-in-up">
+            
+            <button 
+              onClick={() => {
+                setShowScoutModal(false);
+                setScoutedProduct(null);
+                setScoutError(null);
+              }}
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-2">
+              <span className="p-2 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white shadow-sm">
+                <TrendingUp className="w-5 h-5" />
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-pink-50 text-pink-700 border border-pink-200">
+                TikTok & Instagram Viral Scout
+              </span>
+              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-600">
+                DamiJosh Admin AI
+              </span>
+            </div>
+
+            <h2 className="text-2xl font-black text-zinc-900 tracking-tight mb-2">
+              Import Viral Products to SAJODA
+            </h2>
+            <p className="text-sm text-zinc-500 mb-6 leading-relaxed">
+              Found a hot gadget on TikTok or Instagram? Paste the link or topic. Your AI will locate domestic supply at Alaba or Computer Village, calculate realistic Naira pricing with your guaranteed <strong>₦10,000+ commission</strong>, generate 4 multi-angle photos (including carton box or tested hardware), and publish in 1 click!
+            </p>
+
+            {/* Sourcing Input Form */}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                  TikTok / Instagram Link or Trending Product Name
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={scoutInput}
+                    onChange={(e) => setScoutInput(e.target.value)}
+                    placeholder="e.g. https://www.tiktok.com/@tech/video/... or 'Wireless 3-in-1 Foldable Charger'"
+                    className="w-full p-3.5 pr-10 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900 focus:bg-white transition-all"
+                  />
+                  {scoutInput && (
+                    <button
+                      onClick={() => setScoutInput('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Condition Selector */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-1.5">
+                  Listing Condition Model
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setScoutCondition('new')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      scoutCondition === 'new'
+                        ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-600 text-emerald-900'
+                        : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
+                    }`}
+                  >
+                    <div className="font-bold text-xs flex items-center gap-1.5">
+                      <span>📦 Brand New</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">Sealed retail carton & pack</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScoutCondition('used')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      scoutCondition === 'used'
+                        ? 'border-amber-600 bg-amber-50/80 ring-2 ring-amber-600 text-amber-900'
+                        : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
+                    }`}
+                  >
+                    <div className="font-bold text-xs flex items-center gap-1.5">
+                      <span>🛡️ Certified Pre-Owned</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">100% tested working fine</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Inspiration Tags */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] font-bold text-zinc-400">Viral Inspiration:</span>
+                {[
+                  'RGB Gaming Soundbar',
+                  'Portable Electric Blender',
+                  'MagSafe Wireless Power Bank',
+                  'Mini Pocket 4K Drone',
+                ].map((idea, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setScoutInput(idea)}
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors"
+                  >
+                    + {idea}
+                  </button>
+                ))}
+              </div>
+
+              {scoutError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                  {scoutError}
+                </div>
+              )}
+
+              <button
+                type="button"
+                disabled={isScouting}
+                onClick={handleScoutProduct}
+                className="w-full py-3.5 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:opacity-95 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isScouting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Scouting Viral Source & Multi-Angle Photos...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 text-amber-300" />
+                    Scout & Generate Viral Product
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Scouted Product Preview */}
+            {scoutedProduct && (
+              <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Product Ready for Publish
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-zinc-200 text-zinc-800">
+                    {scoutedProduct.condition === 'used' ? 'Pre-Owned Card' : 'Brand New Card'}
+                  </span>
+                </div>
+
+                {/* 4 Multi-Angle Side Photos Preview */}
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                    4-Angle Side Photo Gallery ({scoutedProduct.images?.length || 4} Angles Generated)
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(scoutedProduct.images || [scoutedProduct.image]).map((img: string, idx: number) => (
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-white border border-zinc-200 shadow-2xs">
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] font-bold text-white text-center py-0.5 truncate px-1">
+                          {idx === 0 ? 'Front' : idx === 1 ? 'Side' : idx === 2 ? 'Details' : scoutedProduct.condition === 'used' ? 'Hardware' : 'Carton'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Title & Hook */}
+                <div>
+                  <h3 className="font-black text-base text-zinc-900">{scoutedProduct.name}</h3>
+                  {scoutedProduct.viralHook && (
+                    <p className="text-xs font-bold text-pink-600 mt-0.5">🔥 Viral Hook: "{scoutedProduct.viralHook}"</p>
+                  )}
+                  <p className="text-xs text-zinc-600 mt-1 line-clamp-2">{scoutedProduct.description}</p>
+                </div>
+
+                {/* 🔒 DamiJosh Private Owner Profit & Sourcing Breakdown */}
+                <div className="p-4 rounded-xl bg-zinc-900 text-white space-y-2 border border-zinc-800">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-400 font-bold">🔒 Sourcing Hub:</span>
+                    <span className="font-semibold text-zinc-200">{scoutedProduct.sourcingSupplier || 'Alaba International Wholesale'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-400 font-bold">Base Wholesale Cost:</span>
+                    <span className="font-semibold text-zinc-300">₦{Number(scoutedProduct.costPrice || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-emerald-400 font-bold">DamiJosh Profit Commission:</span>
+                    <span className="font-extrabold text-emerald-400">+₦{Number((scoutedProduct.price || 0) - (scoutedProduct.costPrice || 0)).toLocaleString()}</span>
+                  </div>
+                  <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-sm">
+                    <span className="font-bold text-white">Store Retail Price:</span>
+                    <span className="font-black text-white text-base">₦{Number(scoutedProduct.price || 0).toLocaleString()}</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-400 italic">
+                    * Wholesale costs and commission are 100% hidden from customers. Customers only see SAJODA.
+                  </p>
+                </div>
+
+                {/* Packaging & Guarantee */}
+                <div className="text-xs text-zinc-600 space-y-1">
+                  <div><strong>Packaging:</strong> {scoutedProduct.packaging}</div>
+                  <div><strong>Warranty:</strong> {scoutedProduct.warrantyInfo}</div>
+                </div>
+
+                {/* Publish Action */}
+                {scoutPublishSuccess ? (
+                  <div className="p-3.5 rounded-xl bg-emerald-600 text-white text-center font-bold text-sm flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    Published to SAJODA Store Inventory Successfully!
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isPublishingScout}
+                    onClick={handlePublishScoutedProduct}
+                    className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isPublishingScout ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Publishing to Store Catalog...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5" />
+                        🚀 1-Click Publish to SAJODA Store
+                      </>
+                    )}
+                  </button>
+                )}
+
+              </div>
+            )}
 
           </div>
         </div>

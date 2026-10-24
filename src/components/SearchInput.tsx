@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, Loader2, ArrowRight } from 'lucide-react';
+import { Search, X, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { useStore } from '../StoreContext';
 
 interface SearchInputProps {
@@ -26,12 +26,6 @@ export default function SearchInput({ onClose, isMobile }: SearchInputProps) {
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
-
-  useEffect(() => {
-    if (isMobile && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isMobile]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -92,7 +86,7 @@ export default function SearchInput({ onClose, isMobile }: SearchInputProps) {
     <div ref={wrapperRef} className={`relative ${isMobile ? 'w-full' : 'flex-1 max-w-md'}`}>
       <form onSubmit={handleSearch} className={`flex items-center rounded-full px-4 py-2 transition-colors ${isMobile ? 'bg-zinc-100 border border-transparent' : 'bg-light-bg border border-zinc-200 focus-within:bg-white focus-within:border-primary-blue focus-within:shadow-sm'}`}>
         <Search className="w-4 h-4 text-zinc-500 shrink-0" />
-        <input autoFocus={isMobile}  
+        <input
           ref={inputRef}
           type="text" 
           placeholder="Search gadgets, appliances and more..." 
@@ -108,57 +102,82 @@ export default function SearchInput({ onClose, isMobile }: SearchInputProps) {
         )}
       </form>
 
-      {/* Autocomplete Panel */}
-      {isFocused && (query.trim() || isMobile) && (
-        <div className={`absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden z-50 animate-fade-in-up ${isMobile ? 'fixed top-[70px] bottom-0 rounded-none border-none mt-0 shadow-none' : 'max-h-[80vh] overflow-y-auto'}`}>
-          <div className="p-4">
-            {!query.trim() && isMobile ? (
+      {/* Autocomplete Panel - Compact, short dropdown so users can see products */}
+      {isFocused && (
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-zinc-200 overflow-hidden z-50 animate-fade-in-up max-h-72 overflow-y-auto">
+          <div className="p-3 sm:p-4">
+            {!query.trim() ? (
                <div>
-                  <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 px-2">Popular Searches</h3>
-                  <ul className="space-y-1">
+                  <div className="flex items-center justify-between mb-2.5 px-1">
+                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Popular Searches
+                    </span>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsFocused(false)} 
+                      className="text-[11px] font-bold text-zinc-400 hover:text-zinc-800 px-2 py-0.5 rounded hover:bg-zinc-100 transition-colors cursor-pointer"
+                    >
+                      Close ✕
+                    </button>
+                  </div>
+                  {/* Short, compact chip pills so products stay completely visible */}
+                  <div className="flex flex-wrap gap-1.5">
                     {popularSearches.map(term => (
-                      <li key={term}>
-                        <button type="button" onClick={() => handleSuggestionClick(term)} className="w-full text-left px-2 py-2 text-sm text-zinc-700 hover:text-primary-blue hover:bg-zinc-50 rounded-lg flex items-center gap-3">
-                           <Search className="w-3.5 h-3.5 text-zinc-400" /> {term}
-                        </button>
-                      </li>
+                      <button 
+                        key={term} 
+                        type="button" 
+                        onClick={() => handleSuggestionClick(term)} 
+                        className="px-3 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-900 hover:text-white text-zinc-700 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs group"
+                      >
+                        <Search className="w-3 h-3 text-zinc-400 group-hover:text-white transition-colors" />
+                        <span>{term}</span>
+                      </button>
                     ))}
-                  </ul>
+                  </div>
                </div>
             ) : isSearching ? (
-               <div className="flex items-center justify-center py-8 text-zinc-400 gap-2">
-                 <Loader2 className="w-4 h-4 animate-spin" /> <span className="text-sm font-medium">Searching...</span>
+               <div className="flex items-center justify-center py-6 text-zinc-400 gap-2">
+                 <Loader2 className="w-4 h-4 animate-spin" /> <span className="text-xs font-medium">Searching...</span>
                </div>
             ) : suggestions.length > 0 ? (
                <div>
-                 <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 px-2">Products</h3>
-                 <ul className="space-y-2">
-                   {suggestions.map(p => (
+                 <div className="flex items-center justify-between mb-2.5 px-1">
+                   <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Matching Products</span>
+                   <button 
+                     type="button" 
+                     onClick={() => setIsFocused(false)} 
+                     className="text-[11px] font-bold text-zinc-400 hover:text-zinc-800 px-2 py-0.5 rounded hover:bg-zinc-100 transition-colors cursor-pointer"
+                   >
+                     Close ✕
+                   </button>
+                 </div>
+                 <ul className="space-y-1.5">
+                   {suggestions.slice(0, 4).map(p => (
                      <li key={p.id}>
-                       <button type="button" onClick={() => handleProductClick(p.id)} className="w-full text-left p-2 rounded-xl hover:bg-zinc-50 flex items-center gap-4 group transition-colors">
-                         <div className="w-12 h-12 rounded-lg bg-zinc-100 overflow-hidden shrink-0">
-                           <img src={p.image} alt={p.name} className="w-full h-full object-cover mix-blend-multiply" />
+                       <button type="button" onClick={() => handleProductClick(p.id)} className="w-full text-left p-2 rounded-xl hover:bg-zinc-50 flex items-center gap-3 group transition-colors cursor-pointer">
+                         <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200">
+                           <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                          </div>
                          <div className="flex-1 overflow-hidden">
-                           <p className="text-sm font-bold text-zinc-900 truncate group-hover:text-primary-blue transition-colors">{p.name}</p>
-                           <p className="text-xs text-zinc-500 font-medium">{formatPrice(p.price)}</p>
+                           <p className="text-xs font-bold text-zinc-900 truncate group-hover:text-primary-blue transition-colors">{p.name}</p>
+                           <p className="text-[11px] text-zinc-500 font-medium">{formatPrice(p.price)}</p>
                          </div>
-                         <ArrowRight className="w-4 h-4 text-zinc-300 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 transition-all" />
+                         <ArrowRight className="w-3.5 h-3.5 text-zinc-300 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 transition-all" />
                        </button>
                      </li>
                    ))}
                  </ul>
                  
-                 <div className="mt-4 pt-4 border-t border-zinc-100">
-                   <button type="button" onClick={() => handleSuggestionClick(debouncedQuery)} className="w-full py-3 bg-zinc-50 hover:bg-zinc-100 text-zinc-900 text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
-                     View all results for "{debouncedQuery}" <ArrowRight className="w-4 h-4" />
+                 <div className="mt-3 pt-2.5 border-t border-zinc-100">
+                   <button type="button" onClick={() => handleSuggestionClick(debouncedQuery)} className="w-full py-2 bg-zinc-50 hover:bg-zinc-100 text-zinc-900 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                     View all results for "{debouncedQuery}" <ArrowRight className="w-3.5 h-3.5" />
                    </button>
                  </div>
                </div>
             ) : (
-               <div className="py-8 text-center">
-                  <p className="text-sm text-zinc-500 font-medium mb-2">No results found for "{debouncedQuery}"</p>
-                  <p className="text-xs text-zinc-400">Try checking your spelling or use more general terms.</p>
+               <div className="py-6 text-center">
+                  <p className="text-xs text-zinc-500 font-medium mb-1">No results found for "{debouncedQuery}"</p>
+                  <p className="text-[11px] text-zinc-400">Try a different keyword or browse categories below.</p>
                </div>
             )}
           </div>

@@ -118,17 +118,15 @@ export default function Home() {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => navigate('/shop?condition=new')}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-100 transition-colors shadow-xs"
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 Shop Brand New
               </button>
               <button
                 onClick={() => navigate('/shop?condition=used')}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-100 transition-colors shadow-xs"
               >
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                Shop Certified Pre-Owned
+                Shop Pre-Owned & Refurbished
               </button>
               <button onClick={() => navigate('/shop')} className="text-sm font-semibold text-primary-blue hover:text-blue-800 transition-colors flex items-center gap-1 ml-2">
                 View All <ArrowRight className="w-4 h-4" />
@@ -179,15 +177,14 @@ export default function Home() {
               className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/30">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold uppercase tracking-wider border border-white/15">
                   Brand New
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </div>
               <h3 className="text-lg font-bold mb-1">Factory Sealed in Box</h3>
               <p className="text-xs text-zinc-400 mb-3">Pristine, untouched condition with full manufacturer warranty and packaging.</p>
-              <span className="text-xs font-bold text-emerald-400">Shop Brand New &rarr;</span>
+              <span className="text-xs font-bold text-white group-hover:underline">Shop Brand New &rarr;</span>
             </div>
 
             <div 
@@ -195,15 +192,14 @@ export default function Home() {
               className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-amber-500/30">
-                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span className="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold uppercase tracking-wider border border-white/15">
                   Certified Pre-Owned
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </div>
               <h3 className="text-lg font-bold mb-1">Refurbished & Tested</h3>
               <p className="text-xs text-zinc-400 mb-3">Passed 35-point testing, ultrasonically cleaned, includes 90-day replacement guarantee.</p>
-              <span className="text-xs font-bold text-amber-400">Shop Pre-Owned & Save &rarr;</span>
+              <span className="text-xs font-bold text-white group-hover:underline">Shop Pre-Owned & Save &rarr;</span>
             </div>
           </div>
         </div>
