@@ -7,8 +7,10 @@ import { useStore } from '../../StoreContext';
 import { 
   LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut, 
   Menu, X, Bell, Search, BarChart3, Globe, Shield, Bot, Activity, 
-  MessageSquare, Tag, Truck, FolderGit2, Sparkles
+  MessageSquare, Tag, Truck, FolderGit2, Sparkles, Laptop, Download
 } from 'lucide-react';
+import StandaloneStudioModal from './StandaloneStudioModal';
+import LoadingSpinner from '../LoadingSpinner';
 
 export default function AdminLayout() {
   const { user } = useStore();
@@ -17,6 +19,7 @@ export default function AdminLayout() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true); // Desktop sidebar expanded state
+  const [showStudioModal, setShowStudioModal] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -80,9 +83,7 @@ export default function AdminLayout() {
 
   if (isAdmin === null) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-zinc-700 border-t-white rounded-full animate-spin" />
-      </div>
+      <LoadingSpinner size="fullscreen" theme="dark" label="Verifying admin clearance..." />
     );
   }
 
@@ -198,7 +199,17 @@ export default function AdminLayout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowStudioModal(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border border-zinc-800"
+              title="Separate & Download Standalone Admin Studio App"
+            >
+              <Laptop className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">Standalone App</span>
+              <span className="bg-indigo-500/25 text-indigo-300 text-[10px] px-1.5 py-0.2 rounded font-mono">PWA / ZIP</span>
+            </button>
+
             <button className="relative p-2 text-zinc-500 hover:bg-zinc-100 rounded-full transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
@@ -217,6 +228,11 @@ export default function AdminLayout() {
         </main>
       </div>
       
+      {/* Standalone Studio Modal */}
+      <StandaloneStudioModal 
+        isOpen={showStudioModal} 
+        onClose={() => setShowStudioModal(false)} 
+      />
     </div>
   );
 }

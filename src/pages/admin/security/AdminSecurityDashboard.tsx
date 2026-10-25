@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, ShieldAlert, Activity, Database, Key, Server, RefreshCw, Bot, Bell, Shield } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Activity, Database, Key, Server, RefreshCw, Bot, Bell, Shield, Laptop, Download, Lock } from 'lucide-react';
 import { collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import { db } from '../../../firebase';
+import StandaloneStudioModal from '../../../components/admin/StandaloneStudioModal';
 
 export default function AdminSecurityDashboard() {
-  const [securityScore, setSecurityScore] = useState(92);
+  const [securityScore, setSecurityScore] = useState(96);
   const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
+  const [showStudioModal, setShowStudioModal] = useState(false);
   
   const statusItems = [
     { name: 'System Health', status: 'ONLINE', icon: <Activity className="w-5 h-5 text-emerald-500" /> },
@@ -112,6 +114,40 @@ export default function AdminSecurityDashboard() {
            </div>
         </div>
       </div>
+
+      {/* Standalone Studio Back-Office Separation Card */}
+      <div className="bg-zinc-950 text-white rounded-2xl border border-zinc-800 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-indigo-400 shrink-0">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-black tracking-tight">Standalone Admin Studio & Storefront Isolation</h3>
+              <span className="text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Stealth Shield Active
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1 max-w-2xl leading-relaxed">
+              Your public customer storefront is 100% cleansed of admin controls, wholesale sourcing hubs, and profit calculations. You can install this studio as a standalone desktop/phone app or download the complete source code bundle (.zip) to run on your private local machine.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setShowStudioModal(true)}
+          className="flex items-center justify-center gap-2 px-5 py-3 bg-white text-zinc-950 hover:bg-zinc-100 rounded-xl text-xs font-black transition-all shadow-md shrink-0 cursor-pointer"
+        >
+          <Laptop className="w-4 h-4" />
+          <span>Standalone App & .ZIP Export</span>
+        </button>
+      </div>
+
+      {/* Standalone Studio Modal */}
+      <StandaloneStudioModal 
+        isOpen={showStudioModal} 
+        onClose={() => setShowStudioModal(false)} 
+      />
     </div>
   );
 }

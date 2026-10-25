@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../StoreContext';
 import { Product } from '../types';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -39,10 +40,7 @@ export default function ProductDetail() {
   if (!product) {
     if (productsLoading) {
       return (
-        <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-white text-zinc-900 px-6">
-           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-blue mb-4"></div>
-           <p className="text-zinc-500 font-medium">Loading product details...</p>
-        </div>
+        <LoadingSpinner size="fullscreen" label="Loading product..." />
       );
     }
     return (

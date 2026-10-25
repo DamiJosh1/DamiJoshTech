@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Package, ShoppingCart, Users, DollarSign, TrendingUp, AlertCircle, CheckCircle2, 
-  ArrowRight, Search, Plus, Filter, Activity, Clock, Bot, Bell, Shield, Zap, Sparkles
+  ArrowRight, Search, Plus, Filter, Activity, Clock, Bot, Bell, Shield, Zap, Sparkles, Laptop, Download
 } from 'lucide-react';
 import { collection, query, getDocs, limit, orderBy, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Link } from 'react-router-dom';
+import StandaloneStudioModal from '../../components/admin/StandaloneStudioModal';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -16,6 +17,7 @@ export default function AdminDashboard() {
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showStudioModal, setShowStudioModal] = useState(false);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -53,10 +55,7 @@ export default function AdminDashboard() {
   }, []);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `₦${Math.round(amount || 0).toLocaleString('en-NG')}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -84,6 +83,36 @@ export default function AdminDashboard() {
             <Bot className="w-3 h-3" />
             AI ONLINE
           </div>
+        </div>
+      </div>
+
+      {/* STANDALONE STUDIO BANNER */}
+      <div className="p-4 bg-gradient-to-r from-zinc-950 via-zinc-900 to-indigo-950 text-white rounded-2xl border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-indigo-300 shrink-0">
+            <Laptop className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-black tracking-tight">Standalone Admin Studio Mode</h2>
+              <span className="text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Stealth Active
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Your public storefront is 100% isolated. Customers cannot see any admin controls, wholesale costs, or profit markups.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowStudioModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-zinc-950 hover:bg-zinc-100 rounded-xl text-xs font-black transition-all shadow-md cursor-pointer whitespace-nowrap"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Install / Download Studio App</span>
+          </button>
         </div>
       </div>
 
@@ -311,6 +340,12 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Standalone Studio Modal */}
+      <StandaloneStudioModal 
+        isOpen={showStudioModal} 
+        onClose={() => setShowStudioModal(false)} 
+      />
     </div>
   );
 }

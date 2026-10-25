@@ -1,45 +1,62 @@
 import React, { useState } from 'react';
 
-export default function Logo({ className = "h-8", variant = "full" }: { className?: string, variant?: "full" | "icon" }) {
-  const [imgError, setImgError] = useState(false);
+const FULL_LOGO_CANDIDATES = [
+  '/images/damilogo.jpg',
+  '/damilogo.jpg',
+  '/images/logo.png',
+  '/logo.png',
+  '/images/logo.svg',
+  '/logo.svg',
+  '/images/logo.jpg',
+  '/logo.jpg',
+  '/images/logo.webp',
+  '/logo.webp',
+];
 
-  // If the user uploaded damilogo.jpg or favicondami.ico into /public or /public/images, prefer displaying the uploaded image
-  const [triedAltPath, setTriedAltPath] = useState(false);
+const ICON_CANDIDATES = [
+  '/images/favicondami.ico',
+  '/favicondami.ico',
+  '/images/favicon.svg',
+  '/favicon.svg',
+  '/images/favicon.png',
+  '/favicon.png',
+  '/apple-touch-icon.png',
+  '/favicon.ico',
+];
 
-  if (!imgError) {
-    if (variant === "icon") {
-      return (
-        <img 
-          src={triedAltPath ? "/images/favicondami.ico" : "/favicondami.ico"} 
-          alt="Sajoda Favicon" 
-          className={className} 
-          onError={() => {
-            if (!triedAltPath) {
-              setTriedAltPath(true);
-            } else {
-              setImgError(true);
-            }
-          }} 
-        />
-      );
+export default function Logo({
+  className = 'h-8',
+  variant = 'full',
+}: {
+  className?: string;
+  variant?: 'full' | 'icon';
+}) {
+  const candidates = variant === 'icon' ? ICON_CANDIDATES : FULL_LOGO_CANDIDATES;
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [hasExhaustedCandidates, setHasExhaustedCandidates] = useState(false);
+
+  const handleError = () => {
+    if (candidateIndex + 1 < candidates.length) {
+      setCandidateIndex((prev) => prev + 1);
+    } else {
+      setHasExhaustedCandidates(true);
     }
+  };
+
+  if (!hasExhaustedCandidates && candidateIndex < candidates.length) {
     return (
-      <img 
-        src={triedAltPath ? "/images/damilogo.jpg" : "/damilogo.jpg"} 
-        alt="Sajoda Logo" 
-        className={`${className} object-contain`} 
-        onError={() => {
-          if (!triedAltPath) {
-            setTriedAltPath(true);
-          } else {
-            setImgError(true);
-          }
-        }} 
+      <img
+        key={candidates[candidateIndex]}
+        src={candidates[candidateIndex]}
+        alt="SAJODA"
+        className={`${className} ${variant === 'icon' ? 'object-contain' : 'object-contain'}`}
+        onError={handleError}
       />
     );
   }
 
-  if (variant === "icon") {
+  // Fallback 1: Icon fallback SVG
+  if (variant === 'icon') {
     return (
       <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M75 25H40C31.7 25 25 31.7 25 40V60C25 68.3 31.7 75 40 75H75" stroke="#0D47A1" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
@@ -48,7 +65,7 @@ export default function Logo({ className = "h-8", variant = "full" }: { classNam
     );
   }
 
-  // The full logo SVG fallback
+  // Fallback 2: Clean geometric wordmark fallback SVG
   return (
     <svg className={className} viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M60 25C40 25 25 35 25 50C25 65 40 70 55 75C65 78 70 82 70 90C70 105 50 110 30 110" stroke="#1F2937" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>

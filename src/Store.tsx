@@ -94,6 +94,9 @@ import AdminCommunications from './pages/admin/AdminCommunications';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminDiscountForm from './pages/admin/AdminDiscountForm';
 import AdminLogin from './pages/admin/AdminLogin';
+import AdminMarketing from './pages/admin/AdminMarketing';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminSettings from './pages/admin/AdminSettings';
 
 import AdminAutomations from './pages/admin/automations/AdminAutomations';
 import AdminAiSupport from './pages/admin/ai/AdminAiSupport';
@@ -869,9 +872,19 @@ export default function Store() {
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/wishlist'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Wishlist</button>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/addresses'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Addresses</button>
                       <button onClick={() => { setIsProfileMenuOpen(false); navigate('/account/security'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-zinc-700">Settings</button>
-                      {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} className="w-full text-left px-5 py-2 text-sm transition-colors hover:bg-zinc-50 text-primary-blue font-medium">Admin Dashboard</button>}
+                      {user.email === 'damijosh12@gmail.com' && (
+                        <>
+                          <div className="h-px my-1.5 bg-zinc-100" />
+                          <button 
+                            onClick={() => { setIsProfileMenuOpen(false); navigate('/admin'); }} 
+                            className="w-full text-left px-5 py-2 text-xs font-black tracking-wider uppercase transition-colors hover:bg-zinc-900 hover:text-white text-zinc-900 flex items-center justify-between rounded-lg"
+                          >
+                            <span>⚡ Sajoda Studio App</span>
+                            <span className="text-[9px] bg-zinc-200 text-zinc-800 px-1.5 py-0.5 rounded font-mono">Master</span>
+                          </button>
+                        </>
+                      )}
                       <div className="h-px my-1 bg-zinc-100" />
-                     {user.email === 'damijosh12@gmail.com' && <button onClick={() => { setIsMobileMenuOpen(false); navigate('/admin'); }} className="text-left text-primary-blue font-bold transition-colors mt-2 p-2 -ml-2">Admin Dashboard</button>}
                       <button onClick={() => { setIsProfileMenuOpen(false); handleLogout(); }} className="w-full text-left px-5 py-2 text-sm text-error hover:bg-red-50 transition-colors">Log Out</button>
                    </div>
                  )}
@@ -1007,22 +1020,7 @@ export default function Store() {
             <Route path="notifications" element={<AccountNotifications />} />
             <Route path="notifications/preferences" element={<AccountNotificationPreferences />} />
             <Route path="price-alerts" element={<AccountPriceAlerts />} />
-          
-            <Route path="security" element={<AdminSecurityLayout />}>
-              <Route index element={<AdminSecurityDashboard />} />
-              <Route path="activity" element={<AdminSecurityActivity />} />
-              <Route path="sessions" element={<AdminSecuritySessions />} />
-              <Route path="audit-log" element={<AdminSecurityAuditLog />} />
-              <Route path="permissions" element={<AdminSecurityPermissions />} />
-              <Route path="api" element={<AdminSecurityApi />} />
-              <Route path="integrations" element={<AdminSecurityIntegrations />} />
-              <Route path="system-health" element={<AdminSecuritySystemHealth />} />
-              <Route path="backups" element={<AdminSecurityBackups />} />
-              <Route path="recovery" element={<AdminSecurityRecovery />} />
-              <Route path="ai-safety" element={<AdminSecurityAiSafety />} />
-              <Route path="alerts" element={<AdminSecurityAlerts />} />
-            </Route>
-            </Route>
+          </Route>
 
           
           <Route path="/help" element={<ContentPage />} />
@@ -1040,6 +1038,7 @@ export default function Store() {
           
           <Route path="/dropshipping" element={<Dropshipping />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/studio" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="orders" element={<AdminOrders />} />
@@ -1116,11 +1115,24 @@ export default function Store() {
             <Route path="shipping" element={<AdminComingSoon />} />
             <Route path="homepage" element={<AdminComingSoon />} />
             <Route path="reviews" element={<AdminComingSoon />} />
-            <Route path="marketing" element={<AdminComingSoon />} />
-
-            <Route path="analytics" element={<AdminComingSoon />} />
+            <Route path="marketing" element={<AdminMarketing />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="security" element={<AdminSecurityLayout />}>
+              <Route index element={<AdminSecurityDashboard />} />
+              <Route path="activity" element={<AdminSecurityActivity />} />
+              <Route path="sessions" element={<AdminSecuritySessions />} />
+              <Route path="audit-log" element={<AdminSecurityAuditLog />} />
+              <Route path="permissions" element={<AdminSecurityPermissions />} />
+              <Route path="api" element={<AdminSecurityApi />} />
+              <Route path="integrations" element={<AdminSecurityIntegrations />} />
+              <Route path="system-health" element={<AdminSecuritySystemHealth />} />
+              <Route path="backups" element={<AdminSecurityBackups />} />
+              <Route path="recovery" element={<AdminSecurityRecovery />} />
+              <Route path="ai-safety" element={<AdminSecurityAiSafety />} />
+              <Route path="alerts" element={<AdminSecurityAlerts />} />
+            </Route>
             <Route path="notifications" element={<AdminCommunications />} />
-            <Route path="settings" element={<AdminComingSoon />} />
+            <Route path="settings" element={<AdminSettings />} />
             <Route path="system-health" element={<AdminSystemHealth />} />
 
             <Route path="support" element={<AdminSupportLayout />}>

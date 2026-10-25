@@ -3,7 +3,7 @@ import {
   Megaphone, Plus, Sparkles, Tag, TrendingUp, Users, Send, 
   CheckCircle2, Clock, Eye, AlertCircle, Copy, Share2, 
   Trash2, Edit3, ArrowUpRight, BarChart2, MessageSquare, 
-  Mail, Bell, Zap, Filter, RefreshCw, X, Check, Globe
+  Mail, Bell, Zap, Filter, RefreshCw, X, Check, Globe, Save
 } from 'lucide-react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';

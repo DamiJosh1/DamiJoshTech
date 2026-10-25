@@ -5,7 +5,7 @@ import {
   Package, Search, Filter, Eye, Edit2, Trash2, Plus, Download, 
   RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon, FolderGit2,
   Sparkles, CheckCircle2, Loader2, Wand2, X, Zap, Share2, DollarSign, Layers,
-  Users, CheckSquare, Square
+  Users, CheckSquare, Square, Camera, UploadCloud, Check
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../StoreContext';
@@ -61,6 +61,118 @@ export default function AdminProducts() {
   const [selectedAccountIndices, setSelectedAccountIndices] = useState<number[]>([]);
   const [isPublishingBatch, setIsPublishingBatch] = useState(false);
   const [batchPublishSuccess, setBatchPublishSuccess] = useState<string | null>(null);
+
+  // Quick Photo & Image Manager State
+  const [quickImageProduct, setQuickImageProduct] = useState<any | null>(null);
+  const [quickImagesList, setQuickImagesList] = useState<string[]>([]);
+  const [newImageUrlInput, setNewImageUrlInput] = useState('');
+  const [isSavingQuickImages, setIsSavingQuickImages] = useState(false);
+  const [quickImageSuccess, setQuickImageSuccess] = useState<string | null>(null);
+  const [quickImageError, setQuickImageError] = useState<string | null>(null);
+  const quickFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleOpenQuickImageModal = (product: any) => {
+    setQuickImageProduct(product);
+    const existingList: string[] = [];
+    if (product.images && Array.isArray(product.images)) {
+      existingList.push(...product.images);
+    } else if (product.image) {
+      existingList.push(product.image);
+    }
+    setQuickImagesList(existingList);
+    setNewImageUrlInput('');
+    setQuickImageSuccess(null);
+    setQuickImageError(null);
+  };
+
+  const handleCloseQuickImageModal = () => {
+    setQuickImageProduct(null);
+    setQuickImagesList([]);
+    setNewImageUrlInput('');
+    setQuickImageSuccess(null);
+    setQuickImageError(null);
+  };
+
+  const handleDeviceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file: File) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setQuickImagesList((prev) => [...prev, result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
+
+  const handleAddUrlImage = () => {
+    if (!newImageUrlInput.trim()) return;
+    const trimmed = newImageUrlInput.trim();
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:image')) {
+      setQuickImageError('Please enter a valid image URL starting with http:// or https://');
+      return;
+    }
+    setQuickImagesList((prev) => [...prev, trimmed]);
+    setNewImageUrlInput('');
+    setQuickImageError(null);
+  };
+
+  const handleSetPrimaryQuickImage = (index: number) => {
+    if (index === 0) return;
+    setQuickImagesList((prev) => {
+      const updated = [...prev];
+      const [item] = updated.splice(index, 1);
+      updated.unshift(item);
+      return updated;
+    });
+  };
+
+  const handleRemoveQuickImage = (index: number) => {
+    setQuickImagesList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveQuickImages = async () => {
+    if (!quickImageProduct) return;
+    setIsSavingQuickImages(true);
+    setQuickImageError(null);
+    setQuickImageSuccess(null);
+
+    try {
+      const primaryImage = quickImagesList[0] || '';
+      await updateDoc(doc(db, 'products', quickImageProduct.id), {
+        image: primaryImage,
+        images: quickImagesList,
+        updatedAt: serverTimestamp()
+      });
+
+      // Update local state for instant responsiveness
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === quickImageProduct.id
+            ? { ...p, image: primaryImage, images: quickImagesList }
+            : p
+        )
+      );
+
+      setQuickImageSuccess('Product photos updated and saved to live storefront!');
+      setTimeout(() => {
+        handleCloseQuickImageModal();
+      }, 1500);
+    } catch (err: any) {
+      console.error('Save quick images error:', err);
+      setQuickImageError(err.message || 'Failed to update product images');
+    } finally {
+      setIsSavingQuickImages(false);
+    }
+  };
 
   // Check URL query parameters for ?scout=true or ?scout=account
   useEffect(() => {
@@ -575,7 +687,11 @@ export default function AdminProducts() {
                       <tr key={product.id} className="hover:bg-zinc-50 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center">
+                            <div 
+                              onClick={() => handleOpenQuickImageModal(product)}
+                              className="w-11 h-11 rounded-lg bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center cursor-pointer relative group/img hover:border-zinc-900 transition-all shadow-2xs"
+                              title="Click to quickly update photos & upload real product images"
+                            >
                               {product.image ? (
                                 <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                               ) : product.images && product.images.length > 0 ? (
@@ -583,6 +699,9 @@ export default function AdminProducts() {
                               ) : (
                                 <ImageIcon className="w-4 h-4 text-zinc-300" />
                               )}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                <Camera className="w-4 h-4" />
+                              </div>
                             </div>
                             <div className="flex flex-col max-w-[220px]">
                               <div className="flex items-center gap-1.5 mb-1">
@@ -648,7 +767,16 @@ export default function AdminProducts() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/admin/products/${product.id}`} className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenQuickImageModal(product)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-800 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors cursor-pointer border border-zinc-200 shadow-2xs whitespace-nowrap"
+                              title="Quick Photo Manager — Replace stock images with real photos"
+                            >
+                              <Camera className="w-3.5 h-3.5 text-zinc-900" />
+                              <span>Photos</span>
+                            </button>
+                            <Link to={`/admin/products/${product.id}`} className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors" title="Full Product Editor">
                               <Edit2 className="w-4 h-4" />
                             </Link>
                           </div>
@@ -671,7 +799,11 @@ export default function AdminProducts() {
                   return (
                     <div key={product.id} className="p-4 hover:bg-zinc-50 active:bg-zinc-100 transition-colors flex flex-col gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-xl bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center">
+                        <div 
+                          onClick={() => handleOpenQuickImageModal(product)}
+                          className="w-14 h-14 rounded-xl bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center cursor-pointer relative group/mobimg"
+                          title="Click to edit photos"
+                        >
                           {product.image ? (
                             <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                           ) : product.images && product.images.length > 0 ? (
@@ -679,6 +811,9 @@ export default function AdminProducts() {
                           ) : (
                             <ImageIcon className="w-6 h-6 text-zinc-300" />
                           )}
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-80 sm:opacity-0 group-hover/mobimg:opacity-100 transition-opacity">
+                            <Camera className="w-4 h-4" />
+                          </div>
                         </div>
                         <div className="flex-1 flex flex-col">
                           <div className="flex items-center gap-1.5 mb-0.5">
@@ -720,9 +855,19 @@ export default function AdminProducts() {
                          <span className={`text-xs ${getInventoryStatus(product.inventory).style}`}>
                             {getInventoryStatus(product.inventory).text}
                           </span>
-                          <Link to={`/admin/products/${product.id}`} className="text-xs font-bold text-zinc-900 flex items-center gap-1 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-colors">
-                            Edit <Edit2 className="w-3 h-3" />
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenQuickImageModal(product)}
+                              className="text-xs font-bold text-zinc-900 flex items-center gap-1 bg-white border border-zinc-200 hover:bg-zinc-100 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Camera className="w-3 h-3 text-zinc-700" />
+                              <span>Photos</span>
+                            </button>
+                            <Link to={`/admin/products/${product.id}`} className="text-xs font-bold text-zinc-900 flex items-center gap-1 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-colors">
+                              Edit <Edit2 className="w-3 h-3" />
+                            </Link>
+                          </div>
                       </div>
                     </div>
                   );
@@ -1305,12 +1450,14 @@ export default function AdminProducts() {
 
                   {/* Preset Vendor Accounts */}
                   <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <span className="text-[11px] font-bold text-zinc-400">Popular Sourcing Accounts:</span>
+                    <span className="text-[11px] font-bold text-zinc-400">Target Instagram Stores:</span>
                     {[
-                      { handle: '@gadgethub_lagos', label: 'GadgetHub (Audio & Tech)' },
-                      { handle: '@alaba_direct_deals', label: 'Alaba Deals (Appliances)' },
-                      { handle: '@ikeja_phones_gadgets', label: 'Ikeja Gadgets (Smartphones)' },
-                      { handle: '@computer_village_refurb', label: 'CV Refurb (Certified Pre-Owned)' },
+                      { handle: 'https://www.instagram.com/gadgetzville', label: '📸 @gadgetzville (Tech & Audio)' },
+                      { handle: 'https://www.instagram.com/cybele_beautyshop', label: '📸 @cybele_beautyshop (Beauty Tech)' },
+                      { handle: 'https://www.instagram.com/moorestore.cong', label: '📸 @moorestore.cong (Appliances)' },
+                      { handle: 'https://www.instagram.com/delovette_store', label: '📸 @delovette_store (Lifestyle Tech)' },
+                      { handle: '@alaba_direct_deals', label: 'Alaba Wholesale Hub' },
+                      { handle: '@ikeja_phones_gadgets', label: 'Computer Village' },
                     ].map((acc, i) => (
                       <button
                         key={i}
@@ -1574,6 +1721,189 @@ export default function AdminProducts() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Quick Photo & Real Image Manager Modal */}
+      {quickImageProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-zinc-200 w-full max-w-2xl overflow-hidden animate-scale-up text-zinc-900">
+            {/* Header */}
+            <div className="p-6 bg-zinc-950 text-white flex items-center justify-between border-b border-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-300">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">Quick Photo Manager</h3>
+                  <p className="text-xs text-zinc-400 truncate max-w-md">{quickImageProduct.name}</p>
+                </div>
+              </div>
+              <button 
+                onClick={handleCloseQuickImageModal}
+                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+              
+              {/* Product Info Banner */}
+              <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs text-zinc-700">
+                <span className={`px-2 py-0.5 rounded-full font-black uppercase text-[10px] ${
+                  quickImageProduct.condition === 'used' ? 'bg-amber-100 text-amber-800' : 'bg-zinc-900 text-white'
+                }`}>
+                  {quickImageProduct.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                </span>
+                <span className="font-bold text-zinc-900 truncate">{quickImageProduct.name}</span>
+                <span className="ml-auto font-mono text-zinc-500 font-bold shrink-0">
+                  {formatPrice ? formatPrice(quickImageProduct.price || 0) : `₦${Number(quickImageProduct.price || 0).toLocaleString()}`}
+                </span>
+              </div>
+
+              {/* Status / Error / Success Alerts */}
+              {quickImageSuccess && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>{quickImageSuccess}</span>
+                </div>
+              )}
+              {quickImageError && (
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{quickImageError}</span>
+                </div>
+              )}
+
+              {/* Upload Actions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Device Upload */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  ref={quickFileInputRef}
+                  onChange={handleDeviceFileUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => quickFileInputRef.current?.click()}
+                  className="flex items-center justify-center gap-2.5 p-4 rounded-2xl border-2 border-dashed border-zinc-300 hover:border-zinc-900 bg-zinc-50 hover:bg-zinc-100 transition-all text-xs font-black cursor-pointer group"
+                >
+                  <UploadCloud className="w-5 h-5 text-zinc-700 group-hover:scale-110 transition-transform" />
+                  <span>Upload from Phone / Computer</span>
+                </button>
+
+                {/* Direct Link Input */}
+                <div className="flex gap-1.5 p-1.5 border border-zinc-200 rounded-2xl bg-zinc-50">
+                  <input
+                    type="url"
+                    value={newImageUrlInput}
+                    onChange={(e) => setNewImageUrlInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUrlImage(); }}}
+                    placeholder="Paste image URL (Instagram/Imgur)..."
+                    className="flex-1 bg-white px-3 py-2 rounded-xl text-xs border border-zinc-200 outline-none focus:border-zinc-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddUrlImage}
+                    className="px-3 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-zinc-800 shrink-0 cursor-pointer"
+                  >
+                    + Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Gallery Grid */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+                    Product Photos ({quickImagesList.length} total)
+                  </label>
+                  <span className="text-[11px] text-zinc-400">First image is PRIMARY storefront thumbnail</span>
+                </div>
+
+                {quickImagesList.length === 0 ? (
+                  <div className="p-8 border-2 border-dashed border-zinc-200 rounded-2xl text-center text-zinc-400 text-xs">
+                    No images added yet. Click "Upload from Phone / Computer" or paste an image link above.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {quickImagesList.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className={`group relative aspect-square rounded-2xl overflow-hidden border-2 bg-zinc-100 ${
+                          idx === 0 ? 'border-zinc-900 ring-2 ring-zinc-900/10' : 'border-zinc-200'
+                        }`}
+                      >
+                        <img src={imgUrl} alt={`Product angle ${idx + 1}`} className="w-full h-full object-cover" />
+                        
+                        {idx === 0 ? (
+                          <div className="absolute top-2 left-2 px-2 py-0.5 bg-zinc-900 text-white text-[9px] font-black tracking-wider rounded-md shadow-xs">
+                            PRIMARY
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimaryQuickImage(idx)}
+                            className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 hover:bg-black text-white text-[9px] font-bold rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            Set Main
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveQuickImage(idx)}
+                          className="absolute top-2 right-2 p-1.5 bg-rose-600/90 hover:bg-rose-700 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
+                          title="Remove image"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        <div className="absolute bottom-1.5 inset-x-1.5 text-center text-[9px] font-mono font-bold bg-black/60 text-white py-0.5 rounded backdrop-blur-2xs">
+                          {idx === 0 ? 'Front View' : idx === 1 ? 'Angle 2' : idx === 2 ? 'Details' : 'Packaging/Box'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleCloseQuickImageModal}
+                className="px-4 py-2.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSavingQuickImages || quickImagesList.length === 0}
+                onClick={handleSaveQuickImages}
+                className="flex items-center gap-2 px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isSavingQuickImages ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving Photos...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    Save & Update Live Store
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

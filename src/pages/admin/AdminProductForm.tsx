@@ -6,8 +6,10 @@ import { useStore } from '../../StoreContext';
 import { 
   ArrowLeft, Save, Image as ImageIcon, X, Plus, 
   Trash2, GripVertical, CheckCircle2, AlertTriangle, ExternalLink, 
-  Sparkles, RefreshCw, Box, Tag, Globe, Settings, Eye, Copy, Archive, ShieldCheck
+  Sparkles, RefreshCw, Box, Tag, Globe, Settings, Eye, Copy, Archive, ShieldCheck,
+  UploadCloud, Camera
 } from 'lucide-react';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function AdminProductForm() {
   const { id } = useParams();
@@ -218,9 +220,38 @@ export default function AdminProductForm() {
     }));
   };
 
+  const deviceFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleDeviceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file: File) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setFormData((prev: any) => {
+            const updatedImages = [...prev.images, result];
+            return {
+              ...prev,
+              images: updatedImages,
+              image: prev.image ? prev.image : result
+            };
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
+
   const addImageUrl = () => {
     const url = prompt('Enter image URL:');
-    if (url && url.startsWith('http')) {
+    if (url && (url.startsWith('http') || url.startsWith('data:image'))) {
       setFormData((prev: any) => ({
         ...prev,
         images: [...prev.images, url],
@@ -347,7 +378,7 @@ export default function AdminProductForm() {
   if (isLoading) {
     return (
       <div className="w-full h-96 flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-zinc-300 animate-spin" />
+        <LoadingSpinner size="lg" label="Loading product details..." />
       </div>
     );
   }
@@ -504,11 +535,38 @@ export default function AdminProductForm() {
                   </div>
                 ))}
                 
-                <button onClick={addImageUrl} className="aspect-square rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 flex flex-col items-center justify-center gap-2 hover:bg-zinc-100 hover:border-zinc-300 transition-all group">
-                  <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Plus className="w-5 h-5 text-zinc-500" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  ref={deviceFileInputRef}
+                  onChange={handleDeviceFileUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => deviceFileInputRef.current?.click()}
+                  className="aspect-square rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 flex flex-col items-center justify-center gap-1.5 hover:bg-zinc-100 hover:border-zinc-900 transition-all group cursor-pointer"
+                  title="Upload photos directly from your phone or computer gallery"
+                >
+                  <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <UploadCloud className="w-4 h-4 text-zinc-700" />
                   </div>
-                  <span className="text-xs font-bold text-zinc-500">Add Image</span>
+                  <span className="text-xs font-bold text-zinc-800 text-center">Upload Photo</span>
+                  <span className="text-[9px] text-zinc-400">From Phone / PC</span>
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={addImageUrl} 
+                  className="aspect-square rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 flex flex-col items-center justify-center gap-1.5 hover:bg-zinc-100 hover:border-zinc-300 transition-all group cursor-pointer"
+                  title="Paste direct image link"
+                >
+                  <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Plus className="w-4 h-4 text-zinc-500" />
+                  </div>
+                  <span className="text-xs font-bold text-zinc-600 text-center">Paste URL</span>
+                  <span className="text-[9px] text-zinc-400">Direct Link</span>
                 </button>
               </div>
             </div>
