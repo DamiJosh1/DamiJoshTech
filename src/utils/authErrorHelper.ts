@@ -7,29 +7,31 @@ export function formatFirebaseAuthError(err: any): string {
   const code = err.code || '';
   const message = err.message || '';
 
-  // Google sign in / popup specific error codes
-  if (code === 'auth/operation-not-allowed') {
-    return 'Google Sign-In is not yet enabled in your Firebase Console. Please go to Firebase Console > Authentication > Sign-in method, click Google, and switch it to "Enable".';
+  // Domain not authorized in Firebase Console
+  if (code === 'auth/unauthorized-domain') {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+    return `Security domain approval needed: "${hostname}" is not yet authorized in Firebase. Please add "${hostname}" and "vercel.app" in Firebase Console > Authentication > Settings > Authorized domains.`;
   }
 
-  if (code === 'auth/unauthorized-domain') {
-    return 'This web domain is not authorized in Firebase. Please add this domain or *.run.app to Firebase Console > Authentication > Settings > Authorized Domains.';
+  // Provider not enabled in Firebase Console
+  if (code === 'auth/operation-not-allowed') {
+    return 'This sign-in method is not enabled in Firebase Console. Please go to Firebase Console > Authentication > Sign-in method, click your provider (Google or Email/Password), and toggle "Enable".';
   }
 
   if (code === 'auth/popup-blocked') {
-    return 'The sign-in popup was blocked by your browser. Please allow popups for this site and try again, or click "Open in new tab".';
+    return 'The sign-in popup was blocked by your browser. Please allow popups for this site and try again.';
   }
 
   if (code === 'auth/popup-closed-by-user') {
-    return 'Sign-in was cancelled before completing.';
+    return 'Sign-in window was closed before completing.';
   }
 
   if (code === 'auth/cancelled-popup-request') {
-    return 'Sign-in popup was superseded by another operation.';
+    return 'Sign-in popup was cancelled by a new request.';
   }
 
   if (code === 'auth/account-exists-with-different-credential') {
-    return 'An account already exists with the same email address but different sign-in credentials. Sign in using the original method.';
+    return 'An account already exists with this email using a different sign-in method.';
   }
 
   if (code === 'auth/network-request-failed') {
@@ -37,8 +39,9 @@ export function formatFirebaseAuthError(err: any): string {
   }
 
   if (code === 'auth/invalid-api-key') {
-    return 'Invalid Firebase API key. Please check your Firebase project configuration.';
+    return 'Invalid Firebase API key. Please check your Firebase configuration.';
   }
 
-  return message || 'Authentication failed. Please check your network or try again.';
+  return message || 'Authentication failed. Please try again.';
 }
+

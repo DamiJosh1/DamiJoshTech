@@ -66,7 +66,7 @@ export default function SignUp() {
       if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered.');
       } else {
-        setError(err.message || 'Failed to create account.');
+        setError(formatFirebaseAuthError(err));
       }
     } finally {
       setLoading(false);

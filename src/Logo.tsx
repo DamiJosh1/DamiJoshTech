@@ -14,13 +14,14 @@ const FULL_LOGO_CANDIDATES = [
 ];
 
 const ICON_CANDIDATES = [
+  '/images/favicon.jpg',
+  '/favicon.jpg',
+  '/apple-touch-icon.png',
+  '/pwa-192x192.png',
   '/images/favicondami.ico',
   '/favicondami.ico',
   '/images/favicon.svg',
   '/favicon.svg',
-  '/images/favicon.png',
-  '/favicon.png',
-  '/apple-touch-icon.png',
   '/favicon.ico',
 ];
 

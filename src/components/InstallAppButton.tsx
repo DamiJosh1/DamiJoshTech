@@ -77,7 +77,7 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-zinc-100">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <img src="/pwa-192x192.png" alt="SAJODA" className="w-10 h-10 rounded-xl" />
+                <img src="/pwa-192x192.png" alt="SAJODA" className="w-10 h-10 rounded-xl object-contain border border-zinc-200/80 shadow-xs" />
                 <div>
                   <h3 className="font-extrabold text-zinc-900 text-base">Install on iPhone / iPad</h3>
                   <p className="text-xs text-zinc-500">Quick 2-step setup</p>

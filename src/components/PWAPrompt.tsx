@@ -78,16 +78,16 @@ export default function PWAPrompt() {
       {showBanner && !installedSuccess && (
         <div className="fixed bottom-[84px] md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-[420px] z-[90] bg-white border border-zinc-200/90 shadow-2xl rounded-2xl p-4 flex items-center justify-between animate-slide-up">
           <div className="flex items-center gap-3.5 pr-2">
-            <div className="w-12 h-12 bg-zinc-900 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+            <div className="w-12 h-12 bg-white border border-zinc-200/80 rounded-xl flex items-center justify-center shrink-0 shadow-xs overflow-hidden p-1">
               <img 
                 src="/pwa-192x192.png" 
                 alt="SAJODA" 
-                className="w-9 h-9 object-contain rounded-lg"
+                className="w-full h-full object-contain rounded-lg"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <Smartphone className="w-6 h-6 text-white hidden" />
+              <Smartphone className="w-6 h-6 text-zinc-900 hidden" />
             </div>
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wider text-zinc-900">
@@ -132,7 +132,7 @@ export default function PWAPrompt() {
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-zinc-100 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <img src="/pwa-192x192.png" alt="SAJODA" className="w-10 h-10 rounded-xl" />
+                <img src="/pwa-192x192.png" alt="SAJODA" className="w-10 h-10 rounded-xl object-contain border border-zinc-200/80 shadow-xs" />
                 <div>
                   <h3 className="font-extrabold text-zinc-900 text-base">Install on iPhone / iPad</h3>
                   <p className="text-xs text-zinc-500">Add to your home screen</p>

@@ -38,7 +38,7 @@ export default function Login() {
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
         setError('Invalid email or password.');
       } else {
-        setError(err.message || 'Failed to login.');
+        setError(formatFirebaseAuthError(err));
       }
     } finally {
       setLoading(false);
