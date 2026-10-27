@@ -167,8 +167,8 @@ export default function SignUp() {
         </div>
 
         <div className="w-full max-w-md mx-auto mt-16 lg:mt-0 animate-fade-in-up pb-12">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 mb-2">Create Account</h1>
-          <p className="text-zinc-500 font-medium mb-6">Join SAJODA to start shopping.</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 mb-6">Create Account</h1>
+          <p className="text-zinc-500 font-medium mb-6">Join SAJODA Electronics to start shopping.</p>
           
           {error && (
             <div className="mb-6 p-4 bg-error/10 text-error rounded-xl flex items-start gap-3 text-sm font-semibold">
@@ -321,7 +321,7 @@ export default function SignUp() {
         </div>
         
         <div className="relative z-10 max-w-lg p-12 text-center animate-slide-up">
-          <h2 className="text-4xl font-black tracking-tight mb-6 leading-tight">Welcome to SAJODA.</h2>
+          <h2 className="text-4xl font-black tracking-tight mb-6 leading-tight">Welcome to SAJODA Electronics.</h2>
           <p className="text-lg text-zinc-400 font-medium">Create an account to track orders, manage preferences, and get personalized offers.</p>
         </div>
       </div>
