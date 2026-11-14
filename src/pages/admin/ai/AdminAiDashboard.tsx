@@ -42,17 +42,31 @@ export default function AdminAiDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white">
-              Admin: DamiJosh
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-pink-800">
-              TikTok & Insta Viral Scout Active
-            </span>
+        <div className="flex items-center gap-4">
+          {/* DamiJosh Avatar / Photo */}
+          <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm p-0.5">
+            <img 
+              src="/images/damijosh.jpg" 
+              alt="DamiJosh" 
+              className="w-full h-full object-cover rounded-xl"
+              onError={(e) => {
+                // If custom damijosh.jpg not yet provided, fallback to the store favicon emblem
+                (e.target as HTMLImageElement).src = '/images/favicon.jpg';
+              }}
+            />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900">SAJODA AI COMMAND CENTER</h1>
-          <p className="text-zinc-500">Welcome DamiJosh. Your smart operations layer for catalog sourcing, separate condition cards, domestic logistics, and viral growth.</p>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white">
+                Admin: DamiJosh
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-pink-800">
+                TikTok & Insta Viral Scout Active
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold text-zinc-900">SAJODA AI COMMAND CENTER</h1>
+            <p className="text-zinc-500">Welcome DamiJosh. Your smart operations layer for catalog sourcing, separate condition cards, domestic logistics, and viral growth.</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-zinc-200 rounded-lg">

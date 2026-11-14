@@ -32,6 +32,49 @@
       "logo": "https://sajodaelectronics.com/favicon.svg"
     }
     </script>
+    <script>
+      (function() {
+        var isExtensionError = function(msg, stack, filename) {
+          var combined = (msg || '') + ' ' + (stack || '') + ' ' + (filename || '');
+          return (
+            combined.indexOf('chrome-extension://') !== -1 ||
+            combined.indexOf('moz-extension://') !== -1 ||
+            combined.indexOf('safari-extension://') !== -1 ||
+            combined.indexOf('Failed to connect to MetaMask') !== -1 ||
+            combined.indexOf('inpage.js') !== -1
+          );
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event && event.reason;
+          var msg = (reason && reason.message) ? reason.message : String(reason || '');
+          var stack = (reason && reason.stack) ? reason.stack : '';
+          if (isExtensionError(msg, stack, '')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+        window.addEventListener('error', function(event) {
+          var msg = (event && event.message) || (event && event.error && event.error.message) || '';
+          var stack = (event && event.error && event.error.stack) || '';
+          var filename = (event && event.filename) || '';
+          if (isExtensionError(msg, stack, filename)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+
+        try {
+          var config = JSON.parse(localStorage.getItem('sajoda_monetization_config') || '{}');
+          if (config && config.enabled && config.googleAdSenseId) {
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(config.googleAdSenseId);
+            s.crossOrigin = 'anonymous';
+            document.head.appendChild(s);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="font-sans text-body-text bg-light-bg">
     <div id="root">

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { 
   Package, Search, Filter, Eye, Edit2, Trash2, Plus, Download, 
   RefreshCw, MoreVertical, Archive, Box, TrendingUp, AlertTriangle, Image as ImageIcon, FolderGit2,
   Sparkles, CheckCircle2, Loader2, Wand2, X, Zap, Share2, DollarSign, Layers,
-  Users, CheckSquare, Square, Camera, UploadCloud, Check
+  Users, CheckSquare, Square, Camera, UploadCloud, Check, HelpCircle, MapPin, Building2, ExternalLink
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../StoreContext';
@@ -41,6 +41,12 @@ export default function AdminProducts() {
   const [aiStatusMsg, setAiStatusMsg] = useState('');
   const [aiSuccessResult, setAiSuccessResult] = useState<string | null>(null);
   const [isSeedingDefaults, setIsSeedingDefaults] = useState(false);
+  const [isRefreshingBrands, setIsRefreshingBrands] = useState(false);
+  const [showSourcingGuide, setShowSourcingGuide] = useState(false);
+  const [brandRefreshNotice, setBrandRefreshNotice] = useState<string | null>(null);
+  const [isTriggeringAutoDrop, setIsTriggeringAutoDrop] = useState(false);
+  const [autoDropStatus, setAutoDropStatus] = useState<any>(null);
+  const [autoDropNotice, setAutoDropNotice] = useState<string | null>(null);
 
   // TikTok, Instagram & Seller Account Viral Scout State
   const [showScoutModal, setShowScoutModal] = useState(false);
@@ -356,7 +362,8 @@ export default function AdminProducts() {
       });
 
       if (!res.ok) {
-        throw new Error(`Server returned HTTP ${res.status}`);
+        const errorJson = await res.json().catch(() => null);
+        throw new Error(errorJson?.error || `Server error (${res.status})`);
       }
 
       const data = await res.json();
@@ -381,12 +388,12 @@ export default function AdminProducts() {
         addedCount++;
       }
 
-      setAiSuccessResult(`Successfully generated and uploaded ${addedCount} products to your store!`);
+      setAiSuccessResult(`✨ Successfully uploaded ${addedCount} products to your store catalog!`);
       setIsAiGenerating(false);
       setAiStatusMsg('');
     } catch (err: any) {
       console.error('AI Product Upload Error:', err);
-      setAiStatusMsg(`Error: ${err.message || 'Failed to generate products'}`);
+      setAiStatusMsg(`Upload notice: ${err.message || 'Please try again'}`);
       setIsAiGenerating(false);
     }
   };
@@ -406,12 +413,126 @@ export default function AdminProducts() {
         }, { merge: true });
         count++;
       }
-      alert(`Successfully seeded ${count} premier Home Appliances, Latest Gadgets, and Electronics to Firestore!`);
+      setBrandRefreshNotice(`✨ Successfully seeded ${count} authentic branded products (Samsung, Hisense, LG, Apple, Haier, Oraimo, Century, Silver Crest) to live database!`);
+      setTimeout(() => setBrandRefreshNotice(null), 8000);
     } catch (err: any) {
       console.error('Seed error:', err);
       alert('Error seeding products: ' + err.message);
     } finally {
       setIsSeedingDefaults(false);
+    }
+  };
+
+  const handleTriggerAutoDrop = async () => {
+    if (!window.confirm("Trigger 24-Hour Autonomous AI Product Drop now?\\n\\nThis will refresh your catalog with 30 trending authentic products (Samsung, Apple, Sony, JBL, Hisense, Ninja, Oraimo, Anker, Binatone, etc.), each equipped with:\\n• 4 EXACT multi-angle product photos\\n• ₦10,000+ Owner Profit Markup\\n• Verified Sourcing Hub (Alaba / Computer Village)\\n• Sealed Carton or Tokunbo Tested Working Fine tags.\\n\\nProceed?")) {
+      return;
+    }
+
+    setIsTriggeringAutoDrop(true);
+    setAutoDropNotice(null);
+
+    try {
+      const res = await fetch('/api/ai/trigger-24h-autodrop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'replace' })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data?.error || 'Failed to trigger 24h product drop');
+      }
+      setAutoDropNotice(`⚡ 24-Hour AI Engine successfully dropped ${data.count || 30} trending products with 4 exact photos each!`);
+      setAutoDropStatus(data.status);
+      setTimeout(() => setAutoDropNotice(null), 9000);
+      handleRefresh();
+    } catch (err: any) {
+      console.error('Trigger 24h drop error:', err);
+      alert('Error triggering 24h drop: ' + err.message);
+    } finally {
+      setIsTriggeringAutoDrop(false);
+    }
+  };
+
+  const handleWipeAllProducts = async () => {
+    if (!window.confirm(`⚠️ Remove all ${products.length} products from your store database so you can input fresh items?`)) return;
+    try {
+      const res = await fetch('/api/products/clear-all', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Failed to clear products');
+      setBrandRefreshNotice(`✨ All ${data.deletedCount || products.length} products have been removed from your store database.`);
+      setTimeout(() => setBrandRefreshNotice(null), 8000);
+      handleRefresh();
+    } catch (err: any) {
+      alert('Error clearing products: ' + err.message);
+    }
+  };
+
+  const handleRefreshToRealBrands = async () => {
+    if (!window.confirm("Switch store catalog to 100% Real, Globally Known Brands?\n\nThis will remove any confusing 'Sajoda' placeholder items and replace them with Samsung (Smart TVs), Hisense (4K TVs & Fridges), LG (AI NanoCell TVs), Apple (iPhones), Haier Thermocool (Deep Freezers), Oraimo (Earbuds & Powerbanks), Silver Crest (Heavy-Duty Blenders), Century (Rechargeable Fans), and Sony (Headphones).\n\nDo you want to proceed?")) {
+      return;
+    }
+
+    setIsRefreshingBrands(true);
+    setBrandRefreshNotice(null);
+
+    try {
+      // 1. Delete legacy dummy sajoda items
+      const legacyMockIds = [
+        'sajoda-vortex-robot-vacuum',
+        'sajoda-vortex-robot-vacuum-used',
+        'sajoda-airfry-touch-6l',
+        'sajoda-baristacraft-espresso-used',
+        'sajoda-pureair-purifier-used',
+        'sajoda-quantum-smartwatch',
+        'sajoda-quantum-smartwatch-used',
+        'sajoda-magpulse-charging-hub',
+        'sajoda-aerogimbal-drone-used',
+        'sajoda-lumina-smart-lamp-used',
+        'sajoda-cinebeam-projector',
+        'sajoda-cinebeam-projector-used',
+        'sajoda-soundsphere-anc-headphones',
+        'sajoda-studiobar-soundbar-used',
+        'sajoda-horizonview-monitor-used'
+      ];
+
+      for (const id of legacyMockIds) {
+        try {
+          await deleteDoc(doc(db, 'products', id));
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Also clean up any products in current list whose ID starts with "sajoda-" or name starts with "Sajoda "
+      for (const p of products) {
+        if (p.id && (p.id.startsWith('sajoda-') || (p.name && typeof p.name === 'string' && p.name.startsWith('Sajoda ')))) {
+          try {
+            await deleteDoc(doc(db, 'products', p.id));
+          } catch (e) {}
+        }
+      }
+
+      // 2. Seed all 17 authentic INITIAL_PRODUCTS (Samsung, Hisense, LG, Apple, Haier, etc.)
+      let added = 0;
+      for (const prod of INITIAL_PRODUCTS) {
+        await setDoc(doc(db, 'products', prod.id), {
+          ...prod,
+          status: 'active',
+          inStock: true,
+          inventory: prod.stockCount || 30,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        added++;
+      }
+
+      setBrandRefreshNotice(`🎉 Success! Your store now features ${added} authentic global products from Samsung, Hisense, LG, Apple, Haier Thermocool, Oraimo, Century, Silver Crest, Sony, and JBL.`);
+      setTimeout(() => setBrandRefreshNotice(null), 10000);
+    } catch (err: any) {
+      console.error('Error refreshing brands:', err);
+      alert('Error refreshing brands: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsRefreshingBrands(false);
     }
   };
 
@@ -445,6 +566,14 @@ export default function AdminProducts() {
 
   useEffect(() => {
     const unsub = fetchProducts();
+    fetch('/api/ai/autodrop-status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.status) {
+          setAutoDropStatus(data.status);
+        }
+      })
+      .catch(() => {});
     return () => unsub();
   }, []);
 
@@ -463,7 +592,7 @@ export default function AdminProducts() {
       
     if (activeTab === 'All') return matchesSearch;
     if (activeTab === 'Brand New') return matchesSearch && (product.condition === 'new' || (!product.condition && !product.id.includes('used')));
-    if (activeTab === 'Pre-Owned') return matchesSearch && (product.condition === 'used' || product.id.includes('used'));
+    if (activeTab === 'Tokunbo / Fairly Used' || (activeTab as string) === 'Tokunbo') return matchesSearch && (product.condition === 'used' || product.id.includes('used'));
     if (activeTab === 'Active') return matchesSearch && product.status === 'active';
     if (activeTab === 'Draft') return matchesSearch && product.status === 'draft';
     if (activeTab === 'Out of Stock') return matchesSearch && (product.status === 'out_of_stock' || (product.inventory !== undefined && product.inventory <= 0));
@@ -528,21 +657,33 @@ export default function AdminProducts() {
           >
             <TrendingUp className="w-4 h-4 text-white" /> TikTok & Insta Viral Scout
           </button>
+          <Link 
+            to="/admin/ai/tiktok-sync"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-rose-600 to-purple-600 hover:opacity-95 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-rose-500/20 whitespace-nowrap cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" /> TikTok Auto-Sync & AI Finisher
+          </Link>
+          <Link 
+            to="/admin/ai/products"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-95 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-purple-500/20 whitespace-nowrap cursor-pointer"
+          >
+            <Wand2 className="w-4 h-4 text-amber-300" /> AI Product Studio (Custom Prompt & Pricing)
+          </Link>
           <button 
             onClick={() => setShowAiModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-purple-500/20 whitespace-nowrap cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-amber-300" /> AI Auto-Upload Products
+            <Sparkles className="w-4 h-4 text-amber-300" /> Quick AI Batch Upload
           </button>
-          <button 
-            onClick={handleSeedDefaults}
-            disabled={isSeedingDefaults}
-            className="flex items-center gap-2 px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-sm font-bold transition-all whitespace-nowrap cursor-pointer"
-            title="Seed 10 Premier Appliances & Gadgets directly to Firestore"
-          >
-            {isSeedingDefaults ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-500" />}
-            Seed 10 Defaults
-          </button>
+          {products.length > 0 && (
+            <button 
+              onClick={handleWipeAllProducts}
+              className="flex items-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 rounded-xl text-sm font-bold transition-all whitespace-nowrap cursor-pointer"
+              title="Remove all products from store database"
+            >
+              <Trash2 className="w-4 h-4 text-rose-600" /> Wipe Catalog ({products.length})
+            </button>
+          )}
           <Link 
             to="/admin/drive-import"
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
@@ -575,6 +716,115 @@ export default function AdminProducts() {
             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{stat.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Auto-Drop Notice Alert */}
+      {autoDropNotice && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex items-center gap-3 animate-fade-in shadow-xs">
+          <Zap className="w-5 h-5 text-amber-600 fill-amber-500 shrink-0" />
+          <p className="text-sm font-bold flex-1">{autoDropNotice}</p>
+          <button onClick={() => setAutoDropNotice(null)} className="p-1 hover:bg-amber-100 rounded-lg text-amber-800 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Brand Refresh Notice Alert */}
+      {brandRefreshNotice && (
+        <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3 animate-fade-in shadow-xs">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          <p className="text-sm font-bold flex-1">{brandRefreshNotice}</p>
+          <button onClick={() => setBrandRefreshNotice(null)} className="p-1 hover:bg-emerald-100 rounded-lg text-emerald-700 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* 24-Hour AI Autonomous Drop Engine Banner */}
+      <div className="mb-6 p-5 rounded-3xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 text-white border border-amber-500/30 shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-6 -mr-6 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative z-10">
+          <div className="space-y-2 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                24-Hour Autonomous AI Catalog Drop
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300 border border-zinc-700">
+                Active Cycle: 30 Products / 24 Hours
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                📸 Exactly 4 Multi-Angle Photos Per Item
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                💰 ₦10,000+ Profit Markup Added
+              </span>
+            </div>
+            <h2 className="text-lg md:text-xl font-black tracking-tight text-white flex items-center gap-2">
+              Every 24 hours, your AI curates and inputs 30 trending products with 4 exact photos & ₦10,000+ profit margin.
+            </h2>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Eliminates fake names, random photos, and manual calculating. Your AI automatically inspects authentic Nigerian distribution hubs (<strong className="text-white">Alaba International Market</strong> & <strong className="text-white">Computer Village Ikeja</strong>), selects 30 fast-moving models from <span className="text-amber-300 font-bold">Samsung, Apple, Sony, JBL, Hisense, Ninja, Oraimo, Anker, Binatone & QASA</span>, attaches 4 exact verified images (Front, Angle, Ports, and Sealed Box), and calculates your guaranteed ₦10,000–₦70,000 profit margin.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full lg:w-auto">
+            <button
+              onClick={handleTriggerAutoDrop}
+              disabled={isTriggeringAutoDrop}
+              className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-zinc-950 font-black rounded-2xl text-xs shadow-md transition-all cursor-pointer whitespace-nowrap tracking-wide"
+            >
+              {isTriggeringAutoDrop ? <RefreshCw className="w-4 h-4 animate-spin text-zinc-950" /> : <Zap className="w-4 h-4 fill-zinc-950" />}
+              Trigger 24h Drop Now (30 Products)
+            </button>
+            <div className="px-4 py-2.5 rounded-2xl bg-zinc-900 border border-zinc-800 text-center sm:text-left">
+              <div className="text-[10px] uppercase font-bold text-zinc-400">Automated Schedule</div>
+              <div className="text-xs font-black text-emerald-400">
+                Active Every 24h
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Merchant Guidance Card: You Do NOT Need To Own Products */}
+      <div className="mb-6 p-5 rounded-3xl bg-gradient-to-r from-blue-900 via-indigo-900 to-zinc-900 text-white border border-blue-800 shadow-md">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          <div className="space-y-2 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/30 text-blue-200 border border-blue-400/30">
+                💡 Sourcing & Brand Clarification for DamiJosh
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                You Do NOT Own or Make Any Products
+              </span>
+            </div>
+            <h2 className="text-lg md:text-xl font-black tracking-tight text-white flex items-center gap-2">
+              SAJODA is your retail store — you sell authentic global brands like Samsung, Hisense, Apple & LG.
+            </h2>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Just like <strong className="text-white">Jumia</strong>, <strong className="text-white">Konga</strong>, or <strong className="text-white">Slot</strong>, you are the merchant/distributor. You sell products that customers already know, search for, and trust every day: <span className="text-amber-200 font-bold">Samsung 4K TVs, Hisense Smart TVs & Refrigerators, LG NanoCell TVs, Haier Thermocool Freezers, Apple iPhones, Oraimo Earbuds & Powerbanks, Century Rechargeable Fans, Silver Crest Industrial Blenders, and Sony Headphones</span>. You buy them at wholesale in Lagos and keep the ₦10,000–₦130,000 profit margin on each sale.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={handleRefreshToRealBrands}
+              disabled={isRefreshingBrands}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer whitespace-nowrap"
+            >
+              {isRefreshingBrands ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              One-Click Brand Refresh
+            </button>
+            <button
+              onClick={() => setShowSourcingGuide(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
+            >
+              <HelpCircle className="w-4 h-4 text-blue-300" />
+              Sourcing Guide (Where To Buy)
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Private Wholesale & Profit Intelligence Banner for Owner */}
@@ -619,7 +869,7 @@ export default function AdminProducts() {
         <div className="p-4 border-b border-zinc-100 flex flex-col md:flex-row gap-4 items-center justify-between bg-zinc-50/50">
           
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto snap-x hide-scrollbar">
-            {['All', 'Brand New', 'Pre-Owned', 'Active', 'Draft', 'Out of Stock', 'Archived'].map((tab) => (
+            {['All', 'Brand New', 'Tokunbo / Fairly Used', 'Active', 'Draft', 'Out of Stock', 'Archived'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setPage(1); }}
@@ -710,7 +960,7 @@ export default function AdminProducts() {
                                     ? 'bg-zinc-100 text-zinc-800 border border-zinc-200'
                                     : 'bg-zinc-900 text-white'
                                 }`}>
-                                  {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                                  {product.condition === 'used' ? 'Tokunbo' : 'Brand New'}
                                 </span>
                                 {product.usedPrice && product.newPrice && (
                                   <span className="text-[9px] font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">Dual Price</span>
@@ -822,7 +1072,7 @@ export default function AdminProducts() {
                                 ? 'bg-zinc-100 text-zinc-800 border border-zinc-200'
                                 : 'bg-zinc-900 text-white'
                             }`}>
-                              {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                              {product.condition === 'used' ? 'Tokunbo' : 'Brand New'}
                             </span>
                             <span className="text-[9px] font-semibold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded truncate max-w-[120px]">
                               {hubName}
@@ -1069,9 +1319,9 @@ export default function AdminProducts() {
                       onChange={(e: any) => setAiCondition(e.target.value)}
                       className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-900"
                     >
-                      <option value="both">Both New & Pre-Owned</option>
+                      <option value="both">Both New & Tokunbo (Fairly Used)</option>
                       <option value="new">Brand New Only</option>
-                      <option value="used">Pre-Owned / Refurbished</option>
+                      <option value="used">Tokunbo / Fairly Used Only</option>
                     </select>
                   </div>
 
@@ -1261,7 +1511,7 @@ export default function AdminProducts() {
                         }`}
                       >
                         <div className="font-bold text-xs flex items-center gap-1.5">
-                          <span>🛡️ Certified Pre-Owned</span>
+                          <span>🛡️ Tokunbo / Fairly Used</span>
                         </div>
                         <p className="text-[11px] text-zinc-500 mt-0.5">100% tested working fine</p>
                       </button>
@@ -1322,7 +1572,7 @@ export default function AdminProducts() {
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Product Ready for Publish
                       </span>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-zinc-200 text-zinc-800">
-                        {scoutedProduct.condition === 'used' ? 'Pre-Owned Card' : 'Brand New Card'}
+                        {scoutedProduct.condition === 'used' ? 'Tokunbo Card' : 'Brand New Card'}
                       </span>
                     </div>
 
@@ -1506,7 +1756,7 @@ export default function AdminProducts() {
                         {[
                           { val: 'both', label: 'Both' },
                           { val: 'new', label: 'New Only' },
-                          { val: 'used', label: 'Pre-Owned' },
+                          { val: 'used', label: 'Tokunbo' },
                         ].map((c) => (
                           <button
                             key={c.val}
@@ -1650,7 +1900,7 @@ export default function AdminProducts() {
                                     ? 'bg-amber-100 text-amber-800'
                                     : 'bg-emerald-100 text-emerald-800'
                                 }`}>
-                                  {item.condition === 'used' ? '🛡️ Pre-Owned' : '📦 Brand New'}
+                                  {item.condition === 'used' ? '🛡️ Tokunbo' : '📦 Brand New'}
                                 </span>
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-600">
                                   {item.category}
@@ -1756,7 +2006,7 @@ export default function AdminProducts() {
                 <span className={`px-2 py-0.5 rounded-full font-black uppercase text-[10px] ${
                   quickImageProduct.condition === 'used' ? 'bg-amber-100 text-amber-800' : 'bg-zinc-900 text-white'
                 }`}>
-                  {quickImageProduct.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                  {quickImageProduct.condition === 'used' ? 'Tokunbo' : 'Brand New'}
                 </span>
                 <span className="font-bold text-zinc-900 truncate">{quickImageProduct.name}</span>
                 <span className="ml-auto font-mono text-zinc-500 font-bold shrink-0">
@@ -1902,6 +2152,158 @@ export default function AdminProducts() {
                     Save & Update Live Store
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wholesale Sourcing & Brand Guide Modal */}
+      {showSourcingGuide && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-zinc-200">
+            {/* Header */}
+            <div className="p-6 bg-gradient-to-r from-blue-900 via-indigo-900 to-zinc-900 text-white rounded-t-3xl relative">
+              <button
+                onClick={() => setShowSourcingGuide(false)}
+                className="absolute top-5 right-5 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/30 text-blue-200 border border-blue-400/30">
+                  Business & Sourcing Guide
+                </span>
+                <span className="text-xs text-amber-300 font-bold">100% Genuine Brands</span>
+              </div>
+              <h2 className="text-2xl font-black tracking-tight text-white">
+                How Sourcing & Real Brands Work on SAJODA
+              </h2>
+              <p className="text-xs text-zinc-300 mt-1 max-w-xl">
+                A simple, stress-free guide for DamiJosh. You never need to invent, manufacture, or label products as "Sajoda".
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 text-zinc-800 text-sm">
+              
+              {/* Concept 1: The Store vs The Brand */}
+              <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 font-black text-lg">
+                  1
+                </div>
+                <div>
+                  <h3 className="font-black text-blue-950 text-base mb-1">
+                    SAJODA is Your Store Name (Just like Jumia, Konga, or Slot)
+                  </h3>
+                  <p className="text-xs text-blue-900 leading-relaxed">
+                    Jumia does not make TVs. Slot does not make iPhones. They are <strong>retail stores</strong> that sell authentic global brands that people already trust. 
+                    Your website is <strong>SAJODA ELECTRONICS</strong>, and you sell <strong>Samsung, Hisense, LG, Apple, Haier Thermocool, Oraimo, Century, and Silver Crest</strong>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Concept 2: The Two Sourcing Hubs in Lagos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Alaba Hub */}
+                <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-indigo-600" />
+                    <h4 className="font-black text-zinc-900">Alaba International Market (Ojo, Lagos)</h4>
+                  </div>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    The largest electronics market in West Africa. This is where you source:
+                  </p>
+                  <ul className="text-xs text-zinc-700 space-y-1.5 list-disc list-inside">
+                    <li><strong>Samsung & Hisense TVs</strong> (43", 55", 65" 4K Smart TVs)</li>
+                    <li><strong>Haier Thermocool Freezers</strong> (200L Inverter Chest Freezers)</li>
+                    <li><strong>Silver Crest Blenders</strong> (4500W Heavy-Duty commercial blenders)</li>
+                    <li><strong>Century Fans</strong> (16" Rechargeable fans with remotes)</li>
+                    <li><strong>Binatone Kettles & Irons</strong></li>
+                  </ul>
+                  <div className="p-2.5 rounded-xl bg-white border border-zinc-200 text-[11px] text-zinc-600">
+                    💡 <em>You pay wholesale cost (e.g. ₦470,000 for Samsung 55"), customer pays ₦540,000. You keep ₦70,000 pure profit!</em>
+                  </div>
+                </div>
+
+                {/* Computer Village Hub */}
+                <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-emerald-600" />
+                    <h4 className="font-black text-zinc-900">Computer Village (Ikeja, Lagos)</h4>
+                  </div>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    The biggest technology & smartphone market in Africa (Otigba, Medical Rd, Pepple St).
+                  </p>
+                  <ul className="text-xs text-zinc-700 space-y-1.5 list-disc list-inside">
+                    <li><strong>Apple iPhones</strong> (Brand New Sealed & Tokunbo 100% Tested)</li>
+                    <li><strong>Samsung Galaxy Phones</strong> (S24 Ultra, A-Series)</li>
+                    <li><strong>Oraimo Accessories</strong> (FreePods 4 ANC, 30,000mAh Power Banks)</li>
+                    <li><strong>Anker GaN Fast Chargers</strong> & high-speed cables</li>
+                    <li><strong>Sony Headphones & JBL Speakers</strong></li>
+                  </ul>
+                  <div className="p-2.5 rounded-xl bg-white border border-zinc-200 text-[11px] text-zinc-600">
+                    💡 <em>You pay wholesale (e.g. ₦26,000 for Oraimo FreePods), customer pays ₦36,000. You keep ₦10,000 profit!</em>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Concept 3: Order Fulfillment Step-by-Step */}
+              <div className="p-5 rounded-2xl border border-zinc-200 bg-white space-y-3">
+                <h4 className="font-black text-zinc-900 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  How An Order Works (From Sale to Cash In Hand)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                    <div className="font-black text-zinc-900 mb-1">Step 1: Order</div>
+                    <p className="text-zinc-600 text-[11px]">Customer orders Samsung TV or iPhone on your site.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                    <div className="font-black text-zinc-900 mb-1">Step 2: Payment</div>
+                    <p className="text-zinc-600 text-[11px]">Customer pays online via Paystack/Flutterwave or selects Pay on Delivery.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                    <div className="font-black text-zinc-900 mb-1">Step 3: Sourcing</div>
+                    <p className="text-zinc-600 text-[11px]">You message your vendor in Alaba or Ikeja, pay wholesale cost.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <div className="font-black text-emerald-900 mb-1">Step 4: Delivery & Profit</div>
+                    <p className="text-emerald-800 text-[11px]">Dispatch rider delivers sealed unit. You pocket the margin!</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Concept 4: Real Images Already Provided */}
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="font-black text-amber-950 text-xs uppercase tracking-wider">
+                    📸 Real High-Definition Photos Included
+                  </h4>
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    You don't even need to take photos yourself! Every product in your catalog has 4 genuine multi-angle photos showing the screen, sides, details, and sealed manufacturer carton.
+                  </p>
+                </div>
+                <button
+                  onClick={handleRefreshToRealBrands}
+                  disabled={isRefreshingBrands}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shrink-0 transition-colors cursor-pointer shadow-md"
+                >
+                  {isRefreshingBrands ? 'Refreshing...' : 'Sync Real Brands'}
+                </button>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-zinc-50 border-t border-zinc-200 flex justify-end">
+              <button
+                onClick={() => setShowSourcingGuide(false)}
+                className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black rounded-xl transition-colors cursor-pointer"
+              >
+                Got It, Thanks!
               </button>
             </div>
           </div>

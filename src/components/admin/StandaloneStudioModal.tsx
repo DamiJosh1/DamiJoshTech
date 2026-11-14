@@ -259,8 +259,15 @@ export default function App() {
   if (!user || user.email !== 'damijosh12@gmail.com') {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 text-white text-center">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 shadow-xl">
-          <span className="text-2xl font-black">⚡</span>
+        <div className="w-20 h-20 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 shadow-2xl p-1.5 overflow-hidden">
+          <img 
+            src="/images/damijosh.jpg" 
+            alt="DamiJosh" 
+            className="w-full h-full object-cover rounded-2xl"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/images/favicon.jpg';
+            }}
+          />
         </div>
         <h1 className="text-3xl font-black tracking-tight mb-2">SAJODA ADMIN STUDIO</h1>
         <p className="text-zinc-400 text-sm max-w-md mb-8">
@@ -325,7 +332,7 @@ export default function App() {
                 <img src={p.image || p.images?.[0]} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-zinc-800" />
                 <div>
                   <h4 className="font-bold text-sm text-white line-clamp-1">{p.name}</h4>
-                  <span className="text-xs font-mono text-zinc-400">₦{Number(p.price || 0).toLocaleString()} • {p.condition === 'used' ? 'Pre-Owned' : 'Brand New'}</span>
+                  <span className="text-xs font-mono text-zinc-400">₦{Number(p.price || 0).toLocaleString()} • {p.condition === 'used' ? 'Tokunbo' : 'Brand New'}</span>
                 </div>
               </div>
               <div className="text-right">

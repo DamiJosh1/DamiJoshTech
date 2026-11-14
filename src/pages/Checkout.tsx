@@ -6,18 +6,92 @@ import { ShieldCheck, ArrowRight, Lock, CheckCircle2, ChevronRight, Check, Credi
 import { collection, addDoc, serverTimestamp, updateDoc, doc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 
+export const NIGERIA_DELIVERY_ZONES = [
+  {
+    id: 'lagos-mainland',
+    name: 'Lagos Mainland (Ikeja, Surulere, Yaba, Gbagada, Maryland, Festac)',
+    state: 'Lagos',
+    city: 'Mainland',
+    standardFee: 2500,
+    expressFee: 4000,
+    etaStandard: 'Same-Day / Next-Day Dispatch Rider',
+    etaExpress: 'Priority 3-Hour Direct Express Rider'
+  },
+  {
+    id: 'lagos-island',
+    name: 'Lagos Island (Victoria Island, Ikoyi, Lekki Phase 1)',
+    state: 'Lagos',
+    city: 'Island',
+    standardFee: 3500,
+    expressFee: 5000,
+    etaStandard: 'Same-Day / Next-Day Dispatch Rider',
+    etaExpress: 'Priority Direct Island Rider'
+  },
+  {
+    id: 'lagos-far-island',
+    name: 'Lagos Island Extended (Ajah, Sangotedo, Awoyaya, Lakowe, Epe)',
+    state: 'Lagos',
+    city: 'Ajah / Epe Axis',
+    standardFee: 4500,
+    expressFee: 6000,
+    etaStandard: 'Dedicated Express Dispatch Rider (24 Hours)',
+    etaExpress: 'Same-Day Direct Delivery'
+  },
+  {
+    id: 'lagos-outskirts',
+    name: 'Lagos Outskirts (Ikorodu, Badagry, Alagbado, Ibeju-Lekki)',
+    state: 'Lagos',
+    city: 'Outskirts',
+    standardFee: 5000,
+    expressFee: 6500,
+    etaStandard: 'Express Outskirts Dispatch Rider (24-48 Hours)',
+    etaExpress: 'Dedicated Outskirts Courier'
+  },
+  {
+    id: 'abuja-fct',
+    name: 'Abuja FCT (Central, Wuse, Garki, Maitama, Gwarinpa, Asokoro)',
+    state: 'Abuja (FCT)',
+    city: 'Abuja',
+    standardFee: 6500,
+    expressFee: 8500,
+    etaStandard: 'Interstate Air Waybill / Doorstep Delivery (24-48 Hours)',
+    etaExpress: 'Priority Next-Morning Flight Delivery'
+  },
+  {
+    id: 'interstate-major',
+    name: 'Major States (Ibadan, Port Harcourt, Benin, Kano, Enugu, Abeokuta)',
+    state: 'Interstate',
+    city: 'Major State Capital',
+    standardFee: 7500,
+    expressFee: 9500,
+    etaStandard: 'Commercial Park Waybill / Doorstep Courier (48 Hours)',
+    etaExpress: 'Express Priority Cargo'
+  },
+  {
+    id: 'interstate-nationwide',
+    name: 'Other States Nationwide (Any Destination Across Nigeria)',
+    state: 'Nationwide',
+    city: 'Doorstep Courier',
+    standardFee: 8500,
+    expressFee: 11000,
+    etaStandard: 'Nationwide Doorstep Delivery (2-4 Business Days)',
+    etaExpress: 'Express Courier'
+  }
+];
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { cartItems, cartTotal, cartDiscount, activeCoupon, user, clearCart, formatPrice, countries, shippingMethods, taxRules, activeCountry, activeCurrency } = useStore();
   
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [deliveryZoneId, setDeliveryZoneId] = useState('lagos-mainland');
   const [contactData, setContactData] = useState({ email: user?.email || '', phone: '' });
   const [shippingData, setShippingData] = useState({
     firstName: '', lastName: '', address: '', apartment: '',
-    city: '', state: '', zip: '', country: activeCountry?.code || 'US'
+    city: 'Ikeja', state: 'Lagos', zip: '', country: 'NG'
   });
-  const [shippingMethod, setShippingMethod] = useState('standard');
+  const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [paymentData, setPaymentData] = useState({ cardNumber: '', expiry: '', cvc: '', name: '' });
 
@@ -25,12 +99,8 @@ export default function Checkout() {
     window.scrollTo(0, 0);
   }, [step]);
 
-
-  const availableShipping = shippingMethods.filter(m => m.active);
-  const selectedCustomShipping = availableShipping.find(m => m.id === shippingMethod);
-  const shippingCost = selectedCustomShipping 
-    ? selectedCustomShipping.price 
-    : (shippingMethod === 'express' ? 25 : (cartTotal > 100 ? 0 : 15));
+  const activeZone = NIGERIA_DELIVERY_ZONES.find(z => z.id === deliveryZoneId) || NIGERIA_DELIVERY_ZONES[0];
+  const shippingCost = shippingMethod === 'express' ? activeZone.expressFee : activeZone.standardFee;
 
   const tax = 0; // Simplified domestic store checkout
   const finalTotal = cartTotal + tax + shippingCost;
@@ -76,7 +146,7 @@ export default function Checkout() {
           quantity: i.quantity,
           variantId: i.variantId || null,
           condition: i.condition || i.productSnapshot?.condition || 'new',
-          conditionGrade: i.conditionGrade || i.productSnapshot?.conditionGrade || ((i.condition === 'used' || i.productSnapshot?.condition === 'used') ? 'Certified Pre-Owned' : 'Brand New')
+          conditionGrade: i.conditionGrade || i.productSnapshot?.conditionGrade || ((i.condition === 'used' || i.productSnapshot?.condition === 'used') ? 'Tokunbo (Fairly Used)' : 'Brand New')
         })),
         subtotal: cartTotal,
         discount: cartDiscount,
@@ -188,46 +258,65 @@ export default function Checkout() {
                   <button type="button" onClick={() => setStep(1)} className="text-sm font-semibold text-primary-blue hover:underline">Edit Contact</button>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Delivery Location Zone (Where the person stays) */}
+                  <div className="col-span-2">
+                    <label className="block text-sm font-bold text-zinc-900 mb-1.5 flex items-center justify-between">
+                      <span>Delivery Location (Where will rider deliver to?)</span>
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        Rider fee computed automatically
+                      </span>
+                    </label>
+                    <select
+                      value={deliveryZoneId}
+                      onChange={(e) => {
+                        const newZoneId = e.target.value;
+                        setDeliveryZoneId(newZoneId);
+                        const found = NIGERIA_DELIVERY_ZONES.find(z => z.id === newZoneId);
+                        if (found) {
+                          setShippingData(prev => ({
+                            ...prev,
+                            state: found.state,
+                            city: found.city
+                          }));
+                        }
+                      }}
+                      className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none text-sm font-bold text-zinc-900"
+                    >
+                      {NIGERIA_DELIVERY_ZONES.map(zone => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.name} — from ₦{zone.standardFee.toLocaleString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="col-span-1">
                     <label className="block text-sm font-bold text-zinc-700 mb-1.5">First Name</label>
-                    <input required value={shippingData.firstName} onChange={e => setShippingData({...shippingData, firstName: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="Jane" />
+                    <input required value={shippingData.firstName} onChange={e => setShippingData({...shippingData, firstName: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="First Name" />
                   </div>
                   <div className="col-span-1">
                     <label className="block text-sm font-bold text-zinc-700 mb-1.5">Last Name</label>
-                    <input required value={shippingData.lastName} onChange={e => setShippingData({...shippingData, lastName: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="Doe" />
+                    <input required value={shippingData.lastName} onChange={e => setShippingData({...shippingData, lastName: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="Last Name" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">Address</label>
-                    <input required value={shippingData.address} onChange={e => setShippingData({...shippingData, address: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="123 Main St" />
+                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">Street Address (Doorstep Delivery Address)</label>
+                    <input required value={shippingData.address} onChange={e => setShippingData({...shippingData, address: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="House number, street name, estate, or landmark" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">Apartment, suite, etc. (optional)</label>
-                    <input value={shippingData.apartment} onChange={e => setShippingData({...shippingData, apartment: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="Apt 4B" />
+                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">Apartment, Suite, Unit or Estate Name (Optional)</label>
+                    <input value={shippingData.apartment} onChange={e => setShippingData({...shippingData, apartment: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="E.g. Block B, Flat 3 or Sunrise Estate Gate" />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">City</label>
-                    <input required value={shippingData.city} onChange={e => setShippingData({...shippingData, city: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="New York" />
+                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">Area / City</label>
+                    <input required value={shippingData.city} onChange={e => setShippingData({...shippingData, city: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="E.g. Ikeja, Lekki, Wuse" />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">State/Province</label>
-                    <input required value={shippingData.state} onChange={e => setShippingData({...shippingData, state: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="NY" />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">ZIP Code</label>
-                    <input required value={shippingData.zip} onChange={e => setShippingData({...shippingData, zip: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="10001" />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">Country</label>
-                    <select required value={shippingData.country} onChange={e => setShippingData({...shippingData, country: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none appearance-none">
-                      <option value="US">United States</option>
-                      <option value="CA">Canada</option>
-                      <option value="UK">United Kingdom</option>
-                      <option value="AU">Australia</option>
-                    </select>
+                    <label className="block text-sm font-bold text-zinc-700 mb-1.5">State</label>
+                    <input required value={shippingData.state} onChange={e => setShippingData({...shippingData, state: e.target.value})} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-zinc-900 outline-none" placeholder="E.g. Lagos" />
                   </div>
                 </div>
                 <button type="submit" className="mt-6 w-full py-4 bg-zinc-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors shadow-lg active:scale-[0.98]">
-                  Continue to Delivery <ArrowRight className="w-5 h-5" />
+                  Continue to Delivery Options <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
             )}
@@ -236,7 +325,10 @@ export default function Checkout() {
             {step === 3 && (
               <div className="animate-fade-in-up">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-extrabold text-zinc-900">Shipping Method</h2>
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-zinc-900">Dispatch Rider & Delivery</h2>
+                    <p className="text-xs text-zinc-500 mt-1">Rates computed for: <strong className="text-zinc-900">{activeZone.name}</strong></p>
+                  </div>
                   <button type="button" onClick={() => setStep(2)} className="text-sm font-semibold text-primary-blue hover:underline">Edit Address</button>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -246,11 +338,11 @@ export default function Checkout() {
                         {shippingMethod === 'standard' && <div className="w-2.5 h-2.5 bg-zinc-900 rounded-full" />}
                       </div>
                       <div>
-                        <span className="block font-bold text-zinc-900">Standard Delivery</span>
-                        <span className="block text-sm text-zinc-500">Estimated 2-4 business days</span>
+                        <span className="block font-bold text-zinc-900">Standard Dispatch Rider</span>
+                        <span className="block text-xs text-zinc-500">{activeZone.etaStandard}</span>
                       </div>
                     </div>
-                    <span className="font-bold text-zinc-900">{cartTotal > 100 ? 'Free' : formatPrice(15)}</span>
+                    <span className="font-extrabold text-zinc-900">₦{activeZone.standardFee.toLocaleString()}</span>
                     <input type="radio" name="shipping" value="standard" checked={shippingMethod === 'standard'} onChange={() => setShippingMethod('standard')} className="hidden" />
                   </label>
 
@@ -260,11 +352,11 @@ export default function Checkout() {
                         {shippingMethod === 'express' && <div className="w-2.5 h-2.5 bg-zinc-900 rounded-full" />}
                       </div>
                       <div>
-                        <span className="block font-bold text-zinc-900">Express Priority Courier</span>
-                        <span className="block text-sm text-zinc-500">Estimated 1-2 business days</span>
+                        <span className="block font-bold text-zinc-900">Express Priority Direct Rider</span>
+                        <span className="block text-xs text-zinc-500">{activeZone.etaExpress}</span>
                       </div>
                     </div>
-                    <span className="font-bold text-zinc-900">{formatPrice(25)}</span>
+                    <span className="font-extrabold text-zinc-900">₦{activeZone.expressFee.toLocaleString()}</span>
                     <input type="radio" name="shipping" value="express" checked={shippingMethod === 'express'} onChange={() => setShippingMethod('express')} className="hidden" />
                   </label>
                 </div>
@@ -349,7 +441,7 @@ export default function Checkout() {
                           ? 'bg-zinc-200 text-zinc-800'
                           : 'bg-zinc-900 text-white'
                       }`}>
-                        {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Pre-Owned' : 'Brand New'}
+                        {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Tokunbo' : 'Brand New'}
                       </span>
                     </div>
                     <h4 className="text-sm font-bold text-zinc-900 line-clamp-1">{item.name || item.productSnapshot?.name}</h4>
@@ -372,8 +464,11 @@ export default function Checkout() {
                 </div>
               )}
               <div className="flex justify-between text-zinc-600">
-                <span>Shipping</span>
-                <span className="font-semibold text-zinc-900">{shippingCost === 0 ? 'Free' : `${formatPrice(shippingCost)}`}</span>
+                <div className="flex flex-col">
+                  <span>Dispatch Rider Delivery</span>
+                  <span className="text-[11px] text-zinc-400">{activeZone.name.split('(')[0].trim()}</span>
+                </div>
+                <span className="font-semibold text-zinc-900">{formatPrice(shippingCost)}</span>
               </div>
               <div className="flex justify-between text-zinc-600">
                 <span>Estimated Tax</span>

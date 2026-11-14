@@ -64,10 +64,10 @@ export default function Cart() {
                         </span>
                         <span className={`text-[9px] md:text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                           (item.condition === 'used' || item.productSnapshot?.condition === 'used')
-                            ? 'bg-zinc-100 text-zinc-800 border border-zinc-200'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
                             : 'bg-zinc-900 text-white'
                         }`}>
-                          {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Pre-Owned' : 'Brand New'}
+                          {(item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Tokunbo' : 'Brand New'}
                         </span>
                       </div>
                       <h3 
@@ -78,7 +78,7 @@ export default function Cart() {
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         <span className="text-[11px] text-zinc-500 font-medium">
-                          {item.conditionGrade || item.productSnapshot?.conditionGrade || ((item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Certified Pre-Owned' : 'Factory Sealed')}
+                          {item.conditionGrade || item.productSnapshot?.conditionGrade || ((item.condition === 'used' || item.productSnapshot?.condition === 'used') ? 'Tokunbo (Fairly Used)' : 'Factory Sealed')}
                         </span>
                         {item.variantSnapshot && (
                           <span className="px-2 py-0.5 rounded bg-zinc-100 text-xs font-medium text-zinc-700">{item.variantSnapshot.name}</span>

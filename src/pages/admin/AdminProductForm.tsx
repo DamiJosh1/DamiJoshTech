@@ -85,14 +85,25 @@ export default function AdminProductForm() {
             const data = docSnap.data();
             setFormData({
               ...data,
+              name: data.name || '',
+              shortDescription: data.shortDescription || '',
+              description: data.description || '',
+              brand: data.brand || '',
+              category: data.category || '',
+              subCategory: data.subCategory || '',
+              sku: data.sku || '',
+              barcode: data.barcode || '',
+              seoTitle: data.seoTitle || '',
+              seoDescription: data.seoDescription || '',
+              slug: data.slug || '',
               price: data.price?.toString() || '',
               originalPrice: data.originalPrice?.toString() || '',
               costPrice: data.costPrice?.toString() || '',
               newPrice: data.newPrice?.toString() || '',
               usedPrice: data.usedPrice?.toString() || '',
               condition: data.condition || 'new',
-              conditionGrade: data.conditionGrade || (data.condition === 'used' ? 'Certified Pre-Owned - Grade A' : 'Brand New - Factory Sealed'),
-              warrantyInfo: data.warrantyInfo || (data.condition === 'used' ? '90-Day Sajoda Certified Guarantee' : '1-Year Sajoda Official Warranty'),
+              conditionGrade: data.conditionGrade || (data.condition === 'used' ? 'Tokunbo (Fairly Used) - 100% Tested' : 'Brand New - Factory Sealed'),
+              warrantyInfo: data.warrantyInfo || (data.condition === 'used' ? '90-Day Tokunbo Tested Guarantee & Warranty' : '1-Year Sajoda Official Warranty'),
               sourcingHub: data.sourcingHub || (data.category === 'Home Appliances' ? 'Alaba International Market Electronics Distribution Hub (Lagos)' : 'Computer Village Ikeja Tech Hub (Lagos)'),
               baseCost: data.baseCost?.toString() || data.costPrice?.toString() || '',
               ownerCommission: data.ownerCommission?.toString() || '15000',
@@ -101,13 +112,13 @@ export default function AdminProductForm() {
               lowStockThreshold: data.lowStockThreshold?.toString() || '5',
               weight: data.weight?.toString() || '',
               dimensions: data.dimensions || { length: '', width: '', height: '' },
-              tags: data.tags || [],
+              tags: Array.isArray(data.tags) ? data.tags : [],
               tagInput: '',
-              images: data.images || (data.image ? [data.image] : []),
-              image: data.image || (data.images && data.images.length > 0 ? data.images[0] : ''),
+              images: Array.isArray(data.images) ? data.images : (data.image ? [data.image] : []),
+              image: data.image || (Array.isArray(data.images) && data.images.length > 0 ? data.images[0] : ''),
               status: data.status || (data.active === false ? 'archived' : 'active'),
-              variants: data.variants || [],
-              options: data.options || []
+              variants: Array.isArray(data.variants) ? data.variants : [],
+              options: Array.isArray(data.options) ? data.options : []
             });
           } else {
             navigate('/admin/products');
@@ -199,12 +210,14 @@ export default function AdminProductForm() {
   };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && formData.tagInput.trim()) {
+    if (e.key === 'Enter' && formData.tagInput?.trim()) {
       e.preventDefault();
-      if (!formData.tags.includes(formData.tagInput.trim())) {
+      const currentTags = Array.isArray(formData.tags) ? formData.tags : [];
+      const newTag = formData.tagInput.trim();
+      if (!currentTags.includes(newTag)) {
         setFormData((prev: any) => ({
           ...prev,
-          tags: [...prev.tags, prev.tagInput.trim()],
+          tags: [...(Array.isArray(prev.tags) ? prev.tags : []), newTag],
           tagInput: ''
         }));
       } else {
@@ -216,7 +229,7 @@ export default function AdminProductForm() {
   const removeTag = (tagToRemove: string) => {
     setFormData((prev: any) => ({
       ...prev,
-      tags: prev.tags.filter((t: string) => t !== tagToRemove)
+      tags: (Array.isArray(prev.tags) ? prev.tags : []).filter((t: string) => t !== tagToRemove)
     }));
   };
 
@@ -232,7 +245,8 @@ export default function AdminProductForm() {
         const result = event.target?.result as string;
         if (result) {
           setFormData((prev: any) => {
-            const updatedImages = [...prev.images, result];
+            const currentImages = Array.isArray(prev.images) ? prev.images : [];
+            const updatedImages = [...currentImages, result];
             return {
               ...prev,
               images: updatedImages,
@@ -252,22 +266,25 @@ export default function AdminProductForm() {
   const addImageUrl = () => {
     const url = prompt('Enter image URL:');
     if (url && (url.startsWith('http') || url.startsWith('data:image'))) {
-      setFormData((prev: any) => ({
-        ...prev,
-        images: [...prev.images, url],
-        image: prev.images.length === 0 ? url : prev.image
-      }));
+      setFormData((prev: any) => {
+        const currentImages = Array.isArray(prev.images) ? prev.images : [];
+        return {
+          ...prev,
+          images: [...currentImages, url],
+          image: currentImages.length === 0 ? url : prev.image
+        };
+      });
     }
   };
 
   const removeImage = (index: number) => {
     setFormData((prev: any) => {
-      const newImages = [...prev.images];
-      newImages.splice(index, 1);
+      const currentImages = Array.isArray(prev.images) ? [...prev.images] : [];
+      currentImages.splice(index, 1);
       return {
         ...prev,
-        images: newImages,
-        image: prev.image === prev.images[index] ? (newImages[0] || '') : prev.image
+        images: currentImages,
+        image: prev.image === (prev.images && prev.images[index]) ? (currentImages[0] || '') : prev.image
       };
     });
   };
@@ -275,7 +292,7 @@ export default function AdminProductForm() {
   const setPrimaryImage = (index: number) => {
     setFormData((prev: any) => ({
       ...prev,
-      image: prev.images[index]
+      image: (Array.isArray(prev.images) && prev.images[index]) ? prev.images[index] : ''
     }));
   };
 
@@ -321,16 +338,16 @@ export default function AdminProductForm() {
         ownerCommission: parseFloat(formData.ownerCommission) || 15000,
         commissionNote: formData.commissionNote || '',
         condition: formData.condition || 'new',
-        conditionGrade: formData.conditionGrade || (formData.condition === 'used' ? 'Certified Pre-Owned - Grade A' : 'Brand New - Factory Sealed'),
+        conditionGrade: formData.conditionGrade || (formData.condition === 'used' ? 'Tokunbo (Fairly Used) - 100% Tested' : 'Brand New - Factory Sealed'),
         newPrice: parseFloat(formData.newPrice) || (formData.condition === 'new' ? parseFloat(formData.price) : null),
         usedPrice: parseFloat(formData.usedPrice) || (formData.condition === 'used' ? parseFloat(formData.price) : null),
         warrantyInfo: formData.warrantyInfo || (formData.condition === 'used' ? '90-Day Sajoda Certified Guarantee' : '1-Year Sajoda Official Warranty'),
-        image: formData.image || (formData.images.length > 0 ? formData.images[0] : ''),
-        images: formData.images,
-        category: formData.category,
-        subCategory: formData.subCategory,
-        brand: formData.brand,
-        tags: formData.tags,
+        image: formData.image || (Array.isArray(formData.images) && formData.images.length > 0 ? formData.images[0] : ''),
+        images: Array.isArray(formData.images) ? formData.images : [],
+        category: formData.category || '',
+        subCategory: formData.subCategory || '',
+        brand: formData.brand || '',
+        tags: Array.isArray(formData.tags) ? formData.tags : [],
         inventory: formData.inventory !== '' ? parseInt(formData.inventory) : null,
         lowStockThreshold: parseInt(formData.lowStockThreshold) || 5,
         sku: formData.sku,
@@ -480,7 +497,7 @@ export default function AdminProductForm() {
                 <input 
                   type="text" 
                   name="name"
-                  value={formData.name}
+                  value={formData.name || ''}
                   onChange={handleNameChange}
                   placeholder="e.g. Premium Wireless Headphones"
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
@@ -491,7 +508,7 @@ export default function AdminProductForm() {
                 <input 
                   type="text" 
                   name="shortDescription"
-                  value={formData.shortDescription}
+                  value={formData.shortDescription || ''}
                   onChange={handleChange}
                   placeholder="A brief summary for product cards"
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
@@ -501,7 +518,7 @@ export default function AdminProductForm() {
                 <label className="text-sm font-bold text-zinc-700">Full Description</label>
                 <textarea 
                   name="description"
-                  value={formData.description}
+                  value={formData.description || ''}
                   onChange={handleChange}
                   placeholder="Detailed product description..."
                   className="w-full p-4 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all min-h-[200px] resize-y leading-relaxed"
@@ -518,7 +535,7 @@ export default function AdminProductForm() {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {formData.images.map((img: string, idx: number) => (
+                {(formData.images || []).map((img: string, idx: number) => (
                   <div key={idx} className={`relative aspect-square rounded-2xl overflow-hidden border-2 group ${formData.image === img ? 'border-primary-blue shadow-sm' : 'border-zinc-200'}`}>
                     <img src={img} alt="" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -608,7 +625,7 @@ export default function AdminProductForm() {
                       Computer Village Ikeja Tech Hub (Lagos) - Gadgets & Tech
                     </option>
                     <option value="Certified OEM Refurbisher Hub (Nigeria)">
-                      Certified OEM Refurbisher Hub (Nigeria) - Pre-Owned & Tested
+                      Certified Refurbisher & Testing Hub (Nigeria) - Tokunbo & Fairly Used
                     </option>
                     <option value="Authorized Regional Tier-1 Distributor (Nigeria)">
                       Authorized Regional Tier-1 Distributor (Nigeria)
@@ -669,10 +686,46 @@ export default function AdminProductForm() {
                   </div>
                 </div>
 
-                {/* Quick Presets */}
+                {/* Percentage & Margin Strategy Buttons */}
+                <div className="flex flex-col gap-2 pt-3 border-t border-zinc-200/60">
+                  <span className="text-xs font-bold text-zinc-700">Nigerian Market Strategy Recommendations:</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { label: '⚡ Fast Flip', pct: 0.20, desc: '+20% markup' },
+                      { label: '🏆 Recommended Retail', pct: 0.30, desc: '+30% markup' },
+                      { label: '💎 High Margin', pct: 0.45, desc: '+45% markup' },
+                      { label: '📱 Flagship Tech', pct: 0.15, desc: '+15% markup' },
+                    ].map((strat) => (
+                      <button
+                        type="button"
+                        key={strat.label}
+                        onClick={() => {
+                          const base = parseFloat(formData.baseCost) || 0;
+                          if (base > 0) {
+                            const calculatedComm = Math.max(Math.round((base * strat.pct) / 500) * 500, 10000);
+                            const newPrice = base + calculatedComm;
+                            const compPrice = Math.round((newPrice * 1.22) / 500) * 500;
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              ownerCommission: calculatedComm.toString(),
+                              price: newPrice.toString(),
+                              originalPrice: compPrice.toString()
+                            }));
+                          }
+                        }}
+                        className="p-2 text-left rounded-xl border border-zinc-200 bg-white hover:border-zinc-900 hover:bg-zinc-900 hover:text-white transition-all group cursor-pointer"
+                      >
+                        <div className="text-xs font-bold text-zinc-900 group-hover:text-white">{strat.label}</div>
+                        <div className="text-[10px] text-zinc-500 group-hover:text-zinc-300">{strat.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Fixed Naira Presets */}
                 <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200/60">
-                  <span className="text-xs font-semibold text-zinc-500">Quick Commission Presets:</span>
-                  {[10000, 20000, 35000, 50000, 100000].map((amt) => (
+                  <span className="text-xs font-semibold text-zinc-500">Quick Flat Naira Presets:</span>
+                  {[10000, 15000, 25000, 40000, 75000, 100000].map((amt) => (
                     <button
                       type="button"
                       key={amt}
@@ -690,6 +743,49 @@ export default function AdminProductForm() {
                     </button>
                   ))}
                 </div>
+
+                {/* Live Profit & Margin Dashboard */}
+                {(() => {
+                  const base = parseFloat(formData.baseCost) || 0;
+                  const sell = parseFloat(formData.price) || 0;
+                  const grossProfit = Math.max(sell - base, 0);
+                  const paystackFee = sell > 0 ? Math.min(Math.round(sell * 0.015), 2000) : 0;
+                  const netProfit = Math.max(grossProfit - paystackFee, 0);
+                  const marginPct = sell > 0 ? ((grossProfit / sell) * 100).toFixed(1) : '0';
+
+                  if (base <= 0 && sell <= 0) return null;
+
+                  return (
+                    <div className="mt-3 p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                          <span>💰</span> Live Net Profit & Margin Breakdown
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-900 text-xs font-black">
+                          {marginPct}% Gross Margin
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+                        <div>
+                          <span className="text-zinc-500 block text-[10px] uppercase font-bold">Wholesale Cost</span>
+                          <span className="font-extrabold text-zinc-900 text-sm">₦{base.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block text-[10px] uppercase font-bold">Selling Price</span>
+                          <span className="font-extrabold text-zinc-900 text-sm">₦{sell.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block text-[10px] uppercase font-bold">Paystack (1.5% max ₦2k)</span>
+                          <span className="font-bold text-rose-600 text-sm">-₦{paystackFee.toLocaleString()}</span>
+                        </div>
+                        <div className="bg-emerald-600 text-white p-2 rounded-xl text-center">
+                          <span className="text-emerald-100 block text-[9px] uppercase font-black tracking-wider">Your Take-Home Profit</span>
+                          <span className="font-black text-sm block">₦{netProfit.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -709,7 +805,7 @@ export default function AdminProductForm() {
                     <input 
                       type="number" 
                       name="price"
-                      value={formData.price}
+                      value={formData.price || ''}
                       onChange={handleChange}
                       placeholder="e.g. 145000"
                       min="0"
@@ -724,7 +820,7 @@ export default function AdminProductForm() {
                     <input 
                       type="number" 
                       name="originalPrice"
-                      value={formData.originalPrice}
+                      value={formData.originalPrice || ''}
                       onChange={handleChange}
                       placeholder="e.g. 175000"
                       min="0"
@@ -739,7 +835,7 @@ export default function AdminProductForm() {
           {/* Condition & Dual Options */}
           <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-              <h2 className="text-lg font-black text-zinc-900 tracking-tight">CONDITION & DUAL PRICING (BRAND NEW VS USED)</h2>
+              <h2 className="text-lg font-black text-zinc-900 tracking-tight">CONDITION & PRICING (BRAND NEW VS TOKUNBO / FAIRLY USED)</h2>
               <span className="text-xs font-bold text-zinc-500">Customer Choice</span>
             </div>
             <div className="p-6 flex flex-col gap-6">
@@ -753,7 +849,7 @@ export default function AdminProductForm() {
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-bold outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all cursor-pointer"
                   >
                     <option value="new">Brand New (Factory Sealed)</option>
-                    <option value="used">Pre-Owned / Refurbished / Open Box</option>
+                    <option value="used">Tokunbo / Fairly Used / UK Used (100% Tested)</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -763,7 +859,7 @@ export default function AdminProductForm() {
                     name="conditionGrade"
                     value={formData.conditionGrade || ''}
                     onChange={handleChange}
-                    placeholder="e.g. Brand New - Factory Sealed OR Certified Refurbished - Grade A"
+                    placeholder="e.g. Brand New - Factory Sealed OR Tokunbo (Fairly Used) - 100% Tested"
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
                 </div>
@@ -784,7 +880,7 @@ export default function AdminProductForm() {
                   <span className="text-[11px] text-zinc-500">Allows shoppers to buy brand new</span>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-zinc-700">Pre-Owned / Used Price (₦)</label>
+                  <label className="text-sm font-bold text-zinc-700">Tokunbo / Fairly Used Price (₦)</label>
                   <input 
                     type="number" 
                     name="usedPrice"
@@ -794,7 +890,7 @@ export default function AdminProductForm() {
                     min="0"
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
-                  <span className="text-[11px] text-zinc-500">Discounted price for certified pre-owned</span>
+                  <span className="text-[11px] text-zinc-500">Discounted price for certified Tokunbo / fairly used</span>
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-bold text-zinc-700">Warranty / Guarantee Terms</label>
@@ -824,7 +920,7 @@ export default function AdminProductForm() {
                   <input 
                     type="text" 
                     name="sku"
-                    value={formData.sku}
+                    value={formData.sku || ''}
                     onChange={handleChange}
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
@@ -834,7 +930,7 @@ export default function AdminProductForm() {
                   <input 
                     type="text" 
                     name="barcode"
-                    value={formData.barcode}
+                    value={formData.barcode || ''}
                     onChange={handleChange}
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
@@ -847,7 +943,7 @@ export default function AdminProductForm() {
                   <input 
                     type="number" 
                     name="inventory"
-                    value={formData.inventory}
+                    value={formData.inventory || ''}
                     onChange={handleChange}
                     placeholder="Leave blank for untracked"
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
@@ -858,7 +954,7 @@ export default function AdminProductForm() {
                   <input 
                     type="number" 
                     name="lowStockThreshold"
-                    value={formData.lowStockThreshold}
+                    value={formData.lowStockThreshold || ''}
                     onChange={handleChange}
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
@@ -878,7 +974,7 @@ export default function AdminProductForm() {
                   <input 
                     type="number" 
                     name="weight"
-                    value={formData.weight}
+                    value={formData.weight || ''}
                     onChange={handleChange}
                     placeholder="0.0" step="0.1" min="0"
                     className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
@@ -954,12 +1050,12 @@ export default function AdminProductForm() {
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-zinc-700 flex justify-between">
                   <span>Page Title</span>
-                  <span className="text-zinc-400 font-normal">{formData.seoTitle.length} of 70 characters</span>
+                  <span className="text-zinc-400 font-normal">{(formData.seoTitle || '').length} of 70 characters</span>
                 </label>
                 <input 
                   type="text" 
                   name="seoTitle"
-                  value={formData.seoTitle}
+                  value={formData.seoTitle || ''}
                   onChange={handleChange}
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                 />
@@ -968,11 +1064,11 @@ export default function AdminProductForm() {
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-zinc-700 flex justify-between">
                   <span>Meta Description</span>
-                  <span className="text-zinc-400 font-normal">{formData.seoDescription.length} of 320 characters</span>
+                  <span className="text-zinc-400 font-normal">{(formData.seoDescription || '').length} of 320 characters</span>
                 </label>
                 <textarea 
                   name="seoDescription"
-                  value={formData.seoDescription}
+                  value={formData.seoDescription || ''}
                   onChange={handleChange}
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all min-h-[100px] resize-y"
                 />
@@ -985,7 +1081,7 @@ export default function AdminProductForm() {
                   <input 
                     type="text" 
                     name="slug"
-                    value={formData.slug}
+                    value={formData.slug || ''}
                     onChange={handleChange}
                     className="flex-1 p-3 bg-white border border-zinc-200 rounded-r-xl text-sm font-medium outline-none focus:border-zinc-400 focus:ring-4 focus:ring-zinc-100 transition-all"
                   />
@@ -1010,7 +1106,7 @@ export default function AdminProductForm() {
                 <input 
                   type="text" 
                   name="category"
-                  value={formData.category}
+                  value={formData.category || ''}
                   onChange={handleChange}
                   placeholder="e.g. Electronics, Audio"
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 transition-all"
@@ -1021,7 +1117,7 @@ export default function AdminProductForm() {
                 <input 
                   type="text" 
                   name="subCategory"
-                  value={formData.subCategory}
+                  value={formData.subCategory || ''}
                   onChange={handleChange}
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 transition-all"
                 />
@@ -1031,7 +1127,7 @@ export default function AdminProductForm() {
                 <input 
                   type="text" 
                   name="brand"
-                  value={formData.brand}
+                  value={formData.brand || ''}
                   onChange={handleChange}
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 transition-all"
                 />
@@ -1041,15 +1137,15 @@ export default function AdminProductForm() {
                 <input 
                   type="text" 
                   name="tagInput"
-                  value={formData.tagInput}
+                  value={formData.tagInput || ''}
                   onChange={handleChange}
                   onKeyDown={handleAddTag}
                   placeholder="Type and press Enter..."
                   className="w-full p-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium outline-none focus:border-zinc-400 transition-all mb-2"
                 />
-                {formData.tags.length > 0 && (
+                {(formData.tags?.length || 0) > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {formData.tags.map((tag: string, index: number) => (
+                    {(formData.tags || []).map((tag: string, index: number) => (
                       <span key={index} className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-700 text-xs font-bold rounded-lg border border-zinc-200">
                         {tag}
                         <button onClick={() => removeTag(tag)} className="hover:text-rose-500 transition-colors">

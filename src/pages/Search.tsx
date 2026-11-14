@@ -3,6 +3,9 @@ import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../StoreContext';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
+import { SponsoredProductCard } from '../components/SponsoredProductCard';
+import { AdBanner } from '../components/AdBanner';
+import { getMonetizationConfig, MonetizationConfig } from '../services/monetizationService';
 import { Search, ChevronDown, Filter, X, Loader2, Check } from 'lucide-react';
 import SearchInput from '../components/SearchInput';
 
@@ -23,6 +26,13 @@ export default function SearchPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const isSearching = loading || productsLoading;
+  const [adConfig, setAdConfig] = useState<MonetizationConfig>(getMonetizationConfig());
+
+  useEffect(() => {
+    const handleUpdate = () => setAdConfig(getMonetizationConfig());
+    window.addEventListener('sajoda_monetization_updated', handleUpdate);
+    return () => window.removeEventListener('sajoda_monetization_updated', handleUpdate);
+  }, []);
 
   // Filter state for mobile drawer (unapplied until 'Apply' is clicked)
   const [draftCategory, setDraftCategory] = useState(categoryParam);
@@ -101,7 +111,7 @@ export default function SearchPage() {
       result = result.filter(p => p.category === categoryParam);
     }
 
-    // Condition (Brand New vs Used / Pre-Owned)
+    // Condition (Brand New vs Tokunbo / Fairly Used)
     if (conditionParam === 'new') {
       result = result.filter(p => p.condition === 'new' || (!p.condition && !p.id.includes('used')));
     } else if (conditionParam === 'used') {
@@ -291,7 +301,7 @@ export default function SearchPage() {
                       className="w-4 h-4 text-zinc-900 focus:ring-zinc-900 border-zinc-300"
                     />
                     <span className="text-sm text-zinc-600 group-hover:text-zinc-900 transition-colors">
-                      🛡️ Certified Pre-Owned (Tested Working)
+                      🛡️ Tokunbo / Fairly Used (100% Tested)
                     </span>
                   </label>
                 </div>
@@ -369,7 +379,7 @@ export default function SearchPage() {
                     : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                 }`}
               >
-                Pre-Owned & Used
+                Tokunbo & Fairly Used
               </button>
             </div>
 
@@ -393,7 +403,7 @@ export default function SearchPage() {
                 )}
                 {conditionParam !== 'all' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white border border-zinc-200 text-xs font-medium text-zinc-700 shadow-sm">
-                    Condition: {conditionParam === 'new' ? 'Brand New' : 'Pre-Owned'} <button onClick={() => removeFilter('condition')} className="hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+                    Condition: {conditionParam === 'new' ? 'Brand New' : 'Tokunbo / Fairly Used'} <button onClick={() => removeFilter('condition')} className="hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
                   </span>
                 )}
                 {minPriceParam && (
@@ -459,11 +469,27 @@ export default function SearchPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 animate-fade-in">
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+                {filteredProducts.map((product, idx) => {
+                  const shouldShowAd = adConfig.enabled && adConfig.showInFeedAds && adConfig.customBanners.length > 0 && (idx + 1) % (adConfig.inFeedFrequency || 6) === 0;
+                  const adIndex = Math.floor((idx + 1) / (adConfig.inFeedFrequency || 6)) - 1;
+                  const banner = adConfig.customBanners[adIndex % adConfig.customBanners.length];
+                  
+                  return (
+                    <React.Fragment key={product.id}>
+                      <ProductCard product={product} />
+                      {shouldShowAd && banner && (
+                        <SponsoredProductCard banner={banner} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             )}
+
+            {/* Bottom Monetized Partner Banner */}
+            <div className="mt-8">
+              <AdBanner slotIndex={1} />
+            </div>
           </div>
         </div>
       </div>
@@ -545,7 +571,7 @@ export default function SearchPage() {
                     onClick={() => setDraftCondition('used')} 
                     className={`px-3 py-3 rounded-xl text-xs font-bold border transition-colors ${draftCondition === 'used' ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm' : 'bg-white text-zinc-700 border-zinc-200'}`}
                   >
-                    🛡️ Pre-Owned
+                    🛡️ Tokunbo / Fairly Used
                   </button>
                 </div>
               </div>

@@ -25,11 +25,11 @@ export default function AdminFinanceLayout() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <select className="pl-9 pr-8 py-2 bg-white border border-zinc-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none">
+            <select defaultValue="30 Days" className="pl-9 pr-8 py-2 bg-white border border-zinc-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none">
               <option>Today</option>
               <option>Yesterday</option>
               <option>7 Days</option>
-              <option selected>30 Days</option>
+              <option>30 Days</option>
               <option>90 Days</option>
               <option>12 Months</option>
               <option>This Year</option>

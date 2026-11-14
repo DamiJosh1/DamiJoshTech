@@ -49,7 +49,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           <div className="absolute top-3 left-3 md:top-5 md:left-5 flex flex-col gap-1.5 z-10">
             {product.condition === 'used' ? (
               <span className="bg-white/95 backdrop-blur-xs text-zinc-900 border border-zinc-200 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-                <span>🛡️</span> PRE-OWNED • TESTED WORKING
+                <span>🛡️</span> TOKUNBO • TESTED WORKING
               </span>
             ) : (
               <span className="bg-zinc-900 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
@@ -127,7 +127,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                 <span className="text-[11px] text-zinc-400">({product.reviewCount || Math.floor(Math.random() * 100 + 50)})</span>
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-800 border border-zinc-200">
-                {product.condition === 'used' ? 'Pre-Owned (100% Tested)' : 'Sealed Carton Box'}
+                {product.condition === 'used' ? 'Tokunbo (100% Tested)' : 'Sealed Carton Box'}
               </span>
             </div>
             
@@ -201,7 +201,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                     ? 'bg-amber-100 text-amber-900 border border-amber-300'
                     : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
                 }`}>
-                  {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                  {product.condition === 'used' ? 'Tokunbo' : 'Brand New'}
                 </span>
                 {product.inStock === false ? (
                   <span className="text-xs font-bold uppercase tracking-wider text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Out of Stock</span>
@@ -215,7 +215,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
               </h2>
 
               <p className="text-xs font-semibold text-zinc-500 mb-4">
-                Condition: <span className="text-zinc-900 font-bold">{product.conditionGrade || (product.condition === 'used' ? 'Certified Pre-Owned' : 'Brand New')}</span>
+                Condition: <span className="text-zinc-900 font-bold">{product.conditionGrade || (product.condition === 'used' ? 'Tokunbo (Fairly Used)' : 'Brand New')}</span>
                 {product.warrantyInfo && <span className="ml-2 text-primary-blue">• {product.warrantyInfo}</span>}
               </p>
               

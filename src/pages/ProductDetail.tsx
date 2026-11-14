@@ -61,8 +61,8 @@ export default function ProductDetail() {
   const originalPrice = product.originalPrice;
   const activeAlert = product ? getActiveAlertForProduct(product.id) : undefined;
 
-  const currentConditionGrade = product.conditionGrade || (isUsed ? 'Certified Pre-Owned - 100% Tested Working Fine' : 'Brand New - Factory Sealed Box');
-  const currentWarranty = product.warrantyInfo || (isUsed ? '90-Day Sajoda Certified Replacement Guarantee' : '1-Year Official Manufacturer Warranty');
+  const currentConditionGrade = product.conditionGrade || (isUsed ? 'Tokunbo (Fairly Used) - 100% Tested Working Fine' : 'Brand New - Factory Sealed Box');
+  const currentWarranty = product.warrantyInfo || (isUsed ? '90-Day Tokunbo Tested Guarantee & Warranty' : '1-Year Official Manufacturer Warranty');
   const packagingDesc = product.packaging || (isUsed ? 'Certified Tested Unit with Padded Protective Packaging & Accessories' : 'Factory Sealed Retail Pack & Carton with Serial Seal');
 
   // Find counterpart product in alternate condition if available in store
@@ -98,7 +98,7 @@ export default function ProductDetail() {
     if (idx === 0) return 'Front View';
     if (idx === 1) return 'Side Profile';
     if (idx === 2) return 'Side / Ports Detail';
-    if (idx === 3) return usedProduct ? 'Tested Hardware' : 'Factory Sealed Carton Box';
+    if (idx === 3) return usedProduct ? 'Tokunbo Tested Unit' : 'Factory Sealed Carton Box';
     return `Angle ${idx + 1}`;
   };
 
@@ -303,7 +303,7 @@ export default function ProductDetail() {
                   ? 'bg-amber-100 text-amber-900 border border-amber-300'
                   : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
               }`}>
-                {isUsed ? '🛡️ Pre-Owned • 100% Tested Working' : '📦 Brand New • Sealed Carton'}
+                {isUsed ? '🛡️ Tokunbo (Fairly Used) • 100% Tested Working' : '📦 Brand New • Sealed Carton'}
               </span>
             </div>
 
@@ -362,10 +362,10 @@ export default function ProductDetail() {
                   ? 'bg-amber-100 text-amber-900 border border-amber-300' 
                   : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
               }`}>
-                {isUsed ? '🛡️ Certified Pre-Owned • 100% Tested Working Fine' : '📦 Brand New • Factory Sealed Retail Carton & Pack'}
+                {isUsed ? '🛡️ Tokunbo (Fairly Used) • 100% Tested Working Fine' : '📦 Brand New • Factory Sealed Retail Carton & Pack'}
               </span>
               <span className="text-[11px] font-bold text-zinc-500">
-                {isUsed ? 'Pre-Owned Card' : 'Factory Sealed Card'}
+                {isUsed ? 'Tokunbo Card' : 'Factory Sealed Card'}
               </span>
             </div>
 
@@ -388,14 +388,14 @@ export default function ProductDetail() {
             {alternateConditionProduct && (
               <div className="mt-4 pt-3 border-t border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <span className="text-xs text-zinc-600">
-                  Looking for the {alternateConditionProduct.condition === 'used' ? 'Pre-Owned (Tested Working)' : 'Brand New (Sealed Carton)'} edition?
+                  Looking for the {alternateConditionProduct.condition === 'used' ? 'Tokunbo / Fairly Used (Tested Working)' : 'Brand New (Sealed Carton)'} edition?
                 </span>
                 <button
                   type="button"
                   onClick={() => navigate(`/product/${alternateConditionProduct.id}`)}
                   className="text-xs font-bold text-primary-blue hover:text-blue-800 underline underline-offset-2 shrink-0 flex items-center gap-1"
                 >
-                  View Separate {alternateConditionProduct.condition === 'used' ? 'Pre-Owned' : 'Brand New'} Card ({formatPrice(alternateConditionProduct.price)}) →
+                  View Separate {alternateConditionProduct.condition === 'used' ? 'Tokunbo / Fairly Used' : 'Brand New'} Card ({formatPrice(alternateConditionProduct.price)}) →
                 </button>
               </div>
             )}
@@ -475,7 +475,7 @@ export default function ProductDetail() {
                 }`}
               >
                 <ShoppingBag className="w-5 h-5" />
-                {addingToCartId === product.id ? 'Adding...' : `Add to Cart (${isUsed ? 'Pre-Owned' : 'Brand New'})`}
+                {addingToCartId === product.id ? 'Adding...' : `Add to Cart (${isUsed ? 'Tokunbo' : 'Brand New'})`}
               </button>
             </div>
 
@@ -499,7 +499,7 @@ export default function ProductDetail() {
                   : 'border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white active:scale-[0.98]'
               }`}
             >
-              Buy it Now • {isUsed ? 'Pre-Owned' : 'Brand New'}
+              Buy it Now • {isUsed ? 'Tokunbo' : 'Brand New'}
             </button>
           </div>
 
@@ -644,7 +644,7 @@ export default function ProductDetail() {
       <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom))] inset-x-0 bg-white/90 backdrop-blur-md border-t border-zinc-200 p-4 z-40 flex items-center gap-4 animate-slide-up">
         <div className="flex flex-col flex-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary-blue">
-            {isUsed ? 'Pre-Owned • Tested' : 'Brand New • Sealed'}
+            {isUsed ? 'Tokunbo • Tested' : 'Brand New • Sealed'}
           </span>
           <span className="text-sm font-bold text-zinc-900 line-clamp-1">{product.name}</span>
           <span className="text-sm font-semibold text-primary-blue">{formatPrice(currentPrice)}</span>

@@ -198,7 +198,7 @@ export const PriceAlertModal: React.FC<PriceAlertModalProps> = ({ product, onClo
                     ? 'bg-amber-100 text-amber-900 border border-amber-200'
                     : 'bg-zinc-900 text-white'
                 }`}>
-                  {product.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                  {product.condition === 'used' ? 'Tokunbo' : 'Brand New'}
                 </span>
                 {existingAlert && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">

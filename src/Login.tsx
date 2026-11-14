@@ -188,8 +188,19 @@ export default function Login() {
         </div>
 
         <div className="w-full max-w-md mx-auto mt-16 lg:mt-0 animate-fade-in-up">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 mb-2">Welcome Back</h1>
-          <p className="text-zinc-500 font-medium mb-8">Sign in to your SAJODA account.</p>
+          <div className="flex items-center gap-3.5 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-zinc-200/90 shadow-xs flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+              <img 
+                src="/images/favicon.jpg" 
+                alt="SAJODA" 
+                className="w-full h-full object-contain rounded-xl"
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">Welcome Back</h1>
+              <p className="text-xs text-zinc-500 font-medium">Sign in to your SAJODA account</p>
+            </div>
+          </div>
           
           {error && (
             <div className="mb-6 p-4 bg-error/10 text-error rounded-xl flex items-start gap-3 text-sm font-semibold">
@@ -288,8 +299,18 @@ export default function Login() {
           <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary-blue/20 blur-3xl"></div>
         </div>
         
-        <div className="relative z-10 max-w-lg p-12 text-center animate-slide-up">
-          <h2 className="text-4xl font-black tracking-tight mb-6 leading-tight">Welcome back to SAJODA.</h2>
+        <div className="relative z-10 max-w-lg p-12 text-center animate-slide-up flex flex-col items-center">
+          <div className="w-20 h-20 mb-6 rounded-3xl bg-white/10 border border-white/20 p-2.5 shadow-2xl flex items-center justify-center overflow-hidden">
+            <img 
+              src="/images/favicon.jpg" 
+              alt="SAJODA" 
+              className="w-full h-full object-contain rounded-2xl"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          </div>
+          <h2 className="text-4xl font-black tracking-tight mb-4 leading-tight">Welcome back to SAJODA.</h2>
           <p className="text-lg text-zinc-400 font-medium">Sign in to access your orders, wishlist, and exclusive offers.</p>
         </div>
       </div>

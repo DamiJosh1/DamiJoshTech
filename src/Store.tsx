@@ -1,5 +1,6 @@
 import Footer from "./components/Footer";
 import Logo from './Logo';
+import { TopAdBar } from './components/TopAdBar';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -50,6 +51,7 @@ import AdminAiLayout from './pages/admin/ai/AdminAiLayout';
 import AdminAiDashboard from './pages/admin/ai/AdminAiDashboard';
 import AdminAiTasks from './pages/admin/ai/AdminAiTasks';
 import AdminAiProducts from './pages/admin/ai/AdminAiProducts';
+import AdminAiTikTokSync from './pages/admin/ai/AdminAiTikTokSync';
 import AdminAiTrends from './pages/admin/ai/AdminAiTrends';
 import AdminAiMarkets from './pages/admin/ai/AdminAiMarkets';
 import AdminAiApprovals from './pages/admin/ai/AdminAiApprovals';
@@ -351,16 +353,11 @@ export default function Store() {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
       const fetchedProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      if (fetchedProducts.length > 0) {
-        setProducts(fetchedProducts);
-      } else {
-        // Provide rich default catalog if Firestore has not yet been seeded
-        setProducts(prev => prev.length > 0 ? prev : INITIAL_PRODUCTS);
-      }
+      setProducts(fetchedProducts);
       setProductsLoading(false);
     }, (error) => {
       console.warn("Firestore products operating in offline mode:", error.message || error);
-      setProducts(prev => prev.length > 0 ? prev : INITIAL_PRODUCTS);
+      setProducts(INITIAL_PRODUCTS);
       setProductsLoading(false);
     });
 
@@ -487,7 +484,7 @@ export default function Store() {
         name: product.name,
         image: product.image,
         condition: itemCondition,
-        conditionGrade: product.conditionGrade || (itemCondition === 'used' ? 'Certified Pre-Owned' : 'Brand New - Sealed'),
+        conditionGrade: product.conditionGrade || (itemCondition === 'used' ? 'Tokunbo (Fairly Used)' : 'Brand New - Sealed'),
         productSnapshot: product,
         variantSnapshot: variant,
         createdAt: new Date().toISOString()
@@ -822,7 +819,10 @@ export default function Store() {
     <StoreContext.Provider value={storeState}>
     <div className="min-h-screen font-sans flex flex-col text-dark-text bg-light-bg pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-0">
       
-                  {/* Desktop Header */}
+      {/* Monetized Partner Announcement Bar */}
+      {!isCheckout && <TopAdBar />}
+
+      {/* Desktop Header */}
       {!isCheckout && (
         <header className="hidden lg:block sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-zinc-200 transition-all">
         <div className="max-w-[1440px] mx-auto px-8 h-[80px] flex items-center justify-between gap-6">
@@ -1056,6 +1056,7 @@ export default function Store() {
               <Route path="tasks" element={<AdminAiTasks />} />
               <Route path="approvals" element={<AdminAiApprovals />} />
               <Route path="products" element={<AdminAiProducts />} />
+              <Route path="tiktok-sync" element={<AdminAiTikTokSync />} />
               <Route path="trends" element={<AdminAiTrends />} />
               <Route path="markets" element={<AdminAiMarkets />} />
               <Route path="marketing" element={<AdminAiMarketing />} />
@@ -1285,7 +1286,7 @@ export default function Store() {
                                   ? 'bg-amber-100 text-amber-900 border border-amber-300'
                                   : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
                               }`}>
-                                {item.condition === 'used' ? 'Pre-Owned' : 'Brand New'}
+                                {item.condition === 'used' ? 'Tokunbo' : 'Brand New'}
                               </span>
                               <p className="text-xs text-zinc-500">{formatPrice(item.price || item.unitPrice || 0)} each</p>
                             </div>

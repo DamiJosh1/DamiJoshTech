@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../StoreContext';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
+import { AdBanner } from '../components/AdBanner';
 import { ArrowRight, ChevronRight, ShieldCheck, Truck, CreditCard, HeadphonesIcon, RefreshCw, Mail, Heart, ShoppingBag, Star } from 'lucide-react';
 
 export default function Home() {
@@ -71,6 +72,41 @@ export default function Home() {
         </div>
       </section>
 
+      {/* OFFICIAL BRANDS TRUST STRIP */}
+      <div className="bg-zinc-900 border-b border-zinc-800 py-4 px-6 overflow-x-auto scrollbar-hide">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-6 min-w-max">
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zinc-400 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Authentic Brands We Stock:
+          </div>
+          <div className="flex items-center gap-6 text-sm font-black text-zinc-300">
+            {[
+              { name: 'Samsung', category: 'TVs & Galaxy' },
+              { name: 'Hisense', category: '4K Smart TVs & Fridges' },
+              { name: 'Apple', category: 'iPhones & Watches' },
+              { name: 'LG', category: 'NanoCell & Inverter' },
+              { name: 'Haier Thermocool', category: 'Inverter Freezers' },
+              { name: 'Oraimo', category: 'Earbuds & Powerbanks' },
+              { name: 'Century', category: 'Rechargeable Fans' },
+              { name: 'Silver Crest', category: 'Commercial Blenders' },
+              { name: 'Sony', category: 'ANC Audio' },
+              { name: 'JBL', category: 'Bluetooth Speakers' },
+              { name: 'Anker', category: 'GaN Chargers' },
+              { name: 'Binatone', category: 'Appliances' }
+            ].map(brand => (
+              <button
+                key={brand.name}
+                onClick={() => navigate(`/shop?q=${encodeURIComponent(brand.name)}`)}
+                className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group"
+              >
+                <span>{brand.name}</span>
+                <span className="text-[10px] text-zinc-500 font-normal group-hover:text-zinc-400">({brand.category})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* 2. QUICK CATEGORY NAVIGATION */}
       <section className="py-16 md:py-24 max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20">
         <div className="flex items-end justify-between mb-10">
@@ -126,7 +162,7 @@ export default function Home() {
                 onClick={() => navigate('/shop?condition=used')}
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-100 transition-colors shadow-xs"
               >
-                Shop Pre-Owned & Refurbished
+                Shop Tokunbo & Fairly Used
               </button>
               <button onClick={() => navigate('/shop')} className="text-sm font-semibold text-primary-blue hover:text-blue-800 transition-colors flex items-center gap-1 ml-2">
                 View All <ArrowRight className="w-4 h-4" />
@@ -156,7 +192,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* DUAL CONDITION CHOICE BANNER: BRAND NEW VS CERTIFIED PRE-OWNED */}
+      {/* Monetized Sponsor & Partner Banner */}
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20">
+        <AdBanner slotIndex={0} />
+      </div>
+
+      {/* DUAL CONDITION CHOICE BANNER: BRAND NEW VS TOKUNBO / FAIRLY USED */}
       <section className="py-12 max-w-[1440px] mx-auto px-6 md:px-12 lg:px-20">
         <div className="bg-gradient-to-br from-zinc-900 via-zinc-950 to-blue-950 rounded-3xl p-8 md:p-12 text-white shadow-xl">
           <div className="max-w-3xl mb-8">
@@ -164,10 +205,10 @@ export default function Home() {
               Flexible Buying Choices
             </span>
             <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-3">
-              Buy Brand New or Save with Certified Pre-Owned.
+              Buy Brand New or Save with Tokunbo / Fairly Used.
             </h2>
             <p className="text-zinc-300 text-sm md:text-base leading-relaxed">
-              Every customer deserves top-tier electronics and appliances. Choose factory-sealed brand new with full 1-year manufacturer warranty, or save 25%–45% with our 35-point laboratory certified pre-owned units with a 90-day guarantee.
+              Every customer deserves top-tier electronics and appliances. Choose factory-sealed brand new with full 1-year manufacturer warranty, or save 25%–45% with our 100% tested Tokunbo / Fairly Used (UK Used) units backed by a 90-day testing guarantee.
             </p>
           </div>
 
@@ -183,7 +224,7 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </div>
               <h3 className="text-lg font-bold mb-1">Factory Sealed in Box</h3>
-              <p className="text-xs text-zinc-400 mb-3">Pristine, untouched condition with full manufacturer warranty and packaging.</p>
+              <p className="text-xs text-zinc-400 mb-3">Pristine, untouched condition with full manufacturer warranty and carton packaging.</p>
               <span className="text-xs font-bold text-white group-hover:underline">Shop Brand New &rarr;</span>
             </div>
 
@@ -193,13 +234,13 @@ export default function Home() {
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold uppercase tracking-wider border border-white/15">
-                  Certified Pre-Owned
+                  Tokunbo / Fairly Used
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-lg font-bold mb-1">Refurbished & Tested</h3>
-              <p className="text-xs text-zinc-400 mb-3">Passed 35-point testing, ultrasonically cleaned, includes 90-day replacement guarantee.</p>
-              <span className="text-xs font-bold text-white group-hover:underline">Shop Pre-Owned & Save &rarr;</span>
+              <h3 className="text-lg font-bold mb-1">100% Tested Working Fine</h3>
+              <p className="text-xs text-zinc-400 mb-3">Passed technical diagnostics, pristine grade, includes 90-day replacement guarantee.</p>
+              <span className="text-xs font-bold text-white group-hover:underline">Shop Tokunbo & Save &rarr;</span>
             </div>
           </div>
         </div>

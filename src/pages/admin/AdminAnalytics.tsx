@@ -170,7 +170,7 @@ Current ${timeRange.toUpperCase()} Performance Data:
 - Active Catalog Products: ${liveProductsCount || 45} products
 - Top Categories: Home Appliances (48%), Gadgets (34%), Electronics (18%)
 - Dominant Geography: Lagos (62%), Abuja (18%), Port Harcourt (9%)
-- Strict Business Model: Brand New in sealed retail cartons vs Certified Pre-Owned 100% tested working fine. Mandatory ₦10,000+ profit margin per unit.
+- Strict Business Model: Brand New in sealed retail cartons vs Tokunbo & Fairly Used (100% tested working fine). Mandatory ₦10,000+ profit margin per unit.
 
 Provide a 3-part executive briefing:
 1. 💡 PERFORMANCE DIAGNOSIS: What is driving the strongest growth and where are the biggest margin wins?
@@ -186,7 +186,7 @@ Keep it sharp, business-oriented, and tailored to the Nigerian electronics lands
     } catch (err) {
       console.error('AI Analysis error:', err);
       setAiAnalysisResult(
-        `📈 EXECUTIVE COMMERCIAL BRIEFING - SAJODA ELECTRONICS\n\n1. PERFORMANCE DIAGNOSIS:\n• Commercial Kitchen Appliances (Silver Crest Blenders & Freezers) lead sales revenue with high gross profits (₦18k - ₦45k per sale).\n• MagSafe and audio accessories have the highest velocity turnover at Computer Village Ikeja.\n• Lagos orders represent 62% of volume with a 99.4% Paystack payment clearance rate.\n\n2. REVENUE EXPANSION OPPORTUNITIES:\n• Launch "Kitchen Tech Bundles" (Blender + Air Fryer) with a ₦15,000 discount code to lift AOV above ₦140,000.\n• Scale WhatsApp VIP Broadcasts on Fridays to capture weekend payday shoppers.\n• Expand Certified Pre-Owned iPhone and iPad inventory—these units yield over ₦35,000 owner commission per sale.\n\n3. INVENTORY REPLENISHMENT DIRECTIVE:\n• Reorder Anker Soundcore Motion+ immediately (down to 8 units in stock).\n• Increase stock of 3-in-1 Foldable Chargers at Computer Village Hub before next payday spike.`
+        `📈 EXECUTIVE COMMERCIAL BRIEFING - SAJODA ELECTRONICS\n\n1. PERFORMANCE DIAGNOSIS:\n• Commercial Kitchen Appliances (Silver Crest Blenders & Freezers) lead sales revenue with high gross profits (₦18k - ₦45k per sale).\n• MagSafe and audio accessories have the highest velocity turnover at Computer Village Ikeja.\n• Lagos orders represent 62% of volume with a 99.4% Paystack payment clearance rate.\n\n2. REVENUE EXPANSION OPPORTUNITIES:\n• Launch "Kitchen Tech Bundles" (Blender + Air Fryer) with a ₦15,000 discount code to lift AOV above ₦140,000.\n• Scale WhatsApp VIP Broadcasts on Fridays to capture weekend payday shoppers.\n• Expand Tokunbo & Fairly Used iPhone and iPad inventory—these units yield over ₦35,000 owner commission per sale.\n\n3. INVENTORY REPLENISHMENT DIRECTIVE:\n• Reorder Anker Soundcore Motion+ immediately (down to 8 units in stock).\n• Increase stock of 3-in-1 Foldable Chargers at Computer Village Hub before next payday spike.`
       );
     } finally {
       setIsAnalyzingAi(false);
@@ -494,7 +494,7 @@ Keep it sharp, business-oriented, and tailored to the Nigerian electronics lands
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
                       p.condition === 'used' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
                     }`}>
-                      {p.condition === 'used' ? '🛡️ Pre-Owned' : '📦 Brand New'}
+                      {p.condition === 'used' ? '🛡️ Tokunbo' : '📦 Brand New'}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 font-medium text-zinc-600">

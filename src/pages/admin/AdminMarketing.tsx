@@ -136,7 +136,7 @@ export default function AdminMarketing() {
             },
             {
               id: 'camp-3',
-              title: 'Certified Pre-Owned Gadgets Drop',
+              title: 'Tokunbo & Fairly Used Gadgets Drop',
               channel: 'Instagram',
               status: 'scheduled',
               targetAudience: 'Budget conscious smartphone & audio buyers',
@@ -146,7 +146,7 @@ export default function AdminMarketing() {
               clicks: 0,
               startDate: '2026-11-01',
               endDate: '2026-11-10',
-              discountCode: 'PREOWNED90',
+              discountCode: 'TOKUNBO90',
               contentSnippet: '100% tested working fine electronics with 90-day SAJODA guarantee.'
             }
           ];
@@ -323,8 +323,8 @@ Format your reply strictly as JSON with these keys:
       } else {
         // Fallback robust copy
         setGeneratedCopy({
-          whatsapp: `🔥 *SAJODA ELECTRONICS MEGA FLASH SALE IS LIVE!* 🔥\n\nUpgrade your space today with authentic home appliances & cutting-edge gadgets direct from top Lagos distribution hubs!\n\n⚡ *Offer Details:*\n• ${aiDiscountNote}\n• Brand New in Sealed Cartons (1-Year Warranty)\n• Certified Pre-Owned units (100% Tested Working Fine)\n• Same-day dispatch across Lagos!\n\n👉 Shop now: https://sajoda.ng/shop\n_Hurry while stock lasts!_`,
-          instagram: `Ready to upgrade your home and gadget game? ⚡🔌\n\nAt SAJODA Electronics, we bring you genuine appliances and premium tech straight from trusted domestic hubs. Every brand new item comes in sealed cartons with official warranty, plus tested pre-owned gems with our 90-day guarantee!\n\n💥 Exclusive Deal: ${aiDiscountNote}\n📦 Express delivery available nationwide!\n\nTap the link in bio to shop now or send us a DM to reserve your order before stock runs out!\n\n#SajodaElectronics #LagosTech #NigeriaGadgets #HomeAppliancesNigeria #ComputerVillageDeals #AlabaWholesale #TechLagos #NigerianShoppers #NaijaTech #OnlineShoppingNigeria #SmartHomeLagos #GadgetHub`,
+          whatsapp: `🔥 *SAJODA ELECTRONICS MEGA FLASH SALE IS LIVE!* 🔥\n\nUpgrade your space today with authentic home appliances & cutting-edge gadgets direct from top Lagos distribution hubs!\n\n⚡ *Offer Details:*\n• ${aiDiscountNote}\n• Brand New in Sealed Cartons (1-Year Warranty)\n• Tokunbo & Fairly Used units (100% Tested Working Fine)\n• Same-day dispatch across Lagos!\n\n👉 Shop now: https://sajoda.ng/shop\n_Hurry while stock lasts!_`,
+          instagram: `Ready to upgrade your home and gadget game? ⚡🔌\n\nAt SAJODA Electronics, we bring you genuine appliances and premium tech straight from trusted domestic hubs. Every brand new item comes in sealed cartons with official warranty, plus tested Tokunbo / fairly used gems with our 90-day guarantee!\n\n💥 Exclusive Deal: ${aiDiscountNote}\n📦 Express delivery available nationwide!\n\nTap the link in bio to shop now or send us a DM to reserve your order before stock runs out!\n\n#SajodaElectronics #LagosTech #NigeriaGadgets #HomeAppliancesNigeria #ComputerVillageDeals #AlabaWholesale #TechLagos #NigerianShoppers #NaijaTech #OnlineShoppingNigeria #SmartHomeLagos #GadgetHub`,
           emailSubject: `⚡ Unmissable Flash Drop: ${aiDiscountNote}!`,
           emailBody: `Hello Shopper,\n\nWe are excited to announce our biggest promotion yet at SAJODA Electronics! For a limited time, enjoy ${aiDiscountNote} across our top-rated collection of home appliances and latest tech gadgets.\n\nWhether you are looking to outfit your kitchen with commercial-grade blenders or pick up the latest audio gear, SAJODA guarantees authentic quality and swift nationwide delivery.\n\nShop the collection now before promotional inventory sells out!`,
           smsAlert: `FLASH SALE: ${aiDiscountNote} at SAJODA Electronics! Shop authentic appliances & gadgets now: sajoda.ng/deals`
@@ -654,7 +654,7 @@ Format your reply strictly as JSON with these keys:
                   <option value="flash_sale">⚡ 48-Hour Weekend Flash Sale</option>
                   <option value="appliance_promo">🍳 Home Appliances & Kitchen Mega Drop</option>
                   <option value="gadget_drop">🎧 Latest Gadgets, Audio & Drones Launch</option>
-                  <option value="clearance">🏷️ Certified Pre-Owned Clearance (Tested 100%)</option>
+                  <option value="clearance">🏷️ Tokunbo & Fairly Used Clearance (Tested 100%)</option>
                   <option value="new_arrival">✨ New Arrivals Direct From Wholesale Hubs</option>
                 </select>
               </div>

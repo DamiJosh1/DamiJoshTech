@@ -15,6 +15,7 @@ export default function AdminAiLayout() {
     { name: 'Tasks', path: '/admin/ai/tasks', icon: <Activity className="w-4 h-4" /> },
     { name: 'Approvals', path: '/admin/ai/approvals', icon: <ShieldCheck className="w-4 h-4" /> },
     { name: 'Products', path: '/admin/ai/products', icon: <Package className="w-4 h-4" /> },
+    { name: 'TikTok Auto-Sync', path: '/admin/ai/tiktok-sync', icon: <Zap className="w-4 h-4 text-rose-500" /> },
     { name: 'Trends', path: '/admin/ai/trends', icon: <TrendingUp className="w-4 h-4" /> },
     { name: 'Markets', path: '/admin/ai/markets', icon: <Globe className="w-4 h-4" /> },
     { name: 'Marketing', path: '/admin/ai/marketing', icon: <Zap className="w-4 h-4" /> },

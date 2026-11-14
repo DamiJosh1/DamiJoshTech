@@ -121,7 +121,7 @@ export default function Categories() {
                       }}
                       className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/35 backdrop-blur-md text-white text-xs font-semibold transition-colors flex items-center gap-1.5 border border-white/20"
                     >
-                      Pre-Owned
+                      Tokunbo / Fairly Used
                     </button>
                   </div>
                 </div>

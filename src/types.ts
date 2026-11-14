@@ -29,7 +29,7 @@ export interface Product {
   price: number;
   originalPrice?: number;
   condition?: 'new' | 'used';
-  conditionGrade?: string; // e.g. "Brand New - Factory Sealed Box", "Certified Pre-Owned - 100% Tested Working Fine"
+  conditionGrade?: string; // e.g. "Brand New - Factory Sealed Box", "Tokunbo (Fairly Used) - 100% Tested Working Fine"
   packaging?: string; // e.g. "Factory Sealed Retail Carton & Pack" or "Tested Unit in Padded Protective Packaging"
   relatedConditionId?: string; // ID of counterpart product in alternate condition
   warrantyInfo?: string; // e.g. "1-Year Official Manufacturer Warranty" or "90-Day Certified Guarantee"
